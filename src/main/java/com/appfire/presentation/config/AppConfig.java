@@ -40,7 +40,7 @@ public final class AppConfig {
         Path pptx = Path.of(values.getOrDefault("SOURCE_PPTX_PATH", "source.pptx"));
         Path docx = Path.of(values.getOrDefault("SOURCE_DOCX_PATH", "source.docx"));
         Path output = Path.of(values.getOrDefault("OUTPUT_PPTX_PATH", "final_presentation.pptx"));
-        String model = values.getOrDefault("GEMINI_MODEL", "gemini-2.0-flash");
+        String model = values.getOrDefault("GEMINI_MODEL", "gemini-3.1-flash");
         int retries = parseInt(values.getOrDefault("GEMINI_MAX_RETRIES", "3"), 3);
 
         validateInputFile(pptx, "SOURCE_PPTX_PATH");

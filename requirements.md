@@ -65,7 +65,7 @@ Configuration is loaded from environment variables at startup. The application r
 | `SOURCE_PPTX_PATH` | no | `source.pptx` | Template and structure deck |
 | `SOURCE_DOCX_PATH` | no | `source.docx` | Narrative source document |
 | `OUTPUT_PPTX_PATH` | no | `final_presentation.pptx` | Generated output path |
-| `GEMINI_MODEL` | no | `gemini-2.0-flash` | Gemini model identifier |
+| `GEMINI_MODEL` | no | `gemini-3.1-flash` | Gemini model identifier |
 | `GEMINI_MAX_RETRIES` | no | `3` | Maximum retry attempts for transient API failures |
 
 **Startup behavior:**

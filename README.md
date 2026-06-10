@@ -42,7 +42,7 @@ Unit tests run without an API key. The full pipeline integration test runs only 
 | `SOURCE_PPTX_PATH` | no | `source.pptx` |
 | `SOURCE_DOCX_PATH` | no | `source.docx` |
 | `OUTPUT_PPTX_PATH` | no | `final_presentation.pptx` |
-| `GEMINI_MODEL` | no | `gemini-2.0-flash` |
+| `GEMINI_MODEL` | no | `gemini-3.1-flash` |
 | `GEMINI_MAX_RETRIES` | no | `3` |
 
 ## Pipeline
