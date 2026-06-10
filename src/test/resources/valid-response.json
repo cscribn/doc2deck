@@ -1,0 +1,14 @@
+{
+  "slides": [
+    {
+      "slideIndex": 0,
+      "action": "replace",
+      "title": "Test Title",
+      "bullets": ["Point one", "Point two"],
+      "bodyText": null,
+      "notes": null,
+      "sourceRefs": [0]
+    }
+  ],
+  "warnings": []
+}

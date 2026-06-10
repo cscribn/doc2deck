@@ -52,3 +52,216 @@ The application must inject the following system instructions into the prompt pa
   - Next Steps or Actionable Conclusion
 - **Data Presentation:** Label all chart axes clearly. Round numbers to the nearest whole unit or single decimal place unless strict technical precision is explicitly required.
 - **Review Guard:** Before finalizing, verify that every slide passes the "squint test" - the visual layout, focal point, and hierarchy should remain distinct even when blurry.
+
+---
+
+## 4. Environment and Configuration
+
+Configuration is loaded from environment variables at startup. The application reads a `.env` file in the working directory when present (key=value lines, `#` comments ignored). Operators copy `.env.example` to `.env` and fill in secrets locally. Never hardcode secrets in source.
+
+| Variable | Required | Default | Purpose |
+|----------|----------|---------|---------|
+| `GEMINI_API_KEY` | yes | - | Gemini API authentication |
+| `SOURCE_PPTX_PATH` | no | `source.pptx` | Template and structure deck |
+| `SOURCE_DOCX_PATH` | no | `source.docx` | Narrative source document |
+| `OUTPUT_PPTX_PATH` | no | `final_presentation.pptx` | Generated output path |
+| `GEMINI_MODEL` | no | `gemini-2.0-flash` | Gemini model identifier |
+| `GEMINI_MAX_RETRIES` | no | `3` | Maximum retry attempts for transient API failures |
+
+**Startup behavior:**
+
+- Fail fast with an actionable message when `GEMINI_API_KEY` is missing or blank.
+- Fail fast when `SOURCE_PPTX_PATH` or `SOURCE_DOCX_PATH` does not exist or is unreadable.
+- Log resolved paths and model at INFO level before pipeline execution.
+
+**Run command:** `./gradlew run` (no trailing targets or CLI arguments).
+
+---
+
+## 5. Project Layout and Dependencies
+
+### 5.1 Package structure
+
+Root package: `com.appfire.presentation`
+
+```
+src/main/java/com/appfire/presentation/
+  Application.java
+  config/AppConfig.java
+  extraction/PptxExtractor.java
+  extraction/DocxExtractor.java
+  llm/PromptBuilder.java
+  llm/GeminiClient.java
+  llm/ResponseValidator.java
+  rehydration/PptxRehydrator.java
+  model/
+src/test/java/com/appfire/presentation/
+  (mirrors main package)
+```
+
+### 5.2 Dependencies
+
+| Library | Version | Purpose |
+|---------|---------|---------|
+| Apache POI `poi-ooxml` | 5.4.1 | PPTX (XSLF) and DOCX (XWPF) parsing and writing |
+| `com.google.genai:google-genai` | 1.29.0 | Official Gemini Java SDK |
+| Jackson `jackson-databind` | 2.19.0 | JSON serialization for Gemini responses |
+| JUnit 5 + Mockito | 5.12.2 / 5.17.0 | Unit and integration tests |
+| `junit-platform-launcher` | (BOM) | Required test runtime for Gradle JUnit Platform |
+| SLF4J + `slf4j-simple` | 2.0.17 | Structured logging |
+
+The Gemini client is constructed with `Client.builder().apiKey(GEMINI_API_KEY)` (not `GOOGLE_API_KEY`).
+
+### 5.3 Build tooling
+
+- `build.gradle.kts` with Java 21 toolchain and `application` plugin
+- `settings.gradle.kts` with Foojay toolchain resolver plugin
+- Committed Gradle Wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/`)
+- Main class: `com.appfire.presentation.Application`
+
+---
+
+## 6. Extraction Specifications
+
+### 6.1 PPTX extraction (`PptxExtractor`)
+
+- Open `source.pptx` via Apache POI `XMLSlideShow`.
+- Cache the parsed `XMLSlideShow` instance for reuse during rehydration (do not re-parse).
+- Per slide, extract:
+  - `slideIndex` (zero-based)
+  - `layoutName` from the slide layout
+  - Placeholder shapes: `shapeId`, `placeholderType` (TITLE, BODY, etc.), current text, font family, size, and color from the shape or theme
+  - Speaker notes text from `XSLFNotes` when present (structural instructions)
+- Extract theme summary: up to two font families, dominant/supporting/accent colors when detectable.
+- Output: `PresentationBlueprint` record containing slides, theme, and the cached slide show reference holder.
+
+### 6.2 DOCX extraction (`DocxExtractor`)
+
+- Open `source.docx` via `XWPFDocument`.
+- Emit an ordered list of `ContentBlock` records preserving document order:
+  - Heading blocks: level (1-6) and text
+  - Paragraph blocks: plain text
+  - List blocks: bullet or numbered items
+  - Table blocks: rows as pipe-delimited text
+- Output: `DocumentContent` record with blocks and a flat text summary for prompt inclusion.
+
+---
+
+## 7. Gemini Prompt and JSON Contract
+
+### 7.1 Prompt construction rules
+
+1. Number all instruction steps in the prompt.
+2. Anchor every content claim to text extracted from the DOCX or PPTX (no fabrication).
+3. Inject section 3 slideshow constraints as non-negotiable rules at the top of the prompt.
+4. Require a JSON-only response with no markdown fences and no commentary.
+5. Instruct the model to be stateless: use only information in the current prompt.
+
+### 7.2 Token limit strategy
+
+When DOCX content exceeds approximately 100,000 characters, truncate the flat summary to the first 100,000 characters and append a truncation warning in the prompt. Full `ContentBlock` list is still used for `sourceRefs` validation when blocks fit; otherwise log an advisory warning.
+
+### 7.3 Response JSON schema
+
+```json
+{
+  "slides": [
+    {
+      "slideIndex": 0,
+      "action": "replace",
+      "title": "string",
+      "bullets": ["string"],
+      "bodyText": "string or null",
+      "notes": "string or null",
+      "sourceRefs": [0]
+    }
+  ],
+  "warnings": ["string"]
+}
+```
+
+**Field rules:**
+
+- `action`: one of `replace`, `append`, `skip`
+- `bullets`: array of strings, maximum 4 items per slide
+- `slideIndex`: zero-based; must reference an existing template slide for `replace`/`skip`, or equal current slide count for `append`
+- `sourceRefs`: optional array of `ContentBlock` indices citing DOCX sources (used for validation logging)
+- `warnings`: optional advisory messages from the model
+
+---
+
+## 8. Response Validation
+
+`ResponseValidator` performs deterministic checks before rehydration.
+
+**Critical failures (block output write, exit non-zero):**
+
+- JSON parse failure or missing `slides` array
+- Unknown `action` value
+- `slideIndex` out of range for `replace` or `skip`
+- More than 4 bullets on any slide
+- Empty `title` on any non-`skip` slide
+
+**Advisory warnings (log, continue when no critical failures):**
+
+- Missing narrative flow coverage (title hook, context, deliverables, next steps) when slide count allows
+- Empty `sourceRefs` on content slides
+- Font size overrides below 32pt (title) or 18pt (body) when `fontSizePt` is present in extended directives
+
+On critical failure, log each failed check with a concrete example. Do not write `OUTPUT_PPTX_PATH`.
+
+---
+
+## 9. Rehydration Specifications
+
+`PptxRehydrator` applies a validated `GenerationResponse` to the cached template.
+
+- **replace:** Locate TITLE and BODY placeholders by type; set title, bullets (as body text with bullet prefixes), or `bodyText`. Inherit font family, size, and color from the extracted shape blueprint or theme.
+- **append:** Create a new slide from the first content layout in the master, then apply content as in replace.
+- **skip:** Leave the slide unchanged.
+- Use guard clauses when placeholders are missing; log actionable resolution (for example, "slide 3 has no BODY placeholder; check template layout").
+- Write output to `OUTPUT_PPTX_PATH` using try-with-resources. Close all streams.
+
+---
+
+## 10. Error Handling and Resilience
+
+- **GeminiClient:** Exponential backoff starting at 1 second, capped at 30 seconds, up to `GEMINI_MAX_RETRIES` attempts. Retry on rate limits and transient HTTP errors.
+- **Logging:** Pair every ERROR log with actionable resolution steps (for example, "Set GEMINI_API_KEY in .env and re-run ./gradlew run").
+- **Exit codes:** Non-zero exit on missing configuration, unreadable inputs, API authentication failure, validation critical failure, or I/O errors during output write.
+
+---
+
+## 11. Testing and Acceptance Criteria
+
+### 11.1 Unit tests
+
+- `PptxExtractor` and `DocxExtractor` against `source.pptx` and `source.docx` at project root, falling back to `src/test/resources/` fixtures generated at test runtime when absent
+- `ResponseValidator` with valid and invalid JSON fixtures under `src/test/resources/`
+- `PptxRehydrator` with a `GenerationResponse` fixture against the resolved source PPTX
+- `AppConfig` verifies missing `GEMINI_API_KEY` fails fast
+
+### 11.2 Integration test
+
+- Full pipeline test gated on `GEMINI_API_KEY` being set; skipped otherwise via JUnit `@EnabledIfEnvironmentVariable`
+
+### 11.3 Acceptance criteria
+
+1. `./gradlew build` passes all non-gated tests.
+2. `./gradlew run` with a valid `.env` produces `final_presentation.pptx`.
+3. Output preserves template fonts and colors where placeholders exist.
+4. Validator rejects JSON with more than 4 bullets or malformed structure.
+
+---
+
+## 12. Operator Documentation
+
+[README.md](README.md) is the operator guide and must document:
+
+- Prerequisites (JDK 21 via Gradle toolchain auto-provision)
+- Setup: copy `.env.example` to `.env`, set `GEMINI_API_KEY`
+- Place `source.pptx` and `source.docx` at project root (or override paths via env)
+- Run: `./gradlew run`
+- Troubleshooting: `./gradlew -q javaToolchains`, missing API key, input path errors, validation failures
+
+Supporting files: `.gitignore` (build artifacts, `.env`, OS clutter), `.env.example` (no secrets).
