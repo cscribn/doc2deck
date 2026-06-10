@@ -65,6 +65,6 @@ public final class Application {
         if (e instanceof IllegalStateException) {
             return "Fix configuration or input files and re-run ./gradlew run";
         }
-        return "Check logs, verify API key and inputs, then re-run ./gradlew run";
+        return "Check logs, verify gemini CLI and inputs, then re-run ./gradlew run";
     }
 }

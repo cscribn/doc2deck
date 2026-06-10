@@ -6,10 +6,11 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public final class AppConfig {
 
-    private final String geminiApiKey;
+    private final String geminiCliPath;
     private final Path sourcePptxPath;
     private final Path sourceDocxPath;
     private final Path outputPptxPath;
@@ -17,13 +18,13 @@ public final class AppConfig {
     private final int geminiMaxRetries;
 
     private AppConfig(
-            String geminiApiKey,
+            String geminiCliPath,
             Path sourcePptxPath,
             Path sourceDocxPath,
             Path outputPptxPath,
             String geminiModel,
             int geminiMaxRetries) {
-        this.geminiApiKey = geminiApiKey;
+        this.geminiCliPath = geminiCliPath;
         this.sourcePptxPath = sourcePptxPath;
         this.sourceDocxPath = sourceDocxPath;
         this.outputPptxPath = outputPptxPath;
@@ -35,18 +36,18 @@ public final class AppConfig {
         Map<String, String> values = loadEnvFile(Path.of(".env"));
         mergeSystemEnv(values);
 
-        String apiKey = requireValue(values, "GEMINI_API_KEY",
-                "Set GEMINI_API_KEY in .env and re-run ./gradlew run");
+        String cliPath = values.getOrDefault("GEMINI_CLI_PATH", "gemini");
         Path pptx = Path.of(values.getOrDefault("SOURCE_PPTX_PATH", "source.pptx"));
         Path docx = Path.of(values.getOrDefault("SOURCE_DOCX_PATH", "source.docx"));
         Path output = Path.of(values.getOrDefault("OUTPUT_PPTX_PATH", "final_presentation.pptx"));
         String model = values.getOrDefault("GEMINI_MODEL", "gemini-3.1-flash");
         int retries = parseInt(values.getOrDefault("GEMINI_MAX_RETRIES", "3"), 3);
 
+        validateGeminiCli(cliPath);
         validateInputFile(pptx, "SOURCE_PPTX_PATH");
         validateInputFile(docx, "SOURCE_DOCX_PATH");
 
-        return new AppConfig(apiKey, pptx, docx, output, model, retries);
+        return new AppConfig(cliPath, pptx, docx, output, model, retries);
     }
 
     private static Map<String, String> loadEnvFile(Path envPath) {
@@ -82,7 +83,7 @@ public final class AppConfig {
 
     private static void mergeSystemEnv(Map<String, String> values) {
         for (String key : List.of(
-                "GEMINI_API_KEY", "SOURCE_PPTX_PATH", "SOURCE_DOCX_PATH",
+                "GEMINI_CLI_PATH", "SOURCE_PPTX_PATH", "SOURCE_DOCX_PATH",
                 "OUTPUT_PPTX_PATH", "GEMINI_MODEL", "GEMINI_MAX_RETRIES")) {
             String env = System.getenv(key);
             if (env != null && !env.isBlank()) {
@@ -91,12 +92,32 @@ public final class AppConfig {
         }
     }
 
-    private static String requireValue(Map<String, String> values, String key, String resolution) {
-        String value = values.get(key);
-        if (value == null || value.isBlank()) {
-            throw new IllegalStateException("Missing required environment variable: " + key + ". " + resolution);
+    private static void validateGeminiCli(String cliPath) {
+        try {
+            Process process = new ProcessBuilder(cliPath, "--version")
+                    .redirectErrorStream(true)
+                    .start();
+            boolean finished = process.waitFor(30, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                throw new IllegalStateException(
+                        "Gemini CLI timed out: " + cliPath
+                                + ". Verify the gemini command is installed and re-run ./gradlew run");
+            }
+            if (process.exitValue() != 0) {
+                throw new IllegalStateException(
+                        "Gemini CLI not working: " + cliPath
+                                + ". Install with npm install -g @google/gemini-cli, authenticate, and re-run ./gradlew run");
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Gemini CLI not found: " + cliPath
+                            + ". Install with npm install -g @google/gemini-cli and ensure it is on PATH, then re-run ./gradlew run",
+                    e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while validating Gemini CLI", e);
         }
-        return value;
     }
 
     private static void validateInputFile(Path path, String envName) {
@@ -115,8 +136,8 @@ public final class AppConfig {
         }
     }
 
-    public String geminiApiKey() {
-        return geminiApiKey;
+    public String geminiCliPath() {
+        return geminiCliPath;
     }
 
     public Path sourcePptxPath() {

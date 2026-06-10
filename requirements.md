@@ -30,7 +30,7 @@ The Java application must process files using a strict serial pipeline:
 
 1. **Extraction Phase:** Parse `source.pptx` to identify layout types, slide indexes, custom shapes, and instructions. Parse `source.docx` to extract text blocks, narrative structure, and data elements.
 2. **Payload Preparation:** Construct an orchestrated LLM prompt matching the system guidelines below, merging the presentation blueprint, structural context, and source domain knowledge.
-3. **Gemini Interaction:** Dispatch the payload via the Gemini client. Request a structured JSON response specifying slide allocations, content replacements, and structural mapping directives.
+3. **Gemini Interaction:** Dispatch the payload via the Gemini CLI (`gemini` command). Request a structured JSON response specifying slide allocations, content replacements, and structural mapping directives.
 4. **Rehydration Phase:** Read the structured JSON payload inside the Java layer, clone/modify the template layers derived from `source.pptx`, explicitly preserve style rules, and output the final `.pptx` file.
 
 ---
@@ -61,16 +61,16 @@ Configuration is loaded from environment variables at startup. The application r
 
 | Variable | Required | Default | Purpose |
 |----------|----------|---------|---------|
-| `GEMINI_API_KEY` | yes | - | Gemini API authentication |
+| `GEMINI_CLI_PATH` | no | `gemini` | Path to the Gemini CLI executable |
 | `SOURCE_PPTX_PATH` | no | `source.pptx` | Template and structure deck |
 | `SOURCE_DOCX_PATH` | no | `source.docx` | Narrative source document |
 | `OUTPUT_PPTX_PATH` | no | `final_presentation.pptx` | Generated output path |
-| `GEMINI_MODEL` | no | `gemini-3.1-flash` | Gemini model identifier |
-| `GEMINI_MAX_RETRIES` | no | `3` | Maximum retry attempts for transient API failures |
+| `GEMINI_MODEL` | no | `gemini-3.1-flash` | Gemini model identifier passed to the CLI |
+| `GEMINI_MAX_RETRIES` | no | `3` | Maximum retry attempts for transient CLI failures |
 
 **Startup behavior:**
 
-- Fail fast with an actionable message when `GEMINI_API_KEY` is missing or blank.
+- Fail fast with an actionable message when the Gemini CLI is missing, not executable, or fails a version check.
 - Fail fast when `SOURCE_PPTX_PATH` or `SOURCE_DOCX_PATH` does not exist or is unreadable.
 - Log resolved paths and model at INFO level before pipeline execution.
 
@@ -104,13 +104,12 @@ src/test/java/com/appfire/presentation/
 | Library | Version | Purpose |
 |---------|---------|---------|
 | Apache POI `poi-ooxml` | 5.4.1 | PPTX (XSLF) and DOCX (XWPF) parsing and writing |
-| `com.google.genai:google-genai` | 1.29.0 | Official Gemini Java SDK |
-| Jackson `jackson-databind` | 2.19.0 | JSON serialization for Gemini responses |
+| Jackson `jackson-databind` | 2.19.0 | JSON serialization for Gemini CLI responses |
 | JUnit 5 + Mockito | 5.12.2 / 5.17.0 | Unit and integration tests |
 | `junit-platform-launcher` | (BOM) | Required test runtime for Gradle JUnit Platform |
 | SLF4J + `slf4j-simple` | 2.0.17 | Structured logging |
 
-The Gemini client is constructed with `Client.builder().apiKey(GEMINI_API_KEY)` (not `GOOGLE_API_KEY`).
+Gemini is invoked via the external `gemini` CLI (not the Java SDK). Authentication is handled by the CLI itself; no API key is required in `.env`.
 
 ### 5.3 Build tooling
 
@@ -226,9 +225,9 @@ On critical failure, log each failed check with a concrete example. Do not write
 
 ## 10. Error Handling and Resilience
 
-- **GeminiClient:** Exponential backoff starting at 1 second, capped at 30 seconds, up to `GEMINI_MAX_RETRIES` attempts. Retry on rate limits and transient HTTP errors.
-- **Logging:** Pair every ERROR log with actionable resolution steps (for example, "Set GEMINI_API_KEY in .env and re-run ./gradlew run").
-- **Exit codes:** Non-zero exit on missing configuration, unreadable inputs, API authentication failure, validation critical failure, or I/O errors during output write.
+- **GeminiClient:** Invokes `gemini -p` in headless mode with prompt on stdin, `--output-format json`, `--approval-mode plan`, and `--skip-trust`. Exponential backoff starting at 1 second, capped at 30 seconds, up to `GEMINI_MAX_RETRIES` attempts. Retry on rate limits, timeouts, and transient CLI failures.
+- **Logging:** Pair every ERROR log with actionable resolution steps (for example, "Install gemini CLI with npm install -g @google/gemini-cli and re-run ./gradlew run").
+- **Exit codes:** Non-zero exit on missing configuration, unreadable inputs, Gemini CLI failure, validation critical failure, or I/O errors during output write.
 
 ---
 
@@ -239,11 +238,11 @@ On critical failure, log each failed check with a concrete example. Do not write
 - `PptxExtractor` and `DocxExtractor` against `source.pptx` and `source.docx` at project root, falling back to `src/test/resources/` fixtures generated at test runtime when absent
 - `ResponseValidator` with valid and invalid JSON fixtures under `src/test/resources/`
 - `PptxRehydrator` with a `GenerationResponse` fixture against the resolved source PPTX
-- `AppConfig` verifies missing `GEMINI_API_KEY` fails fast
+- `AppConfig` verifies missing Gemini CLI fails fast
 
 ### 11.2 Integration test
 
-- Full pipeline test gated on `GEMINI_API_KEY` being set; skipped otherwise via JUnit `@EnabledIfEnvironmentVariable`
+- Full pipeline test gated on the `gemini` CLI being available; skipped otherwise via JUnit `@EnabledIf`
 
 ### 11.3 Acceptance criteria
 
@@ -258,10 +257,10 @@ On critical failure, log each failed check with a concrete example. Do not write
 
 [README.md](README.md) is the operator guide and must document:
 
-- Prerequisites (JDK 21 via Gradle toolchain auto-provision)
-- Setup: copy `.env.example` to `.env`, set `GEMINI_API_KEY`
+- Prerequisites (JDK 21 via Gradle toolchain auto-provision; Gemini CLI installed and authenticated)
+- Setup: copy `.env.example` to `.env`, install and authenticate the Gemini CLI
 - Place `source.pptx` and `source.docx` at project root (or override paths via env)
 - Run: `./gradlew run`
-- Troubleshooting: `./gradlew -q javaToolchains`, missing API key, input path errors, validation failures
+- Troubleshooting: `./gradlew -q javaToolchains`, missing Gemini CLI, CLI auth failures, input path errors, validation failures
 
 Supporting files: `.gitignore` (build artifacts, `.env`, OS clutter), `.env.example` (no secrets).
