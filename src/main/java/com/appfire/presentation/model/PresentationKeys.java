@@ -27,8 +27,6 @@ public final class PresentationKeys {
     public static final String ARCHITECTURE_APPROACH_IMG = "architectureApproachImg";
     public static final String VALUE_IMPACT_IMG = "valueImpactImg";
 
-    public static final String PROJECT_TITLE_PREFIX = "Flow Monorepo API - ";
-
     private static final List<String> TEXT_KEYS = List.of(
             SHORT_PROJECT_DESCRIPTION,
             PROBLEM_1,
@@ -135,5 +133,23 @@ public final class PresentationKeys {
 
     public static boolean isImageKey(String key) {
         return IMAGE_KEYS.contains(key);
+    }
+
+    public static List<String> optionalTextKeys() {
+        return List.of(NON_DEV_COSTS);
+    }
+
+    public static boolean isPopulated(String key, String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        String sanitized = value.trim();
+        if (sanitized.equalsIgnoreCase(key)) {
+            return false;
+        }
+        if (sanitized.equals("${" + key + "}")) {
+            return false;
+        }
+        return true;
     }
 }

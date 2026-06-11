@@ -1,6 +1,6 @@
 PRESENTATION KEYS (fill each from DOCX content):
 
-shortProjectDescription - Compact single-sentence fragment describing the project (no title prefix).
+shortProjectDescription - Compact fragment only.
 problem1 - Details of the problem, first bullet point.
 problem2 - Details of the problem, second bullet point.
 persona - Who has this problem?
@@ -16,4 +16,4 @@ appfireBetterment - Value to Appfire (time saved, customers, retention). 1-2 sen
 estimatedImpact - Estimated impact in hours, dollars, customers, etc. with rationale. 2-3 sentences.
 currentState - Current state of the solution. 1-2 sentences.
 sprintsToDeliver - How many 2-week sprints to production. One bullet point.
-nonDevCosts - Optional non-development costs (marketing, research). 1-2 sentences if applicable.
+nonDevCosts - Optional non-development costs (marketing, research). 1-2 sentences if applicable. Omit the key entirely when not applicable.

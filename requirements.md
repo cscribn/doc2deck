@@ -48,7 +48,7 @@ The application must inject system instructions into the prompt payload. These b
 - Fill every required presentation key with grounded content.
 - Return JSON only with no markdown fences and no commentary.
 - Stateless: use only information in the current prompt.
-- `shortProjectDescription` must be a compact fragment only; Java prepends `"Flow Monorepo API - "`.
+- `shortProjectDescription` must be a compact fragment only.
 - Image keys must be 2-5 word Pexels search phrases.
 
 ---
@@ -72,7 +72,8 @@ Configuration is loaded from environment variables at startup. The application r
 
 - Fail fast with an actionable message when the Gemini CLI is missing, not executable, or fails a version check.
 - Fail fast when `TEMPLATE_PPTX_PATH` or `SOURCE_DOCX_PATH` does not exist or is unreadable.
-- Log resolved paths and model at INFO level before pipeline execution.
+- Print user-friendly step progress to standard output during pipeline execution.
+- Emit only ERROR-level log messages to the console; suppress INFO and WARN from console output.
 
 **Run command:** `./gradlew run` (no trailing targets or CLI arguments).
 
@@ -93,6 +94,7 @@ prompts/
   prompt_output_contract.md
 src/main/java/com/appfire/presentation/
   Application.java
+  ConsoleProgress.java
   config/AppConfig.java
   extraction/DocxExtractor.java
   llm/PromptBuilder.java
@@ -113,6 +115,7 @@ src/test/java/com/appfire/presentation/
 | Library | Version | Purpose |
 |---------|---------|---------|
 | Apache POI `poi-ooxml` | 5.4.1 | DOCX parsing and PPTX image insertion |
+| `log4j-to-slf4j` | 2.24.3 | Routes Apache POI Log4j API calls to SLF4J |
 | docx4j `docx4j-JAXB-ReferenceImpl` | 11.5.7 | PPTX `${variableName}` text replacement |
 | Jackson `jackson-databind` | 2.19.0 | JSON serialization for Gemini CLI responses |
 | JUnit 5 + Mockito | 5.12.2 / 5.17.0 | Unit and integration tests |
@@ -172,7 +175,7 @@ When DOCX content exceeds approximately 100,000 characters, truncate the flat su
 
 | Key | Guidance |
 |-----|----------|
-| `shortProjectDescription` | Compact fragment; Java prepends `"Flow Monorepo API - "` |
+| `shortProjectDescription` | Compact fragment only |
 | `problem1`, `problem2` | Problem bullets |
 | `persona` | Who has this problem |
 | `currentSolution1`, `currentSolution2` | Current workaround bullets |
@@ -188,9 +191,9 @@ When DOCX content exceeds approximately 100,000 characters, truncate the flat su
 
 | Key | Description |
 |-----|-------------|
-| `problemSolvingImg` | Pexels query: difficult problem solved by engineers |
-| `architectureApproachImg` | Pexels query: complex architecture being planned |
-| `valueImpactImg` | Pexels query: engineers delivering significant impact |
+| `problemSolvingImg` | Pexels query: incredibly difficult problem solved by engineers |
+| `architectureApproachImg` | Pexels query: most complex architecture being planned |
+| `valueImpactImg` | Pexels query: engineers delivering epic impact |
 
 ### 7.4 Response JSON schema
 
@@ -237,24 +240,30 @@ Pipeline after validation: text replace, then image acquire, then image insert.
 ### 9.1 Text replacement (`PptxTemplateReplacer`)
 
 - Load `template.pptx` with docx4j `PresentationMLPackage`.
-- Build replacement map from validated text keys; prepend project title prefix for `shortProjectDescription`.
-- Exclude image keys from text replacement.
+- Build replacement map from validated text keys.
+- Strip leading bullet characters from all text values (`TextSanitizer`); template bullets provide formatting.
+- Exclude image keys and unpopulated optional keys from text replacement.
 - Apply `variableReplace()` on every slide.
 - Save to a temporary file.
 
-### 9.2 Image acquisition (`ImageAcquisitionService`)
+### 9.2 Optional placeholder cleanup (`OptionalPlaceholderCleaner`)
 
-- Search Pexels using image-key query values, cache results under `IMAGE_CACHE_DIR`.
+- When `nonDevCosts` is absent or not populated, remove the bullet paragraph containing `${nonDevCosts}` from the deck via Apache POI.
+- Treat placeholder-like values (key name only, empty after sanitization) as unpopulated.
+
+### 9.3 Image acquisition (`ImageAcquisitionService`)
+
+- Search Pexels using image-key query values via `curl`, cache results under `IMAGE_CACHE_DIR`.
 - When `PEXELS_API_KEY` is unset or fetch fails, log a warning and continue without the image.
 
-### 9.3 Image insertion (`ImageInserter`)
+### 9.4 Image insertion (`ImageInserter`)
 
 - Open the text-replaced PPTX with Apache POI.
 - For each image key, locate the pre-scanned anchor (or re-scan for `${key}` token).
 - Insert picture at anchor bounds; clear placeholder text.
 - Write final output to `OUTPUT_PPTX_PATH`.
 
-### 9.4 Template authoring
+### 9.5 Template authoring
 
 - Each `${variableName}` must be in a single PowerPoint text run.
 - Disable "Check spelling as you type" when authoring templates to avoid split runs.
@@ -264,7 +273,7 @@ Pipeline after validation: text replace, then image acquire, then image insert.
 ## 10. Error Handling and Resilience
 
 - **GeminiClient:** Invokes `gemini -p` in headless mode with prompt on stdin, `--output-format json`, `--approval-mode plan`, and `--skip-trust`. Exponential backoff starting at 1 second, capped at 30 seconds, up to `GEMINI_MAX_RETRIES` attempts. Retry on rate limits, timeouts, and transient CLI failures.
-- **Logging:** Pair every ERROR log with actionable resolution steps (for example, "Install gemini CLI with npm install -g @google/gemini-cli and re-run ./gradlew run").
+- **Console output:** Print one user-friendly message per pipeline step to standard output. Errors are logged to the console at ERROR level with actionable resolution steps (for example, "Install gemini CLI with npm install -g @google/gemini-cli and re-run ./gradlew run"). INFO and WARN logs are suppressed from console output.
 - **Exit codes:** Non-zero exit on missing configuration, unreadable inputs, Gemini CLI failure, validation critical failure, or I/O errors during output write.
 
 ---

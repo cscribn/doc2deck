@@ -9,6 +9,7 @@ See [requirements.md](requirements.md) for the full specification.
 - JDK 21 (provisioned automatically via Gradle toolchains)
 - [Gemini CLI](https://github.com/google-gemini/gemini-cli) installed and authenticated
 - Optional: [Pexels API key](https://www.pexels.com/api/) for template image slots
+- `curl` on PATH (used for Pexels image downloads)
 
 Confirm JDK resolution:
 
@@ -38,7 +39,7 @@ Your `template.pptx` must contain `${variableName}` placeholders matching the pr
 ./gradlew run
 ```
 
-Output is written to `final_presentation.pptx` by default.
+Output is written to `final_presentation.pptx` by default. The run prints step-by-step progress to the console; only errors are logged in detail.
 
 ## Build and test
 
@@ -68,10 +69,11 @@ Unit tests run without the Gemini CLI. The full pipeline integration test runs o
 3. Build a Gemini prompt from DOCX content and presentation key definitions
 4. Invoke the Gemini CLI and parse the JSON key map
 5. Validate required keys and image query format
-6. Replace text placeholders via docx4j (`PptxTemplateReplacer`)
-7. Acquire Pexels images for image keys (`ImageAcquisitionService`)
-8. Insert images at anchor locations (`ImageInserter`)
-9. Write `final_presentation.pptx`
+6. Replace text placeholders via docx4j (`PptxTemplateReplacer`); strip bullet prefixes from values
+7. Remove optional empty key bullets (`OptionalPlaceholderCleaner`)
+8. Acquire Pexels images for image keys (`ImageAcquisitionService`)
+9. Insert images at anchor locations (`ImageInserter`)
+10. Write `final_presentation.pptx`
 
 ## Troubleshooting
 
@@ -81,8 +83,7 @@ Unit tests run without the Gemini CLI. The full pipeline integration test runs o
 | Gemini CLI auth failure | Run `gemini` interactively once to sign in |
 | Input file not found | Verify `TEMPLATE_PPTX_PATH` and `SOURCE_DOCX_PATH` |
 | Toolchain issues | Run `./gradlew -q javaToolchains` and install JDK 21 if auto-download fails |
-| Validation failure | Check logs for missing keys or invalid image queries (must be 2-5 words) |
+| Validation failure | Read the error output for missing keys or invalid image queries (must be 2-5 words) |
 | Prompt file not found | Run from the project root so `./prompts/` is visible |
 | Placeholders not replaced | Ensure each `${key}` is a single text run; disable spell-check-as-you-type in PowerPoint |
-| No slide images | Set `PEXELS_API_KEY` in `.env`; check logs for Pexels fetch warnings |
-| SSL/certificate errors from Java HTTP | Corporate SSL inspection may block Java HTTPS; the app falls back to `curl` automatically |
+| No slide images | Set `PEXELS_API_KEY` in `.env`; ensure `curl` is installed and on PATH |

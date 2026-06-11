@@ -10,6 +10,7 @@ import com.appfire.presentation.model.DocumentContent;
 import com.appfire.presentation.model.PresentationContentResponse;
 import com.appfire.presentation.model.TemplateScanResult;
 import com.appfire.presentation.template.ImageInserter;
+import com.appfire.presentation.template.OptionalPlaceholderCleaner;
 import com.appfire.presentation.template.PptxTemplateReplacer;
 import com.appfire.presentation.template.TemplateScanner;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,11 +35,8 @@ public final class Application {
     }
 
     public static void run() throws Exception {
+        ConsoleProgress.step("Loading configuration...");
         AppConfig config = AppConfig.load();
-        LOG.info("Template PPTX: {}", config.templatePptxPath());
-        LOG.info("Source DOCX: {}", config.sourceDocxPath());
-        LOG.info("Output PPTX: {}", config.outputPptxPath());
-        LOG.info("Gemini model: {}", config.geminiModel());
 
         ObjectMapper objectMapper = new ObjectMapper();
         DocxExtractor docxExtractor = new DocxExtractor();
@@ -49,36 +47,54 @@ public final class Application {
         PptxTemplateReplacer templateReplacer = new PptxTemplateReplacer();
         ImageAcquisitionService imageService = new ImageAcquisitionService(
                 config.pexelsApiKey(), config.imageCacheDir(), objectMapper);
+        OptionalPlaceholderCleaner optionalCleaner = new OptionalPlaceholderCleaner();
         ImageInserter imageInserter = new ImageInserter();
 
+        ConsoleProgress.step("Extracting content from source document...");
         DocumentContent document = docxExtractor.extract(config.sourceDocxPath());
+
+        ConsoleProgress.step("Scanning template for placeholders...");
         TemplateScanResult scan = templateScanner.scan(config.templatePptxPath());
 
+        ConsoleProgress.step("Generating presentation content with Gemini...");
         String prompt = promptBuilder.build(document, scan);
         PresentationContentResponse response = geminiClient.generate(prompt);
 
+        ConsoleProgress.step("Validating generated content...");
         ResponseValidator.ValidationResult validation = validator.validate(response, scan);
         if (!validation.passed()) {
             throw new IllegalStateException(
                     "Gemini response failed validation: " + validation.criticalFailures());
         }
 
+        ConsoleProgress.step("Replacing text placeholders...");
         Path tempPptx = Files.createTempFile("presentation-text-", ".pptx");
         try {
             templateReplacer.replace(config.templatePptxPath(), response, tempPptx);
+
+            ConsoleProgress.step("Cleaning empty optional sections...");
+            optionalCleaner.clean(tempPptx, response);
+
+            if (config.pexelsApiKey().isBlank()) {
+                ConsoleProgress.step("Skipping image acquisition (PEXELS_API_KEY not set)...");
+            } else {
+                ConsoleProgress.step("Acquiring slide images...");
+            }
             var imagePlan = imageService.acquire(response.imageQueries());
+
+            ConsoleProgress.step("Inserting images and writing presentation...");
             imageInserter.insert(tempPptx, imagePlan, scan, config.outputPptxPath());
         } finally {
             Files.deleteIfExists(tempPptx);
         }
 
-        LOG.info("Presentation generation complete.");
+        ConsoleProgress.complete(config.outputPptxPath());
     }
 
     private static String resolutionFor(Exception e) {
         if (e instanceof IllegalStateException) {
             return "Fix configuration or input files and re-run ./gradlew run";
         }
-        return "Check logs, verify gemini CLI and inputs, then re-run ./gradlew run";
+        return "Review the error above, verify gemini CLI and inputs, then re-run ./gradlew run";
     }
 }

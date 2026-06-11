@@ -50,14 +50,14 @@ public final class PptxTemplateReplacer {
                 continue;
             }
             String value = response.keys().get(key);
-            if (value == null || value.isBlank()) {
+            if (!PresentationKeys.isPopulated(key, value)) {
                 continue;
             }
-            if (PresentationKeys.SHORT_PROJECT_DESCRIPTION.equals(key)) {
-                replacements.put(key, PresentationKeys.PROJECT_TITLE_PREFIX + value.trim());
-            } else {
-                replacements.put(key, value.trim());
+            String sanitized = TextSanitizer.sanitize(value);
+            if (sanitized.isBlank()) {
+                continue;
             }
+            replacements.put(key, sanitized);
         }
         return replacements;
     }

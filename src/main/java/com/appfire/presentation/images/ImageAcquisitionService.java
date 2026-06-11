@@ -8,15 +8,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,16 +29,12 @@ public final class ImageAcquisitionService {
 
     private final String pexelsApiKey;
     private final Path cacheDir;
-    private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
     public ImageAcquisitionService(String pexelsApiKey, Path cacheDir, ObjectMapper objectMapper) {
         this.pexelsApiKey = pexelsApiKey;
         this.cacheDir = cacheDir;
         this.objectMapper = objectMapper;
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(15))
-                .build();
     }
 
     public ImageKeyPlan acquire(Map<String, String> imageQueries) {
@@ -79,8 +70,7 @@ public final class ImageAcquisitionService {
         return new ImageKeyPlan(images);
     }
 
-    private ResolvedImageKey fetchImage(String key, String query, int pickOffset)
-            throws IOException, InterruptedException {
+    private ResolvedImageKey fetchImage(String key, String query, int pickOffset) throws IOException {
         Path cached = cachePath(key, query);
         if (Files.exists(cached)) {
             byte[] data = Files.readAllBytes(cached);
@@ -115,63 +105,11 @@ public final class ImageAcquisitionService {
         return new ResolvedImageKey(key, imageBytes, detectType(imageBytes));
     }
 
-    private String httpGet(String url, Map<String, String> headers) throws IOException, InterruptedException {
-        try {
-            return httpClientGet(url, headers);
-        } catch (IOException e) {
-            if (isSslError(e)) {
-                LOG.warn("Java HTTP SSL failed for {}. Falling back to curl.", url);
-                return curlGet(url, headers);
-            }
-            throw e;
-        }
+    private String httpGet(String url, Map<String, String> headers) throws IOException {
+        return new String(httpGetBytes(url, headers), StandardCharsets.UTF_8);
     }
 
-    private byte[] httpGetBytes(String url, Map<String, String> headers) throws IOException, InterruptedException {
-        try {
-            return httpClientGetBytes(url, headers);
-        } catch (IOException e) {
-            if (isSslError(e)) {
-                LOG.warn("Java HTTP SSL failed for image download. Falling back to curl.");
-                return curlGetBytes(url, headers);
-            }
-            throw e;
-        }
-    }
-
-    private String httpClientGet(String url, Map<String, String> headers)
-            throws IOException, InterruptedException {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(30))
-                .GET();
-        headers.forEach(builder::header);
-        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new IOException("HTTP GET failed with status " + response.statusCode() + " for " + url);
-        }
-        return response.body();
-    }
-
-    private byte[] httpClientGetBytes(String url, Map<String, String> headers)
-            throws IOException, InterruptedException {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(60))
-                .GET();
-        headers.forEach(builder::header);
-        HttpResponse<byte[]> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
-        if (response.statusCode() != 200) {
-            throw new IOException("HTTP GET failed with status " + response.statusCode() + " for " + url);
-        }
-        return response.body();
-    }
-
-    private String curlGet(String url, Map<String, String> headers) throws IOException {
-        return new String(curlGetBytes(url, headers), StandardCharsets.UTF_8);
-    }
-
-    private byte[] curlGetBytes(String url, Map<String, String> headers) throws IOException {
+    private byte[] httpGetBytes(String url, Map<String, String> headers) throws IOException {
         List<String> command = new ArrayList<>();
         command.add("curl");
         command.add("-sS");
@@ -214,20 +152,6 @@ public final class ImageAcquisitionService {
             process.destroyForcibly();
             throw new IOException("Interrupted waiting for curl", e);
         }
-    }
-
-    private boolean isSslError(IOException e) {
-        String message = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
-        Throwable cause = e.getCause();
-        String causeMessage = cause != null && cause.getMessage() != null
-                ? cause.getMessage().toLowerCase()
-                : "";
-        return message.contains("certificate")
-                || message.contains("pkix")
-                || message.contains("ssl")
-                || causeMessage.contains("certificate")
-                || causeMessage.contains("pkix")
-                || causeMessage.contains("ssl");
     }
 
     private Path cachePath(String key, String query) {

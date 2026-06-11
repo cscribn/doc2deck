@@ -1,28 +1,29 @@
 package com.appfire.presentation.images;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+import com.appfire.presentation.model.PresentationKeys;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.io.TempDir;
 
 class ImageAcquisitionServiceNetworkTest {
 
     @Test
     @EnabledIfEnvironmentVariable(named = "PEXELS_API_KEY", matches = ".+")
-    void fetchesImageFromPexels() throws IOException, InterruptedException {
-        HttpClient client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(15))
-                .build();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.pexels.com/v1/search?query=architecture&per_page=1"))
-                .header("Authorization", System.getenv("PEXELS_API_KEY"))
-                .GET()
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        org.junit.jupiter.api.Assertions.assertEquals(200, response.statusCode());
+    void fetchesImageFromPexels(@TempDir Path tempDir) throws Exception {
+        ImageAcquisitionService service = new ImageAcquisitionService(
+                System.getenv("PEXELS_API_KEY"),
+                tempDir,
+                new ObjectMapper());
+
+        var plan = service.acquire(java.util.Map.of(
+                PresentationKeys.PROBLEM_SOLVING_IMG, "architecture skyline"));
+
+        assertFalse(plan.images().isEmpty(), "Expected at least one image from Pexels");
+        assertEquals(1, plan.images().size());
     }
 }

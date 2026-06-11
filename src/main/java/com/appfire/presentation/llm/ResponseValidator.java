@@ -82,7 +82,10 @@ public final class ResponseValidator {
             List<String> advisory) {
         Set<String> found = scan.foundKeys();
         for (String key : found) {
-            if (!response.keys().containsKey(key) || response.keys().get(key).isBlank()) {
+            if (!PresentationKeys.isPopulated(key, response.keys().get(key))) {
+                if (PresentationKeys.optionalTextKeys().contains(key)) {
+                    continue;
+                }
                 advisory.add("Template placeholder '${" + key + "}' has no Gemini value");
             }
         }
@@ -93,7 +96,9 @@ public final class ResponseValidator {
                 advisory.add("Gemini key '" + key + "' not found in template scan");
             }
         }
-        if (!response.keys().containsKey(PresentationKeys.NON_DEV_COSTS)) {
+        if (!PresentationKeys.isPopulated(
+                PresentationKeys.NON_DEV_COSTS,
+                response.keys().get(PresentationKeys.NON_DEV_COSTS))) {
             advisory.add("nonDevCosts absent (optional key)");
         }
         scan.splitRunWarnings().forEach(advisory::add);
