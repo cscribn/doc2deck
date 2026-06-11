@@ -36,7 +36,8 @@ The Java application must process files using a strict serial pipeline:
 6. **Text Replacement:** Use docx4j `SlidePart.variableReplace()` for text keys (excluding image keys).
 7. **Image Acquisition:** Fetch Pexels images using Gemini-provided search phrases for image keys.
 8. **Image Insertion:** Insert images at pre-scanned anchor locations using Apache POI.
-9. **Output:** Write `final_presentation.pptx`.
+9. **Image Optimization:** Compress all embedded JPEG and PNG pictures in the deck before final write (same pixel dimensions; PNG alpha preserved).
+10. **Output:** Write `final_presentation.pptx`.
 
 ---
 
@@ -67,6 +68,9 @@ Configuration is loaded from environment variables at startup. The application r
 | `GEMINI_MAX_RETRIES` | no | `3` | Maximum retry attempts for transient CLI failures |
 | `PEXELS_API_KEY` | no | (empty) | Pexels API key for slide image acquisition; images skipped when unset |
 | `IMAGE_CACHE_DIR` | no | `.cache/images` | Local cache directory for downloaded Pexels images |
+| `IMAGE_JPEG_QUALITY` | no | `0.8` | JPEG re-encode quality (0.0-1.0) for embedded picture optimization |
+| `IMAGE_OPTIMIZATION_ENABLED` | no | `true` | When `false`, skip embedded picture compression before final write |
+| `FONT_CLEANUP_ENABLED` | no | `true` | When `false`, skip removal of unused embedded `.fntdata` font binaries after final write |
 
 **Startup behavior:**
 
@@ -104,7 +108,12 @@ src/main/java/com/appfire/presentation/
   template/TemplateScanner.java
   template/PptxTemplateReplacer.java
   template/ImageInserter.java
+  template/EmbeddedFontCleaner.java
+  template/ReferencedFontCollector.java
   images/ImageAcquisitionService.java
+  images/PresentationImageOptimizer.java
+  images/JpegImageCompressor.java
+  images/PngImageCompressor.java
   model/
 src/test/java/com/appfire/presentation/
   (mirrors main package)
@@ -121,6 +130,7 @@ src/test/java/com/appfire/presentation/
 | JUnit 5 + Mockito | 5.12.2 / 5.17.0 | Unit and integration tests |
 | `junit-platform-launcher` | (BOM) | Required test runtime for Gradle JUnit Platform |
 | SLF4J + `slf4j-simple` | 2.0.17 | Structured logging |
+| `pngquant-png` (`com.xqlee.image`) | 1.0.0 | PNG quantization for embedded picture optimization |
 
 Gemini is invoked via the external `gemini` CLI (not the Java SDK). Authentication is handled by the CLI itself; no API key is required in `.env`.
 
@@ -261,9 +271,30 @@ Pipeline after validation: text replace, then image acquire, then image insert.
 - Open the text-replaced PPTX with Apache POI.
 - For each image key, locate the pre-scanned anchor (or re-scan for `${key}` token).
 - Insert picture at anchor bounds; clear placeholder text.
+- Run embedded picture optimization (section 9.5) when enabled.
 - Write final output to `OUTPUT_PPTX_PATH`.
+- Run embedded font cleanup (section 9.6) on the saved file when enabled.
 
-### 9.5 Template authoring
+### 9.5 Image optimization (`PresentationImageOptimizer`)
+
+- After image insertion, iterate all `XMLSlideShow.getPictureData()` entries (template images and acquired photos).
+- JPEG: re-encode via `ImageIO` at `IMAGE_JPEG_QUALITY` (default 0.8) without changing pixel dimensions.
+- PNG: compress via `pngquant-png` default settings; preserve alpha channel and pixel dimensions.
+- Skip non-JPEG/PNG picture types (EMF, WMF, GIF, etc.).
+- Replace picture bytes only when compressed data is smaller than the original.
+- On per-picture failure, log a warning and keep the original bytes (non-blocking).
+
+### 9.6 Embedded font cleanup (`EmbeddedFontCleaner`)
+
+- After `ImageInserter` writes the final PPTX, reopen the file with Apache POI `OPCPackage` in read-write mode.
+- Collect typefaces referenced in slide, master, layout, notes, and theme XML via `ReferencedFontCollector`.
+- Parse `presentation.xml` and `presentation.xml.rels` for embedded fonts with `.fntdata` binaries.
+- Remove embedded font entries whose typeface is not referenced anywhere in the deck.
+- Delete the `.fntdata` part, relationship, and `[Content_Types].xml` override for each removed font.
+- Keep embedded font metadata entries that have no binary (for example, theme-linked Roboto Light) when still listed in `presentation.xml`.
+- On failure, log a warning and leave the output file unchanged (non-blocking).
+
+### 9.7 Template authoring
 
 - Each `${variableName}` must be in a single PowerPoint text run.
 - Disable "Check spelling as you type" when authoring templates to avoid split runs.
@@ -293,7 +324,8 @@ Pipeline after validation: text replace, then image acquire, then image insert.
 1. `./gradlew build` passes all non-gated tests.
 2. `./gradlew run` with a valid `.env` produces `final_presentation.pptx`.
 3. Output has all text placeholders replaced and images inserted where configured.
-4. Validator rejects JSON with missing required keys or invalid image queries.
+4. Embedded JPEG and PNG pictures are compressed when optimization is enabled and a smaller byte size is achievable.
+5. Validator rejects JSON with missing required keys or invalid image queries.
 
 ---
 

@@ -18,6 +18,9 @@ public final class AppConfig {
     private final int geminiMaxRetries;
     private final String pexelsApiKey;
     private final Path imageCacheDir;
+    private final float imageJpegQuality;
+    private final boolean imageOptimizationEnabled;
+    private final boolean fontCleanupEnabled;
 
     private AppConfig(
             String geminiCliPath,
@@ -27,7 +30,10 @@ public final class AppConfig {
             String geminiModel,
             int geminiMaxRetries,
             String pexelsApiKey,
-            Path imageCacheDir) {
+            Path imageCacheDir,
+            float imageJpegQuality,
+            boolean imageOptimizationEnabled,
+            boolean fontCleanupEnabled) {
         this.geminiCliPath = geminiCliPath;
         this.templatePptxPath = templatePptxPath;
         this.sourceDocxPath = sourceDocxPath;
@@ -36,6 +42,9 @@ public final class AppConfig {
         this.geminiMaxRetries = geminiMaxRetries;
         this.pexelsApiKey = pexelsApiKey;
         this.imageCacheDir = imageCacheDir;
+        this.imageJpegQuality = imageJpegQuality;
+        this.imageOptimizationEnabled = imageOptimizationEnabled;
+        this.fontCleanupEnabled = fontCleanupEnabled;
     }
 
     public static AppConfig load() {
@@ -50,12 +59,17 @@ public final class AppConfig {
         int retries = parseInt(values.getOrDefault("GEMINI_MAX_RETRIES", "3"), 3);
         String pexelsKey = values.getOrDefault("PEXELS_API_KEY", "");
         Path imageCache = Path.of(values.getOrDefault("IMAGE_CACHE_DIR", ".cache/images"));
+        float jpegQuality = parseFloat(values.getOrDefault("IMAGE_JPEG_QUALITY", "0.8"), 0.8f);
+        boolean optimizationEnabled = parseBoolean(values.getOrDefault("IMAGE_OPTIMIZATION_ENABLED", "true"), true);
+        boolean fontCleanupEnabled = parseBoolean(values.getOrDefault("FONT_CLEANUP_ENABLED", "true"), true);
 
         validateGeminiCli(cliPath);
         validateInputFile(pptx, "TEMPLATE_PPTX_PATH");
         validateInputFile(docx, "SOURCE_DOCX_PATH");
 
-        return new AppConfig(cliPath, pptx, docx, output, model, retries, pexelsKey, imageCache);
+        return new AppConfig(
+                cliPath, pptx, docx, output, model, retries, pexelsKey, imageCache,
+                clampJpegQuality(jpegQuality), optimizationEnabled, fontCleanupEnabled);
     }
 
     private static Map<String, String> loadEnvFile(Path envPath) {
@@ -93,7 +107,8 @@ public final class AppConfig {
         for (String key : List.of(
                 "GEMINI_CLI_PATH", "TEMPLATE_PPTX_PATH", "SOURCE_DOCX_PATH",
                 "OUTPUT_PPTX_PATH", "GEMINI_MODEL", "GEMINI_MAX_RETRIES",
-                "PEXELS_API_KEY", "IMAGE_CACHE_DIR")) {
+                "PEXELS_API_KEY", "IMAGE_CACHE_DIR",
+                "IMAGE_JPEG_QUALITY", "IMAGE_OPTIMIZATION_ENABLED", "FONT_CLEANUP_ENABLED")) {
             String env = System.getenv(key);
             if (env != null && !env.isBlank()) {
                 values.put(key, env);
@@ -145,6 +160,28 @@ public final class AppConfig {
         }
     }
 
+    private static float parseFloat(String value, float defaultValue) {
+        try {
+            return Float.parseFloat(value);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    private static boolean parseBoolean(String value, boolean defaultValue) {
+        if ("true".equalsIgnoreCase(value)) {
+            return true;
+        }
+        if ("false".equalsIgnoreCase(value)) {
+            return false;
+        }
+        return defaultValue;
+    }
+
+    private static float clampJpegQuality(float quality) {
+        return Math.max(0.0f, Math.min(1.0f, quality));
+    }
+
     public String geminiCliPath() {
         return geminiCliPath;
     }
@@ -175,5 +212,17 @@ public final class AppConfig {
 
     public Path imageCacheDir() {
         return imageCacheDir;
+    }
+
+    public float imageJpegQuality() {
+        return imageJpegQuality;
+    }
+
+    public boolean imageOptimizationEnabled() {
+        return imageOptimizationEnabled;
+    }
+
+    public boolean fontCleanupEnabled() {
+        return fontCleanupEnabled;
     }
 }

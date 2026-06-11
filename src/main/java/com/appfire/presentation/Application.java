@@ -3,12 +3,14 @@ package com.appfire.presentation;
 import com.appfire.presentation.config.AppConfig;
 import com.appfire.presentation.extraction.DocxExtractor;
 import com.appfire.presentation.images.ImageAcquisitionService;
+import com.appfire.presentation.images.PresentationImageOptimizer;
 import com.appfire.presentation.llm.GeminiClient;
 import com.appfire.presentation.llm.PromptBuilder;
 import com.appfire.presentation.llm.ResponseValidator;
 import com.appfire.presentation.model.DocumentContent;
 import com.appfire.presentation.model.PresentationContentResponse;
 import com.appfire.presentation.model.TemplateScanResult;
+import com.appfire.presentation.template.EmbeddedFontCleaner;
 import com.appfire.presentation.template.ImageInserter;
 import com.appfire.presentation.template.OptionalPlaceholderCleaner;
 import com.appfire.presentation.template.PptxTemplateReplacer;
@@ -48,7 +50,10 @@ public final class Application {
         ImageAcquisitionService imageService = new ImageAcquisitionService(
                 config.pexelsApiKey(), config.imageCacheDir(), objectMapper);
         OptionalPlaceholderCleaner optionalCleaner = new OptionalPlaceholderCleaner();
-        ImageInserter imageInserter = new ImageInserter();
+        PresentationImageOptimizer imageOptimizer = new PresentationImageOptimizer(
+                config.imageOptimizationEnabled(), config.imageJpegQuality());
+        EmbeddedFontCleaner fontCleaner = new EmbeddedFontCleaner(config.fontCleanupEnabled());
+        ImageInserter imageInserter = new ImageInserter(imageOptimizer, fontCleaner);
 
         ConsoleProgress.step("Extracting content from source document...");
         DocumentContent document = docxExtractor.extract(config.sourceDocxPath());
@@ -82,7 +87,7 @@ public final class Application {
             }
             var imagePlan = imageService.acquire(response.imageQueries());
 
-            ConsoleProgress.step("Inserting images and writing presentation...");
+            ConsoleProgress.step("Inserting images, optimizing, writing presentation, and cleaning fonts...");
             imageInserter.insert(tempPptx, imagePlan, scan, config.outputPptxPath());
         } finally {
             Files.deleteIfExists(tempPptx);

@@ -61,6 +61,9 @@ Unit tests run without the Gemini CLI. The full pipeline integration test runs o
 | `GEMINI_MAX_RETRIES` | no | `3` |
 | `PEXELS_API_KEY` | no | (empty) |
 | `IMAGE_CACHE_DIR` | no | `.cache/images` |
+| `IMAGE_JPEG_QUALITY` | no | `0.8` |
+| `IMAGE_OPTIMIZATION_ENABLED` | no | `true` |
+| `FONT_CLEANUP_ENABLED` | no | `true` |
 
 ## Pipeline
 
@@ -73,7 +76,9 @@ Unit tests run without the Gemini CLI. The full pipeline integration test runs o
 7. Remove optional empty key bullets (`OptionalPlaceholderCleaner`)
 8. Acquire Pexels images for image keys (`ImageAcquisitionService`)
 9. Insert images at anchor locations (`ImageInserter`)
-10. Write `final_presentation.pptx`
+10. Compress embedded JPEG and PNG pictures (`PresentationImageOptimizer`)
+11. Write `final_presentation.pptx`
+12. Remove unused embedded font binaries (`EmbeddedFontCleaner`)
 
 ## Troubleshooting
 

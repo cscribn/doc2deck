@@ -1,5 +1,6 @@
 package com.appfire.presentation.template;
 
+import com.appfire.presentation.images.PresentationImageOptimizer;
 import com.appfire.presentation.model.ImageKeyPlan;
 import com.appfire.presentation.model.ImageKeyPlan.ResolvedImageKey;
 import com.appfire.presentation.model.PresentationKeys;
@@ -29,6 +30,14 @@ public final class ImageInserter {
 
     private static final Logger LOG = LoggerFactory.getLogger(ImageInserter.class);
 
+    private final PresentationImageOptimizer optimizer;
+    private final EmbeddedFontCleaner fontCleaner;
+
+    public ImageInserter(PresentationImageOptimizer optimizer, EmbeddedFontCleaner fontCleaner) {
+        this.optimizer = optimizer;
+        this.fontCleaner = fontCleaner;
+    }
+
     public void insert(Path pptxPath, ImageKeyPlan imagePlan, TemplateScanResult scan, Path outputPath)
             throws IOException {
         Map<String, ImageKeyAnchor> anchorsByKey = mapAnchors(scan.imageAnchors());
@@ -54,7 +63,11 @@ public final class ImageInserter {
                 insertAtAnchor(slideShow, anchor, image);
             }
 
+            if (optimizer.isEnabled()) {
+                optimizer.optimize(slideShow);
+            }
             writeOutput(slideShow, outputPath);
+            fontCleaner.clean(outputPath);
         }
     }
 

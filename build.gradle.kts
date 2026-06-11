@@ -22,6 +22,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.19.0")
     implementation("org.slf4j:slf4j-simple:2.0.17")
     implementation("org.apache.logging.log4j:log4j-to-slf4j:2.24.3")
+    implementation("com.xqlee.image:pngquant-png:1.0.0")
 
     testImplementation(platform("org.junit:junit-bom:5.12.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
