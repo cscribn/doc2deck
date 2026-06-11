@@ -25,6 +25,7 @@ class PromptBuilderTest {
         String prompt = builder.build(document, scan);
 
         assertTrue(prompt.contains("NON-NEGOTIABLE RULES:"));
+        assertTrue(prompt.contains("VOICE AND STYLE (TEDx-inspired):"));
         assertTrue(prompt.contains("PRESENTATION KEYS"));
         assertTrue(prompt.contains("IMAGE KEYS"));
         assertTrue(prompt.contains("DOCX CONTENT BLOCKS:"));

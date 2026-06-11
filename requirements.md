@@ -47,9 +47,11 @@ The application must inject system instructions into the prompt payload. These b
 
 - Use only facts from the provided DOCX source text. No fabrication.
 - Fill every required presentation key with grounded content.
+- Apply TEDx-inspired voice: professional, engaging, lightly humorous when appropriate, slightly sensational within source-backed truth.
+- All text keys must use slide copy: short fragments or phrase clusters, not complete sentences.
 - Return JSON only with no markdown fences and no commentary.
 - Stateless: use only information in the current prompt.
-- `shortProjectDescription` must be a compact fragment only.
+- `shortProjectDescription` must be a compact fragment only and must not contain "Flow API Monorepo" (already in the template title).
 - Image keys must be 2-5 word Pexels search phrases.
 
 ---
@@ -92,6 +94,7 @@ Root package: `com.appfire.presentation`
 ```
 prompts/
   prompt_core_rules.md
+  prompt_voice_style.md
   prompt_presentation_keys.md
   prompt_image_keys.md
   prompt_docx_content.md
@@ -172,8 +175,10 @@ Gemini prompt templates live in the project-root `prompts/` directory as Markdow
 
 1. Number all instruction steps in the prompt.
 2. Anchor every content claim to text extracted from the DOCX (no fabrication).
-3. Require a JSON-only response with no markdown fences and no commentary (`prompt_output_contract.md`).
-4. Instruct the model to be stateless: use only information in the current prompt.
+3. Apply TEDx-inspired voice via `prompt_voice_style.md`: hooks, narrative momentum, light humor, and vivid but accurate language.
+4. Require slide-fragment copy for all text keys (no complete sentences or essay-style prose).
+5. Require a JSON-only response with no markdown fences and no commentary (`prompt_output_contract.md`).
+6. Instruct the model to be stateless: use only information in the current prompt.
 
 ### 7.2 Token limit strategy
 
@@ -185,25 +190,25 @@ When DOCX content exceeds approximately 100,000 characters, truncate the flat su
 
 | Key | Guidance |
 |-----|----------|
-| `shortProjectDescription` | Compact fragment only |
-| `problem1`, `problem2` | Problem bullets |
-| `persona` | Who has this problem |
-| `currentSolution1`, `currentSolution2` | Current workaround bullets |
-| `scale`, `whyNow`, `ifUnsolved` | 1-2 sentences each |
-| `architectureApproach`, `approachReasons` | 2-3 sentences each |
-| `personaBetterment`, `appfireBetterment` | 1-2 sentences each |
-| `estimatedImpact` | 2-3 sentences with rationale |
-| `currentState` | 1-2 sentences |
-| `sprintsToDeliver` | Single bullet (2-week sprints) |
-| `nonDevCosts` | Optional; 1-2 sentences |
+| `shortProjectDescription` | Hook fragment; 4-10 words; never include "Flow API Monorepo" |
+| `problem1`, `problem2` | Problem fragments; 8-15 words each |
+| `persona` | Persona fragment; 6-12 words |
+| `currentSolution1`, `currentSolution2` | Workaround fragments; 8-15 words each |
+| `scale`, `whyNow`, `ifUnsolved` | 1-2 fragments; 8-18 words total each |
+| `architectureApproach`, `approachReasons` | 2-3 semicolon-joined fragments; 15-25 words total each |
+| `personaBetterment`, `appfireBetterment` | 1-2 fragments; 8-18 words total each |
+| `estimatedImpact` | 2-3 semicolon-joined fragments; 15-25 words total |
+| `currentState` | 1-2 fragments; 8-18 words total |
+| `sprintsToDeliver` | Single fragment; 4-10 words (2-week sprints) |
+| `nonDevCosts` | Optional; 1-2 fragments; 8-18 words total |
 
 **Image keys (3 required):**
 
 | Key | Description |
 |-----|-------------|
-| `problemSolvingImg` | Pexels query: incredibly difficult problem solved by engineers |
-| `architectureApproachImg` | Pexels query: most complex architecture being planned |
-| `valueImpactImg` | Pexels query: engineers delivering epic impact |
+| `problemSolvingImg` | Pexels query: dramatic engineering breakthrough or impossible problem cracked |
+| `architectureApproachImg` | Pexels query: bold architecture planning or complex system taking shape |
+| `valueImpactImg` | Pexels query: engineers delivering visible, high-impact results |
 
 ### 7.4 Response JSON schema
 

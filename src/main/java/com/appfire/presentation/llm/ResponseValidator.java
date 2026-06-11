@@ -13,6 +13,7 @@ public final class ResponseValidator {
 
     private static final Logger LOG = LoggerFactory.getLogger(ResponseValidator.class);
     private static final int MAX_SHORT_DESCRIPTION_CHARS = 200;
+    private static final String FORBIDDEN_SHORT_DESCRIPTION_PHRASE = "flow api monorepo";
     private static final int MIN_IMAGE_QUERY_WORDS = 2;
     private static final int MAX_IMAGE_QUERY_WORDS = 5;
 
@@ -49,8 +50,14 @@ public final class ResponseValidator {
 
     private void validateShortDescription(PresentationContentResponse response, List<String> advisory) {
         String value = response.keys().get(PresentationKeys.SHORT_PROJECT_DESCRIPTION);
-        if (value != null && value.length() > MAX_SHORT_DESCRIPTION_CHARS) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        if (value.length() > MAX_SHORT_DESCRIPTION_CHARS) {
             advisory.add("shortProjectDescription exceeds " + MAX_SHORT_DESCRIPTION_CHARS + " characters");
+        }
+        if (value.toLowerCase().contains(FORBIDDEN_SHORT_DESCRIPTION_PHRASE)) {
+            advisory.add("shortProjectDescription must not contain \"Flow API Monorepo\" (already in template title)");
         }
     }
 

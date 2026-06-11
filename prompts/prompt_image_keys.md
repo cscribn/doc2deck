@@ -1,10 +1,10 @@
 IMAGE KEYS (Pexels search phrases only, 2-5 words each):
 
-problemSolvingImg - Search phrase for an image depicting an incredibly difficult problem solved by software engineers.
-architectureApproachImg - Search phrase for an image depicting the most complex software architecture being planned.
-valueImpactImg - Search phrase for an image depicting software engineers delivering epic impact.
+problemSolvingImg - Search phrase evoking a dramatic engineering breakthrough or impossible problem cracked.
+architectureApproachImg - Search phrase evoking bold architecture planning or a complex system taking shape.
+valueImpactImg - Search phrase evoking engineers delivering visible, high-impact results.
 
 Rules:
 1. Return short search phrases, not full sentences.
 2. Ground phrases in DOCX themes when possible.
-3. Use consistent professional tone across all three queries.
+3. Prefer vivid, cinematic wording that matches the TEDx-inspired slide voice; stay professional.

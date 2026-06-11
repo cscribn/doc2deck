@@ -1,8 +1,10 @@
 INSTRUCTIONS:
 1. Read the DOCX content blocks and summary.
 2. Fill every required presentation key with grounded content.
-3. Cite source block indices in sourceRefs for each key when possible.
-4. Return JSON only. No markdown fences. No commentary.
+3. Apply TEDx-inspired voice: engaging, slightly sensational, professionally witty; every claim still anchored to DOCX blocks.
+4. Write slide fragments only: no complete sentences, no essay-style prose. See SLIDE COPY FORMAT above.
+5. Cite source block indices in sourceRefs for each key when possible.
+6. Return JSON only. No markdown fences. No commentary.
 
 Template keys found: {{TEMPLATE_KEYS}}
 

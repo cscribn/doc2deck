@@ -24,6 +24,8 @@ public final class PromptBuilder {
         StringBuilder prompt = new StringBuilder();
         prompt.append(promptLoader.load("prompt_core_rules.md"));
         prompt.append("\n\n");
+        prompt.append(promptLoader.load("prompt_voice_style.md"));
+        prompt.append("\n\n");
         prompt.append(promptLoader.load("prompt_presentation_keys.md"));
         prompt.append("\n\n");
         prompt.append(promptLoader.load("prompt_image_keys.md"));

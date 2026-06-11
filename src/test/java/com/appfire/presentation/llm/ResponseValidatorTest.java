@@ -44,6 +44,18 @@ class ResponseValidatorTest {
         assertFalse(result.passed());
     }
 
+    @Test
+    void warnsWhenShortDescriptionRepeatsTemplateTitle() throws IOException {
+        PresentationContentResponse response = loadFixture("valid-response.json");
+        response.keys().put(
+                "shortProjectDescription",
+                "Flow API Monorepo: unified API layer for services");
+        ResponseValidator.ValidationResult result = validator.validate(response, emptyScan());
+        assertTrue(result.passed());
+        assertTrue(result.advisories().stream()
+                .anyMatch(msg -> msg.contains("Flow API Monorepo")));
+    }
+
     private TemplateScanResult emptyScan() {
         return new TemplateScanResult(Set.of(), java.util.List.of(), java.util.List.of());
     }
