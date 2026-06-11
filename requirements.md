@@ -67,6 +67,8 @@ Configuration is loaded from environment variables at startup. The application r
 | `OUTPUT_PPTX_PATH` | no | `final_presentation.pptx` | Generated output path |
 | `GEMINI_MODEL` | no | `gemini-3.1-flash` | Gemini model identifier passed to the CLI |
 | `GEMINI_MAX_RETRIES` | no | `3` | Maximum retry attempts for transient CLI failures |
+| `PEXELS_API_KEY` | no | (empty) | Pexels API key for slide image acquisition; images skipped when unset |
+| `IMAGE_CACHE_DIR` | no | `.cache/images` | Local cache directory for downloaded Pexels images |
 
 **Startup behavior:**
 
@@ -85,15 +87,27 @@ Configuration is loaded from environment variables at startup. The application r
 Root package: `com.appfire.presentation`
 
 ```
+prompts/
+  prompt_core_rules.md
+  prompt_content_variation.md
+  prompt_layout_catalog.md
+  prompt_presentation_blueprint.md
+  prompt_docx_content.md
+  prompt_output_contract.md
 src/main/java/com/appfire/presentation/
   Application.java
   config/AppConfig.java
   extraction/PptxExtractor.java
   extraction/DocxExtractor.java
   llm/PromptBuilder.java
+  llm/PromptLoader.java
   llm/GeminiClient.java
   llm/ResponseValidator.java
+  llm/MetaSlideFilter.java
   rehydration/PptxRehydrator.java
+  rehydration/LayoutResolver.java
+  rehydration/BulletFormatter.java
+  images/ImageAcquisitionService.java
   model/
 src/test/java/com/appfire/presentation/
   (mirrors main package)
@@ -132,7 +146,8 @@ Gemini is invoked via the external `gemini` CLI (not the Java SDK). Authenticati
   - Placeholder shapes: `shapeId`, `placeholderType` (TITLE, BODY, etc.), current text, font family, size, and color from the shape or theme
   - Speaker notes text from `XSLFNotes` when present (structural instructions)
 - Extract theme summary: up to two font families, dominant/supporting/accent colors when detectable.
-- Output: `PresentationBlueprint` record containing slides, theme, and the cached slide show reference holder.
+- Extract `LayoutCatalog` from the slide master: for each layout, record name, placeholder capabilities (`hasTitle`, `hasBody`, `hasPicture`, `hasTwoColumns`, `bodyPlaceholderCount`).
+- Output: `PresentationBlueprint` record containing slides, theme, layout catalog, and the cached slide show reference holder.
 
 ### 6.2 DOCX extraction (`DocxExtractor`)
 
@@ -150,10 +165,12 @@ Gemini is invoked via the external `gemini` CLI (not the Java SDK). Authenticati
 
 ### 7.1 Prompt construction rules
 
+Gemini prompt templates live in the project-root `prompts/` directory as Markdown files named `prompt_<two_word_description>.md`. `PromptLoader` reads and caches these files at runtime (relative to the working directory). `PromptBuilder` loads static rule and contract templates, injects dynamic PPTX/DOCX context via `{{PLACEHOLDER}}` substitution, and concatenates sections in order.
+
 1. Number all instruction steps in the prompt.
 2. Anchor every content claim to text extracted from the DOCX or PPTX (no fabrication).
-3. Inject section 3 slideshow constraints as non-negotiable rules at the top of the prompt.
-4. Require a JSON-only response with no markdown fences and no commentary.
+3. Inject section 3 slideshow constraints as non-negotiable rules at the top of the prompt (`prompt_core_rules.md`).
+4. Require a JSON-only response with no markdown fences and no commentary (`prompt_output_contract.md`).
 5. Instruct the model to be stateless: use only information in the current prompt.
 
 ### 7.2 Token limit strategy
@@ -169,10 +186,17 @@ When DOCX content exceeds approximately 100,000 characters, truncate the flat su
       "slideIndex": 0,
       "action": "replace",
       "title": "string",
-      "bullets": ["string"],
+      "layoutName": "string from LAYOUT CATALOG",
+      "contentStyle": "bullets|body|titleOnly|twoColumn",
+      "includeImage": false,
+      "imageQuery": "string or null",
+      "bullets": ["plain text, no bullet prefix"],
+      "leftBullets": ["col1"],
+      "rightBullets": ["col2"],
       "bodyText": "string or null",
       "notes": "string or null",
-      "sourceRefs": [0]
+      "sourceRefs": [0],
+      "isMetaSlide": false
     }
   ],
   "warnings": ["string"]
@@ -182,10 +206,34 @@ When DOCX content exceeds approximately 100,000 characters, truncate the flat su
 **Field rules:**
 
 - `action`: one of `replace`, `append`, `skip`
-- `bullets`: array of strings, maximum 4 items per slide
+- `layoutName`: must match a layout name from the extracted catalog when provided
+- `contentStyle`: one of `bullets`, `body`, `titleOnly`, `twoColumn`
+- `includeImage`: when true, `imageQuery` must be a 2-5 word Pexels search phrase
+- `bullets`, `leftBullets`, `rightBullets`: arrays of plain-text strings (no bullet prefixes), maximum 4 items per array
 - `slideIndex`: zero-based; must reference an existing template slide for `replace`/`skip`, or equal current slide count for `append`
 - `sourceRefs`: optional array of `ContentBlock` indices citing DOCX sources (used for validation logging)
+- `isMetaSlide`: optional flag for meta-instruction slides; confirmed by `MetaSlideFilter`
 - `warnings`: optional advisory messages from the model
+
+### 7.4 Content variation and meta-slide prompt rules
+
+The prompt must instruct Gemini to:
+
+- Vary bullet count and length across slides; never repeat the same bullet count on consecutive active slides
+- Mix content formats (~40% bullets, ~25% body, ~15% titleOnly, ~20% twoColumn/image)
+- Target 30-50% of active slides with images; skip images on consecutive slides and on long body or titleOnly slides
+- Pick `layoutName` from the layout catalog; use picture layouts for image slides and two-column layouts for `twoColumn` style
+- Exclude meta-instruction slides (presentation tips, template usage guides); use `action: skip` for template instruction slides
+- Return bullet strings without leading bullet characters; Java adds formatting
+
+### 7.5 Meta-slide filtering
+
+`MetaSlideFilter` post-processes Gemini output before validation. Slides matching two or more heuristics are converted to `action: skip`:
+
+- Title matches meta-instruction patterns (presentation/slide tips, guides, template instructions)
+- No DOCX `sourceRefs` and title contains meta keywords
+- Content overlaps template speaker notes without DOCX grounding
+- Explicit `isMetaSlide: true` from the model
 
 ---
 
@@ -206,6 +254,11 @@ When DOCX content exceeds approximately 100,000 characters, truncate the flat su
 - Missing narrative flow coverage (title hook, context, deliverables, next steps) when slide count allows
 - Empty `sourceRefs` on content slides
 - Font size overrides below 32pt (title) or 18pt (body) when `fontSizePt` is present in extended directives
+- Three or more consecutive slides with the same bullet count
+- All active slides share identical `contentStyle`
+- `includeImage` true with blank `imageQuery`
+- Unknown `layoutName` (fallback layout used)
+- Image coverage outside 30-50% when deck has 6+ active slides
 
 On critical failure, log each failed check with a concrete example. Do not write `OUTPUT_PPTX_PATH`.
 
@@ -213,12 +266,35 @@ On critical failure, log each failed check with a concrete example. Do not write
 
 ## 9. Rehydration Specifications
 
-`PptxRehydrator` applies a validated `GenerationResponse` to the cached template.
+Pipeline after validation: `ImageAcquisitionService.acquire()` then `PptxRehydrator.rehydrate()`.
 
-- **replace:** Locate TITLE and BODY placeholders by type; set title, bullets (as body text with bullet prefixes), or `bodyText`. Inherit font family, size, and color from the extracted shape blueprint or theme.
-- **append:** Create a new slide from the first content layout in the master, then apply content as in replace.
-- **skip:** Leave the slide unchanged.
-- Use guard clauses when placeholders are missing; log actionable resolution (for example, "slide 3 has no BODY placeholder; check template layout").
+### 9.1 Layout selection
+
+`LayoutResolver` picks the target layout per slide:
+
+1. Use Gemini `layoutName` when it matches the catalog
+2. Fallback: picture layout when `includeImage` is true; two-column layout for `twoColumn`; standard content layout otherwise
+
+When the resolved layout differs from the current slide, recreate the slide at the same index using POI layout APIs.
+
+### 9.2 Content rendering
+
+- **replace/append:** Apply title, body, two-column bullets, or plain body text based on `contentStyle`
+- **Bullets:** Render with POI native bullets (one paragraph per line); strip leading bullet prefixes from Gemini output; support sub-bullets via indent level 1
+- **twoColumn:** Populate first and second BODY placeholders with `leftBullets` and `rightBullets`
+- **titleOnly:** Set title only; clear body placeholders
+- **skip:** Leave the slide unchanged
+
+### 9.3 Image insertion
+
+- `ImageAcquisitionService` searches Pexels using `imageQuery`, caches results under `IMAGE_CACHE_DIR`, and returns an `ImagePlan`
+- When `PEXELS_API_KEY` is unset or fetch fails, log a warning and continue without the image
+- `PptxRehydrator` inserts images into PICTURE placeholders (or a default anchor region on picture layouts)
+
+### 9.4 General
+
+- Inherit font family, size, and color from the extracted shape blueprint or theme
+- Use guard clauses when placeholders are missing; log actionable resolution (for example, "slide 3 has no BODY placeholder; check template layout")
 - Write output to `OUTPUT_PPTX_PATH` using try-with-resources. Close all streams.
 
 ---
@@ -237,7 +313,8 @@ On critical failure, log each failed check with a concrete example. Do not write
 
 - `PptxExtractor` and `DocxExtractor` against `source.pptx` and `source.docx` at project root, falling back to `src/test/resources/` fixtures generated at test runtime when absent
 - `ResponseValidator` with valid and invalid JSON fixtures under `src/test/resources/`
-- `PptxRehydrator` with a `GenerationResponse` fixture against the resolved source PPTX
+- `MetaSlideFilter`, `LayoutResolver`, `BulletFormatter`, and `ImageAcquisitionService` unit tests
+- `PptxRehydrator` with layout switching, two-column content, and bullet sanitization
 - `AppConfig` verifies missing Gemini CLI fails fast
 
 ### 11.2 Integration test

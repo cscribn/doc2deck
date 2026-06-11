@@ -1,6 +1,9 @@
 package com.appfire.presentation.extraction;
 
 import com.appfire.presentation.model.ExtractedPresentation;
+import com.appfire.presentation.model.LayoutBlueprint;
+import com.appfire.presentation.model.LayoutCatalog;
+import com.appfire.presentation.model.MediaLayoutSpec;
 import com.appfire.presentation.model.PresentationBlueprint;
 import com.appfire.presentation.model.ShapeBlueprint;
 import com.appfire.presentation.model.SlideBlueprint;
@@ -13,6 +16,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import org.apache.poi.sl.usermodel.PaintStyle;
 import org.apache.poi.sl.usermodel.Placeholder;
@@ -20,6 +24,7 @@ import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFNotes;
 import org.apache.poi.xslf.usermodel.XSLFShape;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
+import org.apache.poi.xslf.usermodel.XSLFSlideLayout;
 import org.apache.poi.xslf.usermodel.XSLFTextParagraph;
 import org.apache.poi.xslf.usermodel.XSLFTextRun;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
@@ -35,10 +40,64 @@ public final class PptxExtractor {
             XMLSlideShow slideShow = new XMLSlideShow(input);
             List<SlideBlueprint> slides = extractSlides(slideShow);
             ThemeBlueprint theme = extractTheme(slides);
-            PresentationBlueprint blueprint = new PresentationBlueprint(slides, theme);
-            LOG.info("Extracted {} slides from {}", slides.size(), pptxPath);
+            LayoutCatalog layoutCatalog = extractLayoutCatalog(slideShow);
+            PresentationBlueprint blueprint = new PresentationBlueprint(slides, theme, layoutCatalog);
+            LOG.info("Extracted {} slides and {} layouts from {}",
+                    slides.size(), layoutCatalog.layouts().size(), pptxPath);
             return new ExtractedPresentation(blueprint, slideShow);
         }
+    }
+
+    private LayoutCatalog extractLayoutCatalog(XMLSlideShow slideShow) {
+        List<LayoutBlueprint> layouts = new ArrayList<>();
+        if (slideShow.getSlideMasters().isEmpty()) {
+            return new LayoutCatalog(layouts, List.of());
+        }
+        XSLFSlideLayout[] slideLayouts = slideShow.getSlideMasters().get(0).getSlideLayouts();
+        for (XSLFSlideLayout layout : slideLayouts) {
+            layouts.add(extractLayoutBlueprint(layout));
+        }
+        List<MediaLayoutSpec> mediaLayouts = MediaLayoutDetector.detect(layouts, slideLayouts);
+        LOG.info("Detected {} media-capable layout variants", mediaLayouts.size());
+        return new LayoutCatalog(layouts, mediaLayouts);
+    }
+
+    private LayoutBlueprint extractLayoutBlueprint(XSLFSlideLayout layout) {
+        String name = layout.getName() != null ? layout.getName() : "unknown";
+        boolean hasTitle = false;
+        boolean hasBody = false;
+        boolean hasPicture = false;
+        int bodyCount = 0;
+
+        for (XSLFShape shape : layout.getShapes()) {
+            Placeholder placeholder = shape.getPlaceholder();
+            if (placeholder == null) {
+                continue;
+            }
+            switch (placeholder) {
+                case TITLE, CENTERED_TITLE -> hasTitle = true;
+                case BODY, CONTENT -> {
+                    hasBody = true;
+                    bodyCount++;
+                }
+                case PICTURE -> hasPicture = true;
+                default -> { }
+            }
+        }
+
+        String upperName = name.toUpperCase(Locale.ROOT);
+        if (!hasPicture && (upperName.contains("PIC")
+                || upperName.contains("PICTURE")
+                || upperName.contains("IMAGE")
+                || upperName.contains("PHOTO")
+                || upperName.contains("CLIP"))) {
+            hasPicture = true;
+        }
+        boolean hasTwoColumns = bodyCount >= 2
+                || upperName.contains("TWO")
+                || upperName.contains("COMPARISON");
+
+        return new LayoutBlueprint(name, hasTitle, hasBody, hasPicture, hasTwoColumns, bodyCount);
     }
 
     private List<SlideBlueprint> extractSlides(XMLSlideShow slideShow) {

@@ -16,6 +16,8 @@ public final class AppConfig {
     private final Path outputPptxPath;
     private final String geminiModel;
     private final int geminiMaxRetries;
+    private final String pexelsApiKey;
+    private final Path imageCacheDir;
 
     private AppConfig(
             String geminiCliPath,
@@ -23,13 +25,17 @@ public final class AppConfig {
             Path sourceDocxPath,
             Path outputPptxPath,
             String geminiModel,
-            int geminiMaxRetries) {
+            int geminiMaxRetries,
+            String pexelsApiKey,
+            Path imageCacheDir) {
         this.geminiCliPath = geminiCliPath;
         this.sourcePptxPath = sourcePptxPath;
         this.sourceDocxPath = sourceDocxPath;
         this.outputPptxPath = outputPptxPath;
         this.geminiModel = geminiModel;
         this.geminiMaxRetries = geminiMaxRetries;
+        this.pexelsApiKey = pexelsApiKey;
+        this.imageCacheDir = imageCacheDir;
     }
 
     public static AppConfig load() {
@@ -42,12 +48,14 @@ public final class AppConfig {
         Path output = Path.of(values.getOrDefault("OUTPUT_PPTX_PATH", "final_presentation.pptx"));
         String model = values.getOrDefault("GEMINI_MODEL", "gemini-3.1-flash");
         int retries = parseInt(values.getOrDefault("GEMINI_MAX_RETRIES", "3"), 3);
+        String pexelsKey = values.getOrDefault("PEXELS_API_KEY", "");
+        Path imageCache = Path.of(values.getOrDefault("IMAGE_CACHE_DIR", ".cache/images"));
 
         validateGeminiCli(cliPath);
         validateInputFile(pptx, "SOURCE_PPTX_PATH");
         validateInputFile(docx, "SOURCE_DOCX_PATH");
 
-        return new AppConfig(cliPath, pptx, docx, output, model, retries);
+        return new AppConfig(cliPath, pptx, docx, output, model, retries, pexelsKey, imageCache);
     }
 
     private static Map<String, String> loadEnvFile(Path envPath) {
@@ -84,7 +92,8 @@ public final class AppConfig {
     private static void mergeSystemEnv(Map<String, String> values) {
         for (String key : List.of(
                 "GEMINI_CLI_PATH", "SOURCE_PPTX_PATH", "SOURCE_DOCX_PATH",
-                "OUTPUT_PPTX_PATH", "GEMINI_MODEL", "GEMINI_MAX_RETRIES")) {
+                "OUTPUT_PPTX_PATH", "GEMINI_MODEL", "GEMINI_MAX_RETRIES",
+                "PEXELS_API_KEY", "IMAGE_CACHE_DIR")) {
             String env = System.getenv(key);
             if (env != null && !env.isBlank()) {
                 values.put(key, env);
@@ -158,5 +167,13 @@ public final class AppConfig {
 
     public int geminiMaxRetries() {
         return geminiMaxRetries;
+    }
+
+    public String pexelsApiKey() {
+        return pexelsApiKey;
+    }
+
+    public Path imageCacheDir() {
+        return imageCacheDir;
     }
 }

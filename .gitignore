@@ -20,6 +20,9 @@ Thumbs.db
 # Generated output
 final_presentation.pptx
 
+# Image cache
+.cache/
+
 # Logs
 *.log
 *.pptx#

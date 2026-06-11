@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.appfire.presentation.model.GenerationResponse;
+import com.appfire.presentation.model.LayoutCatalog;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +18,7 @@ class ResponseValidatorTest {
 
     @BeforeEach
     void setUp() {
-        validator = new ResponseValidator();
+        validator = new ResponseValidator(new LayoutCatalog(java.util.List.of()));
         objectMapper = new ObjectMapper();
     }
 

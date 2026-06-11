@@ -4,5 +4,12 @@ import java.util.List;
 
 public record PresentationBlueprint(
         List<SlideBlueprint> slides,
-        ThemeBlueprint theme) {
+        ThemeBlueprint theme,
+        LayoutCatalog layoutCatalog) {
+
+    public PresentationBlueprint {
+        if (layoutCatalog == null) {
+            layoutCatalog = new LayoutCatalog(List.of());
+        }
+    }
 }

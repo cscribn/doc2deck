@@ -3,12 +3,17 @@ package com.appfire.presentation;
 import com.appfire.presentation.config.AppConfig;
 import com.appfire.presentation.extraction.DocxExtractor;
 import com.appfire.presentation.extraction.PptxExtractor;
+import com.appfire.presentation.images.ImageAcquisitionService;
+import com.appfire.presentation.images.ImageDirectiveEnricher;
 import com.appfire.presentation.llm.GeminiClient;
+import com.appfire.presentation.llm.MetaSlideFilter;
 import com.appfire.presentation.llm.PromptBuilder;
 import com.appfire.presentation.llm.ResponseValidator;
 import com.appfire.presentation.model.DocumentContent;
 import com.appfire.presentation.model.ExtractedPresentation;
 import com.appfire.presentation.model.GenerationResponse;
+import com.appfire.presentation.model.ImagePlan;
+import com.appfire.presentation.rehydration.LayoutResolver;
 import com.appfire.presentation.rehydration.PptxRehydrator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -41,14 +46,22 @@ public final class Application {
         DocxExtractor docxExtractor = new DocxExtractor();
         PromptBuilder promptBuilder = new PromptBuilder();
         GeminiClient geminiClient = new GeminiClient(config, objectMapper);
-        ResponseValidator validator = new ResponseValidator();
-        PptxRehydrator rehydrator = new PptxRehydrator();
+        MetaSlideFilter metaSlideFilter = new MetaSlideFilter();
 
         ExtractedPresentation extracted = pptxExtractor.extract(config.sourcePptxPath());
         DocumentContent document = docxExtractor.extract(config.sourceDocxPath());
 
+        LayoutResolver layoutResolver = new LayoutResolver(extracted.blueprint().layoutCatalog());
+        ResponseValidator validator = new ResponseValidator(extracted.blueprint().layoutCatalog());
+        PptxRehydrator rehydrator = new PptxRehydrator(layoutResolver);
+        ImageAcquisitionService imageService = new ImageAcquisitionService(
+                config.pexelsApiKey(), config.imageCacheDir(), objectMapper);
+        ImageDirectiveEnricher imageEnricher = new ImageDirectiveEnricher(
+                extracted.blueprint().layoutCatalog());
+
         String prompt = promptBuilder.build(extracted.blueprint(), document);
         GenerationResponse response = geminiClient.generate(prompt);
+        response = metaSlideFilter.filter(response, extracted.blueprint());
 
         ResponseValidator.ValidationResult validation = validator.validate(
                 response, extracted.blueprint().slides().size());
@@ -57,7 +70,9 @@ public final class Application {
                     "Gemini response failed validation: " + validation.criticalFailures());
         }
 
-        rehydrator.rehydrate(extracted, response, config.outputPptxPath());
+        GenerationResponse enrichedResponse = imageEnricher.enrich(response, extracted.blueprint());
+        ImagePlan imagePlan = imageService.acquire(enrichedResponse);
+        rehydrator.rehydrate(extracted, enrichedResponse, imagePlan, config.outputPptxPath());
         LOG.info("Presentation generation complete.");
     }
 
