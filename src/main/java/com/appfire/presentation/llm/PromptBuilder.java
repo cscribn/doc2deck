@@ -2,11 +2,9 @@ package com.appfire.presentation.llm;
 
 import com.appfire.presentation.model.ContentBlock;
 import com.appfire.presentation.model.DocumentContent;
-import com.appfire.presentation.model.LayoutBlueprint;
-import com.appfire.presentation.model.PresentationBlueprint;
-import com.appfire.presentation.model.ShapeBlueprint;
-import com.appfire.presentation.model.SlideBlueprint;
+import com.appfire.presentation.model.TemplateScanResult;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class PromptBuilder {
 
@@ -22,55 +20,17 @@ public final class PromptBuilder {
         this.promptLoader = promptLoader;
     }
 
-    public String build(PresentationBlueprint blueprint, DocumentContent document) {
+    public String build(DocumentContent document, TemplateScanResult scan) {
         StringBuilder prompt = new StringBuilder();
         prompt.append(promptLoader.load("prompt_core_rules.md"));
         prompt.append("\n\n");
-        prompt.append(promptLoader.load("prompt_content_variation.md"));
+        prompt.append(promptLoader.load("prompt_presentation_keys.md"));
         prompt.append("\n\n");
-        prompt.append(buildLayoutCatalog(blueprint));
-        prompt.append(buildBlueprint(blueprint));
+        prompt.append(promptLoader.load("prompt_image_keys.md"));
+        prompt.append("\n\n");
         prompt.append(buildDocument(document));
-        prompt.append(buildOutputContract(blueprint.slides().size()));
+        prompt.append(buildOutputContract(scan));
         return prompt.toString();
-    }
-
-    private String buildLayoutCatalog(PresentationBlueprint blueprint) {
-        StringBuilder entries = new StringBuilder();
-        for (LayoutBlueprint layout : blueprint.layoutCatalog().layouts()) {
-            entries.append("- name=").append(layout.name())
-                    .append(" hasTitle=").append(layout.hasTitle())
-                    .append(" hasBody=").append(layout.hasBody())
-                    .append(" hasPicture=").append(layout.hasPicture())
-                    .append(" hasTwoColumns=").append(layout.hasTwoColumns())
-                    .append(" bodyPlaceholders=").append(layout.bodyPlaceholderCount())
-                    .append("\n");
-        }
-        return promptLoader.apply(
-                promptLoader.load("prompt_layout_catalog.md"),
-                Map.of("ENTRIES", entries.toString()));
-    }
-
-    private String buildBlueprint(PresentationBlueprint blueprint) {
-        StringBuilder slides = new StringBuilder();
-        for (SlideBlueprint slide : blueprint.slides()) {
-            slides.append("Slide ").append(slide.slideIndex())
-                    .append(" layout=").append(slide.layoutName()).append("\n");
-            if (!slide.notes().isBlank()) {
-                slides.append("  notes: ").append(slide.notes()).append("\n");
-            }
-            for (ShapeBlueprint shape : slide.shapes()) {
-                slides.append("  shape ").append(shape.shapeId())
-                        .append(" type=").append(shape.placeholderType())
-                        .append(" text=").append(shape.currentText()).append("\n");
-            }
-        }
-        return promptLoader.apply(
-                promptLoader.load("prompt_presentation_blueprint.md"),
-                Map.of(
-                        "SLIDES", slides.toString(),
-                        "THEME_FONTS", blueprint.theme().fontFamilies().toString(),
-                        "THEME_COLORS", blueprint.theme().colors().toString()));
     }
 
     private String buildDocument(DocumentContent document) {
@@ -106,9 +66,12 @@ public final class PromptBuilder {
         return "\nDOCX SUMMARY:\n" + summary + "\n\n";
     }
 
-    private String buildOutputContract(int slideCount) {
+    private String buildOutputContract(TemplateScanResult scan) {
+        String templateKeys = scan.foundKeys().stream()
+                .sorted()
+                .collect(Collectors.joining(", "));
         return promptLoader.apply(
                 promptLoader.load("prompt_output_contract.md"),
-                Map.of("SLIDE_COUNT", Integer.toString(slideCount)));
+                Map.of("TEMPLATE_KEYS", templateKeys.isBlank() ? "(none detected)" : templateKeys));
     }
 }

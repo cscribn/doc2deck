@@ -1,3 +1,0 @@
-PRESENTATION BLUEPRINT:
-{{SLIDES}}Theme fonts: {{THEME_FONTS}}
-Theme colors: {{THEME_COLORS}}

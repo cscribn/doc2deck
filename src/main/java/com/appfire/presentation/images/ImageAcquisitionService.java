@@ -1,10 +1,8 @@
 package com.appfire.presentation.images;
 
-import com.appfire.presentation.model.GenerationResponse;
-import com.appfire.presentation.model.ImagePlan;
-import com.appfire.presentation.model.ResolvedImage;
-import com.appfire.presentation.model.SlideAction;
-import com.appfire.presentation.model.SlideDirective;
+import com.appfire.presentation.model.ImageKeyPlan;
+import com.appfire.presentation.model.ImageKeyPlan.ResolvedImageKey;
+import com.appfire.presentation.model.PresentationKeys;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
@@ -48,49 +46,45 @@ public final class ImageAcquisitionService {
                 .build();
     }
 
-    public ImagePlan acquire(GenerationResponse response) {
-        Map<Integer, ResolvedImage> images = new HashMap<>();
+    public ImageKeyPlan acquire(Map<String, String> imageQueries) {
+        Map<String, ResolvedImageKey> images = new HashMap<>();
         if (pexelsApiKey == null || pexelsApiKey.isBlank()) {
             LOG.warn("PEXELS_API_KEY not set. Skipping image acquisition.");
-            return new ImagePlan(images);
+            return new ImageKeyPlan(images);
+        }
+        if (imageQueries == null || imageQueries.isEmpty()) {
+            LOG.warn("No image queries provided. Check Gemini output for image keys.");
+            return new ImageKeyPlan(images);
         }
 
-        long requested = response.slides().stream()
-                .filter(s -> s.action() != SlideAction.SKIP && Boolean.TRUE.equals(s.includeImage()))
-                .count();
-        if (requested == 0) {
-            LOG.warn("No slides requested images (includeImage=true). Check Gemini output or ImageDirectiveEnricher.");
-            return new ImagePlan(images);
-        }
-        LOG.info("Acquiring images for {} slide(s) via Pexels", requested);
-
-        for (SlideDirective slide : response.slides()) {
-            if (slide.action() == SlideAction.SKIP || !Boolean.TRUE.equals(slide.includeImage())) {
-                continue;
-            }
-            if (slide.imageQuery() == null || slide.imageQuery().isBlank()) {
-                LOG.warn("Slide {} has includeImage but no imageQuery. Skipping image.", slide.slideIndex());
+        LOG.info("Acquiring images for {} key(s) via Pexels", imageQueries.size());
+        int index = 0;
+        for (String key : PresentationKeys.imageKeys()) {
+            String query = imageQueries.get(key);
+            if (query == null || query.isBlank()) {
+                LOG.warn("Image key '{}' has no query. Skipping.", key);
                 continue;
             }
             try {
-                ResolvedImage image = fetchImage(slide.slideIndex(), slide.imageQuery());
+                ResolvedImageKey image = fetchImage(key, query, index++);
                 if (image != null) {
-                    images.put(slide.slideIndex(), image);
+                    images.put(key, image);
                 }
             } catch (Exception e) {
-                LOG.warn("Failed to acquire image for slide {}: {}. Continuing without image.",
-                        slide.slideIndex(), e.getMessage());
+                LOG.warn("Failed to acquire image for key '{}': {}. Continuing without image.",
+                        key, e.getMessage());
             }
         }
-        LOG.info("Acquired {} of {} requested image(s)", images.size(), requested);
-        return new ImagePlan(images);
+        LOG.info("Acquired {} of {} requested image(s)", images.size(), imageQueries.size());
+        return new ImageKeyPlan(images);
     }
 
-    private ResolvedImage fetchImage(int slideIndex, String query) throws IOException, InterruptedException {
-        Path cached = cachePath(slideIndex, query);
+    private ResolvedImageKey fetchImage(String key, String query, int pickOffset)
+            throws IOException, InterruptedException {
+        Path cached = cachePath(key, query);
         if (Files.exists(cached)) {
             byte[] data = Files.readAllBytes(cached);
-            return new ResolvedImage(slideIndex, data, detectType(data));
+            return new ResolvedImageKey(key, data, detectType(data));
         }
 
         String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
@@ -105,7 +99,7 @@ public final class ImageAcquisitionService {
             return null;
         }
 
-        int pickIndex = Math.floorMod(slideIndex + query.hashCode(), photos.size());
+        int pickIndex = Math.floorMod(pickOffset + query.hashCode(), photos.size());
         JsonNode photo = photos.get(pickIndex);
         String imageUrl = photo.path("src").path("large").asText(null);
         if (imageUrl == null || imageUrl.isBlank()) {
@@ -118,7 +112,7 @@ public final class ImageAcquisitionService {
         byte[] imageBytes = httpGetBytes(imageUrl, Map.of());
         Files.createDirectories(cacheDir);
         Files.write(cached, imageBytes);
-        return new ResolvedImage(slideIndex, imageBytes, detectType(imageBytes));
+        return new ResolvedImageKey(key, imageBytes, detectType(imageBytes));
     }
 
     private String httpGet(String url, Map<String, String> headers) throws IOException, InterruptedException {
@@ -236,9 +230,9 @@ public final class ImageAcquisitionService {
                 || causeMessage.contains("ssl");
     }
 
-    private Path cachePath(int slideIndex, String query) {
+    private Path cachePath(String key, String query) {
         String safeQuery = query.replaceAll("[^a-zA-Z0-9_-]", "_");
-        return cacheDir.resolve("slide-" + slideIndex + "-" + safeQuery + ".jpg");
+        return cacheDir.resolve(key + "-" + safeQuery + ".jpg");
     }
 
     private PictureData.PictureType detectType(byte[] data) {

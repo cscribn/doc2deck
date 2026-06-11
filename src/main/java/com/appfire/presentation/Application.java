@@ -2,20 +2,19 @@ package com.appfire.presentation;
 
 import com.appfire.presentation.config.AppConfig;
 import com.appfire.presentation.extraction.DocxExtractor;
-import com.appfire.presentation.extraction.PptxExtractor;
 import com.appfire.presentation.images.ImageAcquisitionService;
-import com.appfire.presentation.images.ImageDirectiveEnricher;
 import com.appfire.presentation.llm.GeminiClient;
-import com.appfire.presentation.llm.MetaSlideFilter;
 import com.appfire.presentation.llm.PromptBuilder;
 import com.appfire.presentation.llm.ResponseValidator;
 import com.appfire.presentation.model.DocumentContent;
-import com.appfire.presentation.model.ExtractedPresentation;
-import com.appfire.presentation.model.GenerationResponse;
-import com.appfire.presentation.model.ImagePlan;
-import com.appfire.presentation.rehydration.LayoutResolver;
-import com.appfire.presentation.rehydration.PptxRehydrator;
+import com.appfire.presentation.model.PresentationContentResponse;
+import com.appfire.presentation.model.TemplateScanResult;
+import com.appfire.presentation.template.ImageInserter;
+import com.appfire.presentation.template.PptxTemplateReplacer;
+import com.appfire.presentation.template.TemplateScanner;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,43 +35,43 @@ public final class Application {
 
     public static void run() throws Exception {
         AppConfig config = AppConfig.load();
-        LOG.info("Source PPTX: {}", config.sourcePptxPath());
+        LOG.info("Template PPTX: {}", config.templatePptxPath());
         LOG.info("Source DOCX: {}", config.sourceDocxPath());
         LOG.info("Output PPTX: {}", config.outputPptxPath());
         LOG.info("Gemini model: {}", config.geminiModel());
 
         ObjectMapper objectMapper = new ObjectMapper();
-        PptxExtractor pptxExtractor = new PptxExtractor();
         DocxExtractor docxExtractor = new DocxExtractor();
+        TemplateScanner templateScanner = new TemplateScanner();
         PromptBuilder promptBuilder = new PromptBuilder();
         GeminiClient geminiClient = new GeminiClient(config, objectMapper);
-        MetaSlideFilter metaSlideFilter = new MetaSlideFilter();
-
-        ExtractedPresentation extracted = pptxExtractor.extract(config.sourcePptxPath());
-        DocumentContent document = docxExtractor.extract(config.sourceDocxPath());
-
-        LayoutResolver layoutResolver = new LayoutResolver(extracted.blueprint().layoutCatalog());
-        ResponseValidator validator = new ResponseValidator(extracted.blueprint().layoutCatalog());
-        PptxRehydrator rehydrator = new PptxRehydrator(layoutResolver);
+        ResponseValidator validator = new ResponseValidator();
+        PptxTemplateReplacer templateReplacer = new PptxTemplateReplacer();
         ImageAcquisitionService imageService = new ImageAcquisitionService(
                 config.pexelsApiKey(), config.imageCacheDir(), objectMapper);
-        ImageDirectiveEnricher imageEnricher = new ImageDirectiveEnricher(
-                extracted.blueprint().layoutCatalog());
+        ImageInserter imageInserter = new ImageInserter();
 
-        String prompt = promptBuilder.build(extracted.blueprint(), document);
-        GenerationResponse response = geminiClient.generate(prompt);
-        response = metaSlideFilter.filter(response, extracted.blueprint());
+        DocumentContent document = docxExtractor.extract(config.sourceDocxPath());
+        TemplateScanResult scan = templateScanner.scan(config.templatePptxPath());
 
-        ResponseValidator.ValidationResult validation = validator.validate(
-                response, extracted.blueprint().slides().size());
+        String prompt = promptBuilder.build(document, scan);
+        PresentationContentResponse response = geminiClient.generate(prompt);
+
+        ResponseValidator.ValidationResult validation = validator.validate(response, scan);
         if (!validation.passed()) {
             throw new IllegalStateException(
                     "Gemini response failed validation: " + validation.criticalFailures());
         }
 
-        GenerationResponse enrichedResponse = imageEnricher.enrich(response, extracted.blueprint());
-        ImagePlan imagePlan = imageService.acquire(enrichedResponse);
-        rehydrator.rehydrate(extracted, enrichedResponse, imagePlan, config.outputPptxPath());
+        Path tempPptx = Files.createTempFile("presentation-text-", ".pptx");
+        try {
+            templateReplacer.replace(config.templatePptxPath(), response, tempPptx);
+            var imagePlan = imageService.acquire(response.imageQueries());
+            imageInserter.insert(tempPptx, imagePlan, scan, config.outputPptxPath());
+        } finally {
+            Files.deleteIfExists(tempPptx);
+        }
+
         LOG.info("Presentation generation complete.");
     }
 

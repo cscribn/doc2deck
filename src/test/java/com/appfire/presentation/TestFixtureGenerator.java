@@ -1,5 +1,6 @@
 package com.appfire.presentation;
 
+import com.appfire.presentation.model.PresentationKeys;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -20,26 +21,30 @@ public final class TestFixtureGenerator {
     }
 
     public static void ensureFixtures() throws IOException {
-        Path pptx = Path.of("src/test/resources/source.pptx");
+        Path pptx = Path.of("src/test/resources/template.pptx");
         Path docx = Path.of("src/test/resources/source.docx");
         if (!Files.exists(pptx)) {
-            createMinimalPptx(pptx);
+            createMinimalTemplatePptx(pptx);
         }
         if (!Files.exists(docx)) {
             createMinimalDocx(docx);
         }
     }
 
-    private static void createMinimalPptx(Path path) throws IOException {
+    private static void createMinimalTemplatePptx(Path path) throws IOException {
         Files.createDirectories(path.getParent());
         try (XMLSlideShow slideShow = new XMLSlideShow()) {
             XSLFSlideLayout layout = slideShow.getSlideMasters().get(0).getLayout(SlideLayout.TITLE_AND_CONTENT);
             XSLFSlide slide = slideShow.createSlide(layout);
             if (slide.getPlaceholder(Placeholder.TITLE) instanceof XSLFTextShape title) {
-                title.setText("Template Title");
+                title.setText("${shortProjectDescription}");
             }
             if (slide.getPlaceholder(Placeholder.BODY) instanceof XSLFTextShape body) {
-                body.setText("Template body placeholder");
+                body.setText("${problem1}\n${problem2}");
+            }
+            XSLFSlide imageSlide = slideShow.createSlide(layout);
+            if (imageSlide.getPlaceholder(Placeholder.BODY) instanceof XSLFTextShape imageBody) {
+                imageBody.setText("${" + PresentationKeys.PROBLEM_SOLVING_IMG + "}");
             }
             try (OutputStream out = Files.newOutputStream(path)) {
                 slideShow.write(out);

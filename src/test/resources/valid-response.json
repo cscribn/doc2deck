@@ -1,22 +1,28 @@
 {
-  "slides": [
-    {
-      "slideIndex": 0,
-      "action": "replace",
-      "title": "Test Title",
-      "layoutName": "Title and Content",
-      "contentStyle": "bullets",
-      "includeImage": false,
-      "imageQuery": null,
-      "bullets": ["Point one", "Point two"],
-      "leftBullets": [],
-      "rightBullets": [],
-      "bodyText": null,
-      "notes": null,
-      "sourceRefs": [0],
-      "isMetaSlide": false,
-      "imagePosition": "none"
-    }
-  ],
+  "keys": {
+    "shortProjectDescription": "Unified API layer for monorepo services",
+    "problem1": "Teams duplicate integration logic across services",
+    "problem2": "Inconsistent API contracts slow delivery",
+    "persona": "Platform engineers maintaining shared services",
+    "currentSolution1": "Copy-paste SDK wrappers per team",
+    "currentSolution2": "Ad hoc REST endpoints without standards",
+    "scale": "Affects 40+ microservices across three product lines.",
+    "whyNow": "Monorepo consolidation makes a shared API layer urgent.",
+    "ifUnsolved": "Integration debt will compound and block releases.",
+    "architectureApproach": "Central Flow API gateway with typed SDK generation.",
+    "approachReasons": "Reduces duplication and enforces contract consistency.",
+    "personaBetterment": "Engineers ship integrations in hours instead of weeks.",
+    "appfireBetterment": "Improves retention by reducing customer integration friction.",
+    "estimatedImpact": "Saves ~200 engineer hours per quarter across teams.",
+    "currentState": "Prototype gateway exists with two pilot consumers.",
+    "sprintsToDeliver": "4 two-week sprints to production",
+    "problemSolvingImg": "software engineers solving problem",
+    "architectureApproachImg": "software architecture planning whiteboard",
+    "valueImpactImg": "team delivering software impact"
+  },
+  "sourceRefs": {
+    "problem1": [0],
+    "architectureApproach": [1]
+  },
   "warnings": []
 }

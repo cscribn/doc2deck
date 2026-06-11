@@ -1,0 +1,25 @@
+{
+  "keys": {
+    "shortProjectDescription": "Unified API layer for monorepo services",
+    "problem1": "Teams duplicate integration logic",
+    "problem2": "Inconsistent API contracts",
+    "persona": "Platform engineers",
+    "currentSolution1": "Copy-paste SDK wrappers",
+    "currentSolution2": "Ad hoc REST endpoints",
+    "scale": "Affects 40+ microservices.",
+    "whyNow": "Monorepo consolidation is urgent.",
+    "ifUnsolved": "Integration debt compounds.",
+    "architectureApproach": "Central Flow API gateway.",
+    "approachReasons": "Reduces duplication.",
+    "personaBetterment": "Engineers ship faster.",
+    "appfireBetterment": "Improves retention.",
+    "estimatedImpact": "Saves 200 hours per quarter.",
+    "currentState": "Prototype exists.",
+    "sprintsToDeliver": "4 sprints",
+    "problemSolvingImg": "engineers",
+    "architectureApproachImg": "architecture planning",
+    "valueImpactImg": "team impact delivery"
+  },
+  "sourceRefs": {},
+  "warnings": []
+}

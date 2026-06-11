@@ -1,13 +1,8 @@
 NON-NEGOTIABLE RULES:
-1. Use only facts from the provided DOCX and PPTX source text. No fabrication.
-2. One core concept per slide. Maximum 4 bullets per column.
-3. Two fonts maximum. Title at least 32pt, body at least 18pt.
-4. High contrast. Maximum three theme colors.
-5. Narrative flow: Title/Hook, Context, Deliverables, Next Steps.
-6. Round numbers to nearest whole or single decimal unless precision required.
-7. Stateless: use only this prompt. No prior conversation.
-8. Bullet strings must be plain text without bullet prefixes (no •, -, *).
-9. Do NOT create slides about presentation delivery, formatting tips, template usage,
-   or how to present. Use action skip for template instruction slides.
-10. Never append meta-instruction slides. Audience content must come from DOCX only.
-11. Set isMetaSlide true when a slide might be meta-instruction; Java will confirm.
+1. Use only facts from the provided DOCX source text. No fabrication.
+2. Fill every required presentation key with content grounded in the DOCX blocks.
+3. Return JSON only. No markdown fences. No commentary.
+4. Stateless: use only this prompt. No prior conversation.
+5. shortProjectDescription must be a compact single-sentence fragment only (Java prepends "Flow Monorepo API - ").
+6. Image keys must be 2-5 word Pexels search phrases, not sentences.
+7. Cite DOCX block indices in sourceRefs for each key when possible.

@@ -13,7 +13,7 @@ class PipelineIntegrationTest {
     @Test
     @EnabledIf("geminiCliAvailable")
     void runsFullPipeline() throws Exception {
-        assumeTrue(TestFixtures.hasSourcePptx(), "source.pptx not available");
+        assumeTrue(TestFixtures.hasTemplatePptx(), "template.pptx not available");
         assumeTrue(TestFixtures.hasSourceDocx(), "source.docx not available");
         Application.run();
     }

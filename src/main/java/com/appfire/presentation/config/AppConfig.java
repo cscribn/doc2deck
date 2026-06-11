@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 public final class AppConfig {
 
     private final String geminiCliPath;
-    private final Path sourcePptxPath;
+    private final Path templatePptxPath;
     private final Path sourceDocxPath;
     private final Path outputPptxPath;
     private final String geminiModel;
@@ -21,7 +21,7 @@ public final class AppConfig {
 
     private AppConfig(
             String geminiCliPath,
-            Path sourcePptxPath,
+            Path templatePptxPath,
             Path sourceDocxPath,
             Path outputPptxPath,
             String geminiModel,
@@ -29,7 +29,7 @@ public final class AppConfig {
             String pexelsApiKey,
             Path imageCacheDir) {
         this.geminiCliPath = geminiCliPath;
-        this.sourcePptxPath = sourcePptxPath;
+        this.templatePptxPath = templatePptxPath;
         this.sourceDocxPath = sourceDocxPath;
         this.outputPptxPath = outputPptxPath;
         this.geminiModel = geminiModel;
@@ -43,7 +43,7 @@ public final class AppConfig {
         mergeSystemEnv(values);
 
         String cliPath = values.getOrDefault("GEMINI_CLI_PATH", "gemini");
-        Path pptx = Path.of(values.getOrDefault("SOURCE_PPTX_PATH", "source.pptx"));
+        Path pptx = Path.of(values.getOrDefault("TEMPLATE_PPTX_PATH", "template.pptx"));
         Path docx = Path.of(values.getOrDefault("SOURCE_DOCX_PATH", "source.docx"));
         Path output = Path.of(values.getOrDefault("OUTPUT_PPTX_PATH", "final_presentation.pptx"));
         String model = values.getOrDefault("GEMINI_MODEL", "gemini-3.1-flash");
@@ -52,7 +52,7 @@ public final class AppConfig {
         Path imageCache = Path.of(values.getOrDefault("IMAGE_CACHE_DIR", ".cache/images"));
 
         validateGeminiCli(cliPath);
-        validateInputFile(pptx, "SOURCE_PPTX_PATH");
+        validateInputFile(pptx, "TEMPLATE_PPTX_PATH");
         validateInputFile(docx, "SOURCE_DOCX_PATH");
 
         return new AppConfig(cliPath, pptx, docx, output, model, retries, pexelsKey, imageCache);
@@ -91,7 +91,7 @@ public final class AppConfig {
 
     private static void mergeSystemEnv(Map<String, String> values) {
         for (String key : List.of(
-                "GEMINI_CLI_PATH", "SOURCE_PPTX_PATH", "SOURCE_DOCX_PATH",
+                "GEMINI_CLI_PATH", "TEMPLATE_PPTX_PATH", "SOURCE_DOCX_PATH",
                 "OUTPUT_PPTX_PATH", "GEMINI_MODEL", "GEMINI_MAX_RETRIES",
                 "PEXELS_API_KEY", "IMAGE_CACHE_DIR")) {
             String env = System.getenv(key);
@@ -149,8 +149,8 @@ public final class AppConfig {
         return geminiCliPath;
     }
 
-    public Path sourcePptxPath() {
-        return sourcePptxPath;
+    public Path templatePptxPath() {
+        return templatePptxPath;
     }
 
     public Path sourceDocxPath() {

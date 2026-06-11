@@ -13,7 +13,7 @@ class AppConfigTest {
     @Test
     void loadsWhenPrerequisitesExist() {
         assumeTrue(geminiCliAvailable(), "gemini CLI not available");
-        assumeTrue(Files.exists(TestFixtures.resolveSourcePptx()), "source PPTX not available");
+        assumeTrue(Files.exists(TestFixtures.resolveTemplatePptx()), "template PPTX not available");
         assumeTrue(Files.exists(TestFixtures.resolveSourceDocx()), "source DOCX not available");
 
         AppConfig config = AppConfig.load();

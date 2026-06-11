@@ -3,11 +3,12 @@ package com.appfire.presentation.llm;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.appfire.presentation.model.GenerationResponse;
-import com.appfire.presentation.model.LayoutCatalog;
+import com.appfire.presentation.model.PresentationContentResponse;
+import com.appfire.presentation.model.TemplateScanResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,27 +19,38 @@ class ResponseValidatorTest {
 
     @BeforeEach
     void setUp() {
-        validator = new ResponseValidator(new LayoutCatalog(java.util.List.of()));
+        validator = new ResponseValidator();
         objectMapper = new ObjectMapper();
     }
 
     @Test
     void acceptsValidResponse() throws IOException {
-        GenerationResponse response = loadFixture("valid-response.json");
-        ResponseValidator.ValidationResult result = validator.validate(response, 1);
+        PresentationContentResponse response = loadFixture("valid-response.json");
+        ResponseValidator.ValidationResult result = validator.validate(response, emptyScan());
         assertTrue(result.passed());
     }
 
     @Test
-    void rejectsTooManyBullets() throws IOException {
-        GenerationResponse response = loadFixture("invalid-too-many-bullets.json");
-        ResponseValidator.ValidationResult result = validator.validate(response, 1);
+    void rejectsMissingRequiredKeys() throws IOException {
+        PresentationContentResponse response = loadFixture("invalid-missing-keys.json");
+        ResponseValidator.ValidationResult result = validator.validate(response, emptyScan());
         assertFalse(result.passed());
     }
 
-    private GenerationResponse loadFixture(String name) throws IOException {
+    @Test
+    void rejectsSingleWordImageQuery() throws IOException {
+        PresentationContentResponse response = loadFixture("invalid-image-query.json");
+        ResponseValidator.ValidationResult result = validator.validate(response, emptyScan());
+        assertFalse(result.passed());
+    }
+
+    private TemplateScanResult emptyScan() {
+        return new TemplateScanResult(Set.of(), java.util.List.of(), java.util.List.of());
+    }
+
+    private PresentationContentResponse loadFixture(String name) throws IOException {
         try (InputStream in = getClass().getClassLoader().getResourceAsStream(name)) {
-            return objectMapper.readValue(in, GenerationResponse.class);
+            return objectMapper.readValue(in, PresentationContentResponse.class);
         }
     }
 }

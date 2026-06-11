@@ -8,16 +8,16 @@ public final class TestFixtures {
     private TestFixtures() {
     }
 
-    public static Path resolveSourcePptx() {
-        return resolveFirstExisting(Path.of("source.pptx"), Path.of("src/test/resources/source.pptx"));
+    public static Path resolveTemplatePptx() {
+        return resolveFirstExisting(Path.of("template.pptx"), Path.of("src/test/resources/template.pptx"));
     }
 
     public static Path resolveSourceDocx() {
         return resolveFirstExisting(Path.of("source.docx"), Path.of("src/test/resources/source.docx"));
     }
 
-    public static boolean hasSourcePptx() {
-        Path path = resolveSourcePptx();
+    public static boolean hasTemplatePptx() {
+        Path path = resolveTemplatePptx();
         return path != null && Files.exists(path);
     }
 

@@ -1,7 +1,7 @@
 package com.appfire.presentation.llm;
 
 import com.appfire.presentation.config.AppConfig;
-import com.appfire.presentation.model.GenerationResponse;
+import com.appfire.presentation.model.PresentationContentResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -28,7 +28,7 @@ public final class GeminiClient {
         this.objectMapper = objectMapper;
     }
 
-    public GenerationResponse generate(String prompt) throws IOException {
+    public PresentationContentResponse generate(String prompt) throws IOException {
         int attempts = 0;
         long backoff = BASE_BACKOFF_MS;
         while (true) {
@@ -117,9 +117,9 @@ public final class GeminiClient {
         return response.asText();
     }
 
-    private GenerationResponse parseResponse(String text) throws IOException {
+    private PresentationContentResponse parseResponse(String text) throws IOException {
         String json = stripMarkdownFences(text);
-        return objectMapper.readValue(json, GenerationResponse.class);
+        return objectMapper.readValue(json, PresentationContentResponse.class);
     }
 
     private String stripMarkdownFences(String text) {
