@@ -13,11 +13,13 @@ import com.appfire.presentation.model.TemplateScanResult;
 import com.appfire.presentation.template.EmbeddedFontCleaner;
 import com.appfire.presentation.template.ImageInserter;
 import com.appfire.presentation.template.OptionalPlaceholderCleaner;
+import com.appfire.presentation.template.PptxLayoutNormalizer;
 import com.appfire.presentation.template.PptxTemplateReplacer;
 import com.appfire.presentation.template.TemplateScanner;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +55,7 @@ public final class Application {
         PresentationImageOptimizer imageOptimizer = new PresentationImageOptimizer(
                 config.imageOptimizationEnabled(), config.imageJpegQuality());
         EmbeddedFontCleaner fontCleaner = new EmbeddedFontCleaner(config.fontCleanupEnabled());
+        PptxLayoutNormalizer layoutNormalizer = new PptxLayoutNormalizer(config.layoutNormalizeEnabled());
         ImageInserter imageInserter = new ImageInserter(imageOptimizer, fontCleaner);
 
         ConsoleProgress.step("Extracting content from source document...");
@@ -72,13 +75,23 @@ public final class Application {
                     "Gemini response failed validation: " + validation.criticalFailures());
         }
 
-        ConsoleProgress.step("Replacing text placeholders...");
-        Path tempPptx = Files.createTempFile("presentation-text-", ".pptx");
+        ConsoleProgress.step("Preparing working copy and replacing text placeholders...");
+        Path workingPptx = Files.createTempFile("presentation-working-", ".pptx");
         try {
-            templateReplacer.replace(config.templatePptxPath(), response, tempPptx);
+            Files.copy(config.templatePptxPath(), workingPptx, StandardCopyOption.REPLACE_EXISTING);
+            if (config.layoutNormalizeEnabled()) {
+                ConsoleProgress.step("Hardening layout for cross-viewer compatibility...");
+                layoutNormalizer.hardenStructure(workingPptx);
+            }
+            templateReplacer.replace(workingPptx, response, workingPptx);
 
             ConsoleProgress.step("Cleaning empty optional sections...");
-            optionalCleaner.clean(tempPptx, response);
+            optionalCleaner.clean(workingPptx, response);
+
+            if (config.layoutNormalizeEnabled()) {
+                ConsoleProgress.step("Fitting text to slide layout...");
+                layoutNormalizer.fitText(workingPptx);
+            }
 
             if (config.pexelsApiKey().isBlank()) {
                 ConsoleProgress.step("Skipping image acquisition (PEXELS_API_KEY not set)...");
@@ -88,9 +101,9 @@ public final class Application {
             var imagePlan = imageService.acquire(response.imageQueries());
 
             ConsoleProgress.step("Inserting images, optimizing, writing presentation, and cleaning fonts...");
-            imageInserter.insert(tempPptx, imagePlan, scan, config.outputPptxPath());
+            imageInserter.insert(workingPptx, imagePlan, scan, config.outputPptxPath());
         } finally {
-            Files.deleteIfExists(tempPptx);
+            Files.deleteIfExists(workingPptx);
         }
 
         ConsoleProgress.complete(config.outputPptxPath());

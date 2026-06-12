@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.appfire.presentation.model.PresentationContentResponse;
+import com.appfire.presentation.model.PresentationKeys;
 import com.appfire.presentation.model.TemplateScanResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -42,6 +43,17 @@ class ResponseValidatorTest {
         PresentationContentResponse response = loadFixture("invalid-image-query.json");
         ResponseValidator.ValidationResult result = validator.validate(response, emptyScan());
         assertFalse(result.passed());
+    }
+
+    @Test
+    void rejectsOverLimitTextKey() throws IOException {
+        PresentationContentResponse response = loadFixture("valid-response.json");
+        response.keys().put(
+                PresentationKeys.PROBLEM_1,
+                "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen");
+        ResponseValidator.ValidationResult result = validator.validate(response, emptyScan());
+        assertFalse(result.passed());
+        assertTrue(result.criticalFailures().stream().anyMatch(msg -> msg.contains("problem1")));
     }
 
     @Test

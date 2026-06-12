@@ -4,7 +4,9 @@ import com.appfire.presentation.model.PresentationContentResponse;
 import com.appfire.presentation.model.PresentationKeys;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,12 @@ public final class PptxTemplateReplacer {
 
     public void replace(Path templatePath, PresentationContentResponse response, Path outputPath)
             throws IOException {
+        Path writePath = outputPath;
+        Path tempOutput = null;
+        if (isSamePath(templatePath, outputPath)) {
+            tempOutput = Files.createTempFile("pptx-replace-", ".pptx");
+            writePath = tempOutput;
+        }
         try {
             PresentationMLPackage pptPackage = PresentationMLPackage.load(new File(templatePath.toString()));
             MainPresentationPart mainPart = pptPackage.getMainPresentationPart();
@@ -33,14 +41,24 @@ public final class PptxTemplateReplacer {
                 slidePart.variableReplace(replacements);
             }
 
-            pptPackage.save(new File(outputPath.toString()));
+            pptPackage.save(new File(writePath.toString()));
             LOG.info("Text replacement complete: {} slide(s) processed", slideParts.size());
         } catch (Docx4JException | Pptx4jException | JAXBException e) {
+            if (tempOutput != null) {
+                Files.deleteIfExists(tempOutput);
+            }
             throw new IOException(
                     "Failed to replace template placeholders. Ensure each ${key} is in a single text run "
                             + "and re-run ./gradlew run",
                     e);
         }
+        if (tempOutput != null) {
+            Files.move(tempOutput, outputPath, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private static boolean isSamePath(Path left, Path right) {
+        return left.toAbsolutePath().normalize().equals(right.toAbsolutePath().normalize());
     }
 
     private Map<String, String> buildTextReplacements(PresentationContentResponse response) {
@@ -57,7 +75,7 @@ public final class PptxTemplateReplacer {
             if (sanitized.isBlank()) {
                 continue;
             }
-            replacements.put(key, sanitized);
+            replacements.put(key, ContentLengthEnforcer.enforce(key, sanitized));
         }
         return replacements;
     }

@@ -8,3 +8,4 @@ NON-NEGOTIABLE RULES:
 7. Cite DOCX block indices in sourceRefs for each key when possible.
 8. All text values must be plain text without bullet prefixes (no •, -, *, or numbered list markers). The template provides bullets.
 9. All text values must be slide copy: short fragments or phrase clusters, not complete sentences. Drop filler words (the, a, an, is, are, was, were) when meaning stays clear. Use semicolons to join related fragments when a key needs more than one beat.
+10. Hard word limits apply per key (see presentation keys). Output that exceeds a key limit is rejected.

@@ -64,6 +64,7 @@ Unit tests run without the Gemini CLI. The full pipeline integration test runs o
 | `IMAGE_JPEG_QUALITY` | no | `0.8` |
 | `IMAGE_OPTIMIZATION_ENABLED` | no | `true` |
 | `FONT_CLEANUP_ENABLED` | no | `true` |
+| `LAYOUT_NORMALIZE_ENABLED` | no | `true` |
 
 ## Pipeline
 
@@ -71,14 +72,17 @@ Unit tests run without the Gemini CLI. The full pipeline integration test runs o
 2. Scan `template.pptx` for `${variableName}` placeholders and image anchors
 3. Build a Gemini prompt from DOCX content and presentation key definitions
 4. Invoke the Gemini CLI and parse the JSON key map
-5. Validate required keys and image query format
-6. Replace text placeholders via docx4j (`PptxTemplateReplacer`); strip bullet prefixes from values
-7. Remove optional empty key bullets (`OptionalPlaceholderCleaner`)
-8. Acquire Pexels images for image keys (`ImageAcquisitionService`)
-9. Insert images at anchor locations (`ImageInserter`)
-10. Compress embedded JPEG and PNG pictures (`PresentationImageOptimizer`)
-11. Write `final_presentation.pptx`
-12. Remove unused embedded font binaries (`EmbeddedFontCleaner`)
+5. Validate required keys, per-key word limits, and image query format
+6. Copy `template.pptx` to a working file (source template is never modified)
+7. Harden layout on the working copy: disable autofit, enable word wrap (`PptxLayoutNormalizer`)
+8. Replace text placeholders via docx4j (`PptxTemplateReplacer`); strip bullet prefixes and enforce word limits
+9. Remove optional empty key bullets (`OptionalPlaceholderCleaner`)
+10. Fit text to slide boxes with explicit font sizes (`PptxLayoutNormalizer`)
+11. Acquire Pexels images for image keys (`ImageAcquisitionService`)
+12. Insert images at anchor locations (`ImageInserter`)
+13. Compress embedded JPEG and PNG pictures (`PresentationImageOptimizer`)
+14. Write `final_presentation.pptx`
+15. Remove unused embedded font binaries (`EmbeddedFontCleaner`)
 
 ## Troubleshooting
 
@@ -88,7 +92,8 @@ Unit tests run without the Gemini CLI. The full pipeline integration test runs o
 | Gemini CLI auth failure | Run `gemini` interactively once to sign in |
 | Input file not found | Verify `TEMPLATE_PPTX_PATH` and `SOURCE_DOCX_PATH` |
 | Toolchain issues | Run `./gradlew -q javaToolchains` and install JDK 21 if auto-download fails |
-| Validation failure | Read the error output for missing keys or invalid image queries (must be 2-5 words) |
+| Validation failure | Read the error output for missing keys, over-limit text (word counts), or invalid image queries (must be 2-5 words) |
+| Text overflows in Google Drive / Slides | Ensure `LAYOUT_NORMALIZE_ENABLED=true` (default); re-run after fixing word-limit validation errors |
 | Prompt file not found | Run from the project root so `./prompts/` is visible |
 | Placeholders not replaced | Ensure each `${key}` is a single text run; disable spell-check-as-you-type in PowerPoint |
 | No slide images | Set `PEXELS_API_KEY` in `.env`; ensure `curl` is installed and on PATH |

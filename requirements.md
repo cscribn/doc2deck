@@ -33,11 +33,12 @@ The Java application must process files using a strict serial pipeline:
 3. **Payload Preparation:** Construct a Gemini prompt from DOCX content and presentation key definitions.
 4. **Gemini Interaction:** Dispatch the payload via the Gemini CLI (`gemini` command). Request a structured JSON response with key values.
 5. **Validation:** Verify all required keys are present and image queries meet format rules.
-6. **Text Replacement:** Use docx4j `SlidePart.variableReplace()` for text keys (excluding image keys).
-7. **Image Acquisition:** Fetch Pexels images using Gemini-provided search phrases for image keys.
-8. **Image Insertion:** Insert images at pre-scanned anchor locations using Apache POI.
-9. **Image Optimization:** Compress all embedded JPEG and PNG pictures in the deck before final write (same pixel dimensions; PNG alpha preserved).
-10. **Output:** Write `final_presentation.pptx`.
+6. **Text Replacement:** Use docx4j `SlidePart.variableReplace()` for text keys (excluding image keys). Enforce per-key word limits before replacement.
+7. **Layout Normalization:** Copy `template.pptx` to a working file; apply layout hardening and text fitting on the copy only (`PptxLayoutNormalizer`). Never modify `template.pptx`.
+8. **Image Acquisition:** Fetch Pexels images using Gemini-provided search phrases for image keys.
+9. **Image Insertion:** Insert images at pre-scanned anchor locations using Apache POI.
+10. **Image Optimization:** Compress all embedded JPEG and PNG pictures in the deck before final write (same pixel dimensions; PNG alpha preserved).
+11. **Output:** Write `final_presentation.pptx`.
 
 ---
 
@@ -49,6 +50,7 @@ The application must inject system instructions into the prompt payload. These b
 - Fill every required presentation key with grounded content.
 - Apply TEDx-inspired voice: professional, engaging, lightly humorous when appropriate, slightly sensational within source-backed truth.
 - All text keys must use slide copy: short fragments or phrase clusters, not complete sentences.
+- Per-key hard word limits apply (see `prompts/prompt_presentation_keys.md`); validation rejects over-limit output.
 - Return JSON only with no markdown fences and no commentary.
 - Stateless: use only information in the current prompt.
 - `shortProjectDescription` must be a compact fragment only and must not contain "Flow API Monorepo" (already in the template title).
@@ -73,6 +75,7 @@ Configuration is loaded from environment variables at startup. The application r
 | `IMAGE_JPEG_QUALITY` | no | `0.8` | JPEG re-encode quality (0.0-1.0) for embedded picture optimization |
 | `IMAGE_OPTIMIZATION_ENABLED` | no | `true` | When `false`, skip embedded picture compression before final write |
 | `FONT_CLEANUP_ENABLED` | no | `true` | When `false`, skip removal of unused embedded `.fntdata` font binaries after final write |
+| `LAYOUT_NORMALIZE_ENABLED` | no | `true` | When `false`, skip layout hardening and text fitting on the working copy (Google Drive / Slides compatibility) |
 
 **Startup behavior:**
 
@@ -110,6 +113,9 @@ src/main/java/com/appfire/presentation/
   llm/ResponseValidator.java
   template/TemplateScanner.java
   template/PptxTemplateReplacer.java
+  template/PptxLayoutNormalizer.java
+  template/KeyContentLimits.java
+  template/ContentLengthEnforcer.java
   template/ImageInserter.java
   template/EmbeddedFontCleaner.java
   template/ReferencedFontCollector.java
@@ -250,28 +256,37 @@ On critical failure, log each failed check with a concrete example. Do not write
 
 ## 9. Template Fill Specifications
 
-Pipeline after validation: text replace, then image acquire, then image insert.
+Pipeline after validation: copy template to working file, layout harden, text replace, optional cleanup, text fit, then image acquire and insert.
 
-### 9.1 Text replacement (`PptxTemplateReplacer`)
+### 9.1 Working copy and layout normalization (`PptxLayoutNormalizer`)
+
+- Copy `template.pptx` to a temporary working PPTX. **Never write to `template.pptx`.**
+- When `LAYOUT_NORMALIZE_ENABLED` is `true` (default):
+  - **`hardenStructure`:** On the working copy, disable autofit (`noAutofit`), enable word wrap on all text shapes.
+  - **`fitText`:** After text replacement and optional cleanup, bake explicit font sizes for content slides (skip static slides 1, 6, 9) so Google Drive and Google Slides render reliably.
+- Minimum baked body font size: 12pt.
+
+### 9.2 Text replacement (`PptxTemplateReplacer`)
 
 - Load `template.pptx` with docx4j `PresentationMLPackage`.
 - Build replacement map from validated text keys.
+- Enforce per-key word limits via `ContentLengthEnforcer` (truncate with warning as safety net).
 - Strip leading bullet characters from all text values (`TextSanitizer`); template bullets provide formatting.
 - Exclude image keys and unpopulated optional keys from text replacement.
 - Apply `variableReplace()` on every slide.
 - Save to a temporary file.
 
-### 9.2 Optional placeholder cleanup (`OptionalPlaceholderCleaner`)
+### 9.3 Optional placeholder cleanup (`OptionalPlaceholderCleaner`)
 
 - When `nonDevCosts` is absent or not populated, remove the bullet paragraph containing `${nonDevCosts}` from the deck via Apache POI.
 - Treat placeholder-like values (key name only, empty after sanitization) as unpopulated.
 
-### 9.3 Image acquisition (`ImageAcquisitionService`)
+### 9.4 Image acquisition (`ImageAcquisitionService`)
 
 - Search Pexels using image-key query values via `curl`, cache results under `IMAGE_CACHE_DIR`.
 - When `PEXELS_API_KEY` is unset or fetch fails, log a warning and continue without the image.
 
-### 9.4 Image insertion (`ImageInserter`)
+### 9.5 Image insertion (`ImageInserter`)
 
 - Open the text-replaced PPTX with Apache POI.
 - For each image key, locate the pre-scanned anchor (or re-scan for `${key}` token).
@@ -280,7 +295,7 @@ Pipeline after validation: text replace, then image acquire, then image insert.
 - Write final output to `OUTPUT_PPTX_PATH`.
 - Run embedded font cleanup (section 9.6) on the saved file when enabled.
 
-### 9.5 Image optimization (`PresentationImageOptimizer`)
+### 9.6 Image optimization (`PresentationImageOptimizer`)
 
 - After image insertion, iterate all `XMLSlideShow.getPictureData()` entries (template images and acquired photos).
 - JPEG: re-encode via `ImageIO` at `IMAGE_JPEG_QUALITY` (default 0.8) without changing pixel dimensions.
@@ -289,7 +304,7 @@ Pipeline after validation: text replace, then image acquire, then image insert.
 - Replace picture bytes only when compressed data is smaller than the original.
 - On per-picture failure, log a warning and keep the original bytes (non-blocking).
 
-### 9.6 Embedded font cleanup (`EmbeddedFontCleaner`)
+### 9.7 Embedded font cleanup (`EmbeddedFontCleaner`)
 
 - After `ImageInserter` writes the final PPTX, reopen the file with Apache POI `OPCPackage` in read-write mode.
 - Collect typefaces referenced in slide, master, layout, notes, and theme XML via `ReferencedFontCollector`.
@@ -299,10 +314,11 @@ Pipeline after validation: text replace, then image acquire, then image insert.
 - Keep embedded font metadata entries that have no binary (for example, theme-linked Roboto Light) when still listed in `presentation.xml`.
 - On failure, log a warning and leave the output file unchanged (non-blocking).
 
-### 9.7 Template authoring
+### 9.8 Template authoring
 
 - Each `${variableName}` must be in a single PowerPoint text run.
 - Disable "Check spelling as you type" when authoring templates to avoid split runs.
+- The application never modifies `template.pptx`; layout compatibility is applied at runtime on a working copy.
 
 ---
 
@@ -320,7 +336,8 @@ Pipeline after validation: text replace, then image acquire, then image insert.
 
 - `DocxExtractor` against `source.docx` at project root, falling back to `src/test/resources/` fixtures
 - `TemplateScanner`, `PptxTemplateReplacer`, and `ImageInserter` against `template.pptx`
-- `ResponseValidator` with valid and invalid JSON fixtures under `src/test/resources/`
+- `ResponseValidator` with valid and invalid JSON fixtures under `src/test/resources/`; including per-key word limit rejection
+- `KeyContentLimits`, `ContentLengthEnforcer`, and `PptxLayoutNormalizer` unit tests
 - `PromptBuilder`, `ImageAcquisitionService`, and `AppConfig` unit tests
 - Full pipeline integration test gated on the `gemini` CLI being available
 
@@ -330,7 +347,7 @@ Pipeline after validation: text replace, then image acquire, then image insert.
 2. `./gradlew run` with a valid `.env` produces `final_presentation.pptx`.
 3. Output has all text placeholders replaced and images inserted where configured.
 4. Embedded JPEG and PNG pictures are compressed when optimization is enabled and a smaller byte size is achievable.
-5. Validator rejects JSON with missing required keys or invalid image queries.
+5. Validator rejects JSON with missing required keys, invalid image queries, or text keys exceeding word limits.
 
 ---
 

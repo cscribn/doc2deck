@@ -21,6 +21,7 @@ public final class AppConfig {
     private final float imageJpegQuality;
     private final boolean imageOptimizationEnabled;
     private final boolean fontCleanupEnabled;
+    private final boolean layoutNormalizeEnabled;
 
     private AppConfig(
             String geminiCliPath,
@@ -33,7 +34,8 @@ public final class AppConfig {
             Path imageCacheDir,
             float imageJpegQuality,
             boolean imageOptimizationEnabled,
-            boolean fontCleanupEnabled) {
+            boolean fontCleanupEnabled,
+            boolean layoutNormalizeEnabled) {
         this.geminiCliPath = geminiCliPath;
         this.templatePptxPath = templatePptxPath;
         this.sourceDocxPath = sourceDocxPath;
@@ -45,6 +47,7 @@ public final class AppConfig {
         this.imageJpegQuality = imageJpegQuality;
         this.imageOptimizationEnabled = imageOptimizationEnabled;
         this.fontCleanupEnabled = fontCleanupEnabled;
+        this.layoutNormalizeEnabled = layoutNormalizeEnabled;
     }
 
     public static AppConfig load() {
@@ -62,6 +65,7 @@ public final class AppConfig {
         float jpegQuality = parseFloat(values.getOrDefault("IMAGE_JPEG_QUALITY", "0.8"), 0.8f);
         boolean optimizationEnabled = parseBoolean(values.getOrDefault("IMAGE_OPTIMIZATION_ENABLED", "true"), true);
         boolean fontCleanupEnabled = parseBoolean(values.getOrDefault("FONT_CLEANUP_ENABLED", "true"), true);
+        boolean layoutNormalizeEnabled = parseBoolean(values.getOrDefault("LAYOUT_NORMALIZE_ENABLED", "true"), true);
 
         validateGeminiCli(cliPath);
         validateInputFile(pptx, "TEMPLATE_PPTX_PATH");
@@ -69,7 +73,7 @@ public final class AppConfig {
 
         return new AppConfig(
                 cliPath, pptx, docx, output, model, retries, pexelsKey, imageCache,
-                clampJpegQuality(jpegQuality), optimizationEnabled, fontCleanupEnabled);
+                clampJpegQuality(jpegQuality), optimizationEnabled, fontCleanupEnabled, layoutNormalizeEnabled);
     }
 
     private static Map<String, String> loadEnvFile(Path envPath) {
@@ -108,7 +112,8 @@ public final class AppConfig {
                 "GEMINI_CLI_PATH", "TEMPLATE_PPTX_PATH", "SOURCE_DOCX_PATH",
                 "OUTPUT_PPTX_PATH", "GEMINI_MODEL", "GEMINI_MAX_RETRIES",
                 "PEXELS_API_KEY", "IMAGE_CACHE_DIR",
-                "IMAGE_JPEG_QUALITY", "IMAGE_OPTIMIZATION_ENABLED", "FONT_CLEANUP_ENABLED")) {
+                "IMAGE_JPEG_QUALITY", "IMAGE_OPTIMIZATION_ENABLED", "FONT_CLEANUP_ENABLED",
+                "LAYOUT_NORMALIZE_ENABLED")) {
             String env = System.getenv(key);
             if (env != null && !env.isBlank()) {
                 values.put(key, env);
@@ -224,5 +229,9 @@ public final class AppConfig {
 
     public boolean fontCleanupEnabled() {
         return fontCleanupEnabled;
+    }
+
+    public boolean layoutNormalizeEnabled() {
+        return layoutNormalizeEnabled;
     }
 }

@@ -3,6 +3,7 @@ package com.appfire.presentation.llm;
 import com.appfire.presentation.model.PresentationContentResponse;
 import com.appfire.presentation.model.PresentationKeys;
 import com.appfire.presentation.model.TemplateScanResult;
+import com.appfire.presentation.template.KeyContentLimits;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -34,6 +35,7 @@ public final class ResponseValidator {
         }
 
         validateShortDescription(response, advisory);
+        validateTextKeyWordLimits(response, critical);
         validateImageQueries(response, critical);
         validateSourceRefs(response, advisory);
         validateTemplateAlignment(response, scan, advisory);
@@ -58,6 +60,20 @@ public final class ResponseValidator {
         }
         if (value.toLowerCase().contains(FORBIDDEN_SHORT_DESCRIPTION_PHRASE)) {
             advisory.add("shortProjectDescription must not contain \"Flow API Monorepo\" (already in template title)");
+        }
+    }
+
+    private void validateTextKeyWordLimits(PresentationContentResponse response, List<String> critical) {
+        for (String key : PresentationKeys.textKeys()) {
+            String value = response.keys().get(key);
+            if (!PresentationKeys.isPopulated(key, value)) {
+                continue;
+            }
+            int wordCount = KeyContentLimits.countWords(value);
+            int maxWords = KeyContentLimits.maxWordsFor(key);
+            if (wordCount > maxWords) {
+                critical.add("Key '" + key + "' exceeds " + maxWords + "-word limit, got " + wordCount);
+            }
         }
     }
 
