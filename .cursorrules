@@ -1,113 +1,47 @@
 # Agent Instructions
 
-> **Scope:** These rules apply to all AI coding agents (Copilot, Cursor, Gemini, etc.) unless a section is explicitly marked otherwise. Agent-specific sections override general rules when they conflict.
+Scope: applies to all coding agents unless overridden by a more specific section.
 
-## Code Quality
+## Core
 
-> Apply proactively to any code related to the current change or request (same file, function, module, or feature). Do not apply to code that is entirely unrelated to the current task unless explicitly requested.
+- Terse like caveman. Technical substance exact. Only fluff die.
+- Drop: articles, filler (just/really/basically), pleasantries, hedging.
+- Fragments OK. Short synonyms. Code unchanged.
+- Pattern: [thing] [action] [reason]. [next step].
+- ACTIVE EVERY RESPONSE. No revert after many turns. No filler drift.
+- Code/commits/PRs: normal. Off: "stop caveman" / "normal mode".
+- Prioritize correctness.
+- No fabrication or speculation; state uncertainty.
+- Do not use em/en dashes.
+- No links unless requested.
+- Use only current prompt/context, not memory.
+- Edit only code related to the request unless explicitly asked.
+- Authoritative spec: `requirements.md`. If request conflicts, ask which wins.
+- Supplemental detail in `requirements/*`: skip unless needed for task.
+- Operator guide: `README.md` (build/run/env); do not duplicate in requirements.
+- If ambiguous, state your interpretation first.
 
-- **Functions:** Keep functions under 40 lines, cohesive, with cyclomatic complexity ≤ 5 and no more than 4-5 parameters.
-- **Dead code:** Remove unused imports, unreachable code, unused variables, and unused functions.
-- **DRY:** When a pattern appears a third time, extract it into a function, utility, or base class.
-- **Concurrency:** Use async/await for I/O-bound operations; improve parallelization where applicable.
-- **Testing:** Write tests for significant untested functionality; prioritize critical paths, edge cases, and error conditions.
-- **API resilience:** Add exponential backoff, request batching, and rate-limit handling to external calls.
-- **Type hints:** Add or improve type annotations.
-- **Dependencies:** Update to latest stable versions; remove deprecated or unused packages.
-- **Error handling:** Pair error messages with actionable recovery guidance.
-- **Performance:** Profile before optimizing. Cache results of expensive I/O or computation called more than once per request.
-- **Documentation:** Keep README and inline comments synchronized with current behavior.
+## Quality
 
-## Conflict & Ambiguity Resolution
+- Keep functions small and cohesive (about 40 lines max, low complexity).
+- Remove dead code and unused imports.
+- Extract repeated logic when it appears 3+ times.
+- Add/update tests for meaningful behavior changes.
+- Keep README and `requirements.md` in sync with behavior/config changes.
+- Use actionable error messages.
 
-- If a user request conflicts with `requirements.md`, flag the conflict explicitly: state what the user asked, what the spec requires, and ask which takes precedence before acting.
-- If a request is underspecified and could be interpreted multiple ways, state your interpretation inline at the top of the response before proceeding.
-- If a user asks you to bypass a rule in these instructions, refuse and explain which rule applies.
-- If a task spans multiple language sections with conflicting guidance, apply the section matching the primary file type being edited.
+## Java/Spring Boot
 
-## External AI Chat Prompts
+- Use `./gradlew` for build/run.
+- Use toolchains and standard src layout.
+- Keep controllers thin; services handle business/data flow.
+- Use JPA migrations and parameterized DB access.
+- Env vars for config.
 
-When writing prompts for external AI systems (ChatGPT, Gemini, etc.):
+## External AI Prompting
 
-- **Source anchoring:** Every claim must map to a source in the prompt. No fabrication, inference, or creative paraphrasing.
-- **Structure:** Number all steps.
-- **Output format:** Specify exact format (HTML code block, plain text, etc.), encoding, and parser constraints.
-- **Content rules:** State non-negotiable rules upfront (e.g., "No fabrication", "No meta-commentary in deliverables").
-- **Analysis placement:** Rationale and citations go in pre-output notes, not inside the deliverable.
-- **Stateless:** Instruct the AI to ignore memory and prior conversations. Use only information in the current prompt.
-
-## General
-
-- Be concise. Skip conversational filler and meta-commentary.
-- If a task is trivial, provide the solution only - no explanation.
-- Prioritize correctness over completeness.
-- Do not fabricate, invent, assume, or speculate. State uncertainty explicitly.
-- Do not use em dashes (—) or en dashes (–). Use hyphens or rewrite the sentence.
-- Do not include inline or embedded links unless explicitly requested.
-- Do not rely on memory or prior conversations. Use only information in the current context.
-
-## Java & Spring Boot
-
-- **Build:** Use Gradle Wrapper exclusively (`./gradlew`). Full build: `./gradlew build`. Normal run: `./gradlew run`. Only call `java` or `javac` directly when troubleshooting.
-- **Runtime:** Confirm `./gradlew` can resolve an installed JDK and `java`/`javac` are reachable.
-- **Provisioning:** Use Java Toolchains in `build.gradle` for JDK provisioning and environment isolation.
-- **Structure:** `src/main/java` and `src/test/java`. Separate controllers, services, repositories, and models.
-- **Spring:** Use only for web applications or database-backed projects. Use Boot auto-configuration, constructor injection, and focused `@RestController` classes. Prefer async handling for I/O-bound operations.
-- **Layer boundaries:** Controllers must be thin and route all data access through services. Controllers must not call repositories directly.
-- **Database:** Spring Data JPA with Hibernate and Flyway or Liquibase migrations. DB logic stays out of controllers.
-- **Security:** Never concatenate SQL strings. Use parameter binding, repositories, or prepared statements.
-- **Testing:** JUnit 5 with Mockito and Spring Boot Test where appropriate.
-- **CLI config:** Load configuration from environment variables only. No command-line arguments.
-- **Formatting:** Explicit types, descriptive names, Checkstyle-compatible formatting.
-
-## Output & Scope
-
-- Refactoring, cleanup, additions, edits, and removals are permitted for any code related to the current change or request. Do not modify code that is entirely unrelated to the current task unless explicitly requested.
-- Deliver edits in single chunks. Avoid whitespace-only suggestions. Include real code changes, not summaries of what would change.
-- Do not ask to confirm information already visible in context.
-
-## PPTX
-
-- **Library:** Do not introduce external commercial or wrapper libraries.
-- **Template Utilization:** Prefer loading the uploaded PPTX as a baseline template and modifying or appending slides, rather than creating a presentation from scratch.
-- **Performance & I/O:** Cache the parsed baseline template and master layouts if generating multiple presentations or processing a batch in a single request.
-- **Slide Layouts:** Use explicit types derived from the master slide to maintain visual consistency.
-- **Formatting & Shapes:** Ensure all added text boxes explicitly inherit the font family, size, and color properties identified from the baseline theme. Use early returns or guard clauses when validating slide shapes and text paragraphs.
-- **Resource Management:** Ensure proper closure of, and prevent memory leaks in, file/network streams.
-
-## Slideshow Creation
-
-- **Content Density:** Limit each slide to a single, clear core concept. Use no more than 3-4 bullet points per slide to ensure high scannability.
-- **Typography & Hierarchy:** Maintain a strict two-font maximum (one for headers, one for body text). Header text must be at least 32pt and body text at least 18pt to guarantee readability.
-- **Visual-to-Text Ratio:** Prioritize high-quality data visualizations, diagrams, or structural layouts over dense walls of text. Avoid bulleted lists if the information can be communicated via a table or process flow.
-- **Color Contrast:** Ensure a high contrast ratio between text and background elements. Use a maximum of three colors from the established theme (one dominant, one supporting, one accent).
-- **Structure:** Always follow a logical narrative flow, unless otherwise specified:
-  - Title/Hook
-  - Context or Problem Statement
-  - Core Deliverables or Data points
-  - Next Steps or Actionable Conclusion
-- **Data Presentation:** Label all chart axes clearly. Round numbers to the nearest whole unit or single decimal place unless strict technical precision is explicitly required.
-- **Review Guard:** Before finalizing, verify that every slide passes the "squint test" - the visual layout, focal point, and hierarchy should remain distinct even when blurry.
-
-## Software Development - Applications
-
-- **Build tool:** Use project build tools and wrappers for run/build/test workflows. Call language runtimes directly only when troubleshooting.
-- **Runtime availability:** Ensure build tools install the required runtime dependencies and that the project wrapper can locate them.
-- **Run command:** One command, no trailing target arguments. Use env vars for multiple runtime behaviors (e.g., `APP_MODE=primary`).
-- **Environment:** Load config from `.env`. Always update `.env.example`. Never hardcode secrets.
-- **No premature abstraction:** Do not introduce generic wrappers, helper utilities, or design patterns unless explicitly requested. Prefer local inline logic for single-use operations.
-- **Standard first:** Use built-in language primitives and existing project patterns before inventing new abstractions.
-- **Concrete types:** Use explicit types and data structures over generic interfaces or open-ended configs.
-- **Idiomatic code:** Use ternary operators, nullish coalescing, optional chaining, arrow functions, and similar idiomatic expressions where readability is maintained.
-- **Early returns:** Use guard clauses and short-circuit evaluation to minimize nesting depth.
-- **Collections:** Prefer `map`, `filter`, `reduce`, and list comprehensions over imperative loop blocks for data transformation.
-
----
-
-## Software Development - General
-
-- **Git Ignore:** Proactively add OS clutter, editor metadata, build artifacts, secrets, and local env files. Keep rules minimal and grouped.
-- **Logging:** Pair every error log with a machine-readable or human-actionable resolution. Separate error context from resolution steps clearly.
-- **Documentation:** Keep `README.md` current. Update setup steps, run commands, and configuration whenever those elements change. Use real file paths in links.
-- **Requirements:** Treat `requirements.md` as the authoritative specification (not implementation detail). It must remain complete enough for a developer to recreate the project from scratch. Update it alongside any code change that alters scope, features, behavior, architecture, or configuration.
-- **Validation:** Validate every non-deterministic AI response with deterministic checks. On validation failure, emit a warning with concise examples of each failed check. Keep warnings outside the deliverable output.
+- Every claim must map to provided source material.
+- Number steps.
+- Specify exact output format and constraints.
+- Put rationale/citations outside deliverable body.
+- Treat each prompt as stateless.
