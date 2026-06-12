@@ -1,12 +1,13 @@
 # Requirements
 
-Authoritative functional specification. [README.md](README.md) is the operator guide (setup, env table, troubleshooting).
+Authoritative functional specification. [README.md](README.md) is the operator guide (setup, troubleshooting).
 
 ## Canonical sources
 
 | Concern | Source |
 |---------|--------|
-| Operator setup, env table, troubleshooting | [README.md](README.md) |
+| Operator setup, troubleshooting | [README.md](README.md) |
+| Env variable list | [.env.example](.env.example) |
 | Env defaults (code truth) | [AppConfig.java](src/main/java/com/appfire/presentation/config/AppConfig.java) |
 | Gemini rules, presentation keys, JSON schema | [prompts/](prompts/) |
 | Dependency versions | [build.gradle.kts](build.gradle.kts) |
@@ -23,7 +24,7 @@ Java CLI fills a fixed PowerPoint template from a DOCX source via the Gemini CLI
 
 ## Configuration
 
-Load `.env` from working directory (key=value, `#` comments) plus system env; never hardcode secrets. Full variable list: [README.md](README.md). Defaults: [AppConfig.java](src/main/java/com/appfire/presentation/config/AppConfig.java).
+Load `.env` from working directory (key=value, `#` comments) plus system env; never hardcode secrets. Variable list: [.env.example](.env.example). Defaults: [AppConfig.java](src/main/java/com/appfire/presentation/config/AppConfig.java).
 
 **Startup:** Fail fast if Gemini CLI missing, not executable, or fails version check; fail if `TEMPLATE_PPTX_PATH` or `SOURCE_DOCX_PATH` missing/unreadable. Print step progress to stdout; console logs ERROR only (suppress INFO/WARN).
 
