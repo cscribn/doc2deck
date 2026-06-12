@@ -57,7 +57,7 @@ Unit tests run without the Gemini CLI. The full pipeline integration test runs o
 | `TEMPLATE_PPTX_PATH` | no | `template.pptx` |
 | `SOURCE_DOCX_PATH` | no | `source.docx` |
 | `OUTPUT_PPTX_PATH` | no | `final_presentation.pptx` |
-| `GEMINI_MODEL` | no | `gemini-3.1-flash` |
+| `GEMINI_MODEL` | no | `gemini-3.1-flash-lite` |
 | `GEMINI_MAX_RETRIES` | no | `3` |
 | `PEXELS_API_KEY` | no | (empty) |
 | `IMAGE_CACHE_DIR` | no | `.cache/images` |
