@@ -22,6 +22,7 @@ public final class AppConfig {
     private final boolean imageOptimizationEnabled;
     private final boolean fontCleanupEnabled;
     private final boolean layoutNormalizeEnabled;
+    private final Path presentationKeysPath;
 
     private AppConfig(
             String geminiCliPath,
@@ -35,7 +36,8 @@ public final class AppConfig {
             float imageJpegQuality,
             boolean imageOptimizationEnabled,
             boolean fontCleanupEnabled,
-            boolean layoutNormalizeEnabled) {
+            boolean layoutNormalizeEnabled,
+            Path presentationKeysPath) {
         this.geminiCliPath = geminiCliPath;
         this.templatePptxPath = templatePptxPath;
         this.sourceDocxPath = sourceDocxPath;
@@ -48,6 +50,7 @@ public final class AppConfig {
         this.imageOptimizationEnabled = imageOptimizationEnabled;
         this.fontCleanupEnabled = fontCleanupEnabled;
         this.layoutNormalizeEnabled = layoutNormalizeEnabled;
+        this.presentationKeysPath = presentationKeysPath;
     }
 
     public static AppConfig load() {
@@ -66,14 +69,20 @@ public final class AppConfig {
         boolean optimizationEnabled = parseBoolean(values.getOrDefault("IMAGE_OPTIMIZATION_ENABLED", "true"), true);
         boolean fontCleanupEnabled = parseBoolean(values.getOrDefault("FONT_CLEANUP_ENABLED", "true"), true);
         boolean layoutNormalizeEnabled = parseBoolean(values.getOrDefault("LAYOUT_NORMALIZE_ENABLED", "true"), true);
+        Path presentationKeys = Path.of(values.getOrDefault("PRESENTATION_KEYS_PATH", "presentation-keys.properties"));
 
         validateGeminiCli(cliPath);
         validateInputFile(pptx, "TEMPLATE_PPTX_PATH");
         validateInputFile(docx, "SOURCE_DOCX_PATH");
+        validateInputFile(
+                presentationKeys,
+                "PRESENTATION_KEYS_PATH",
+                "Copy presentation-keys.example.properties to presentation-keys.properties");
 
         return new AppConfig(
                 cliPath, pptx, docx, output, model, retries, pexelsKey, imageCache,
-                clampJpegQuality(jpegQuality), optimizationEnabled, fontCleanupEnabled, layoutNormalizeEnabled);
+                clampJpegQuality(jpegQuality), optimizationEnabled, fontCleanupEnabled, layoutNormalizeEnabled,
+                presentationKeys);
     }
 
     private static Map<String, String> loadEnvFile(Path envPath) {
@@ -113,7 +122,7 @@ public final class AppConfig {
                 "OUTPUT_PPTX_PATH", "GEMINI_MODEL", "GEMINI_MAX_RETRIES",
                 "PEXELS_API_KEY", "IMAGE_CACHE_DIR",
                 "IMAGE_JPEG_QUALITY", "IMAGE_OPTIMIZATION_ENABLED", "FONT_CLEANUP_ENABLED",
-                "LAYOUT_NORMALIZE_ENABLED")) {
+                "LAYOUT_NORMALIZE_ENABLED", "PRESENTATION_KEYS_PATH")) {
             String env = System.getenv(key);
             if (env != null && !env.isBlank()) {
                 values.put(key, env);
@@ -150,10 +159,13 @@ public final class AppConfig {
     }
 
     private static void validateInputFile(Path path, String envName) {
+        validateInputFile(path, envName, "Set " + envName + " in .env to a valid path and re-run ./gradlew run");
+    }
+
+    private static void validateInputFile(Path path, String envName, String resolution) {
         if (!Files.exists(path) || !Files.isReadable(path)) {
             throw new IllegalStateException(
-                    "Input file not found or unreadable: " + path
-                            + ". Set " + envName + " in .env to a valid path and re-run ./gradlew run");
+                    "Input file not found or unreadable: " + path + ". " + resolution);
         }
     }
 
@@ -233,5 +245,9 @@ public final class AppConfig {
 
     public boolean layoutNormalizeEnabled() {
         return layoutNormalizeEnabled;
+    }
+
+    public Path presentationKeysPath() {
+        return presentationKeysPath;
     }
 }

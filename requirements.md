@@ -4,7 +4,7 @@ Authoritative functional spec. Setup/troubleshooting: README.md only.
 
 ## Sources
 
-`.env.example` (env list) | `AppConfig.java` (defaults) | `prompts/prompt_*.md` (Gemini rules/keys/schema) | `build.gradle.kts` (deps) | `src/main/java/com/appfire/presentation/` (code)
+`.env.example` (env list) | `presentation-keys.example.properties` (key instructions) | `AppConfig.java` (defaults) | `prompts/prompt_*.md` (Gemini rules/schema) | `build.gradle.kts` (deps) | `src/main/java/com/appfire/presentation/` (code)
 
 ## System
 
@@ -14,13 +14,13 @@ Text: `${variableName}` (docx4j). Images: Pexels stock (POI). JDK 21 toolchain (
 
 ## Config
 
-`.env` (cwd) + system env. No hardcoded secrets. Fail-fast: gemini missing/unexecutable/version fail; unreadable `TEMPLATE_PPTX_PATH`/`SOURCE_DOCX_PATH`. Stdout progress; logs ERROR only.
+`.env` (cwd) + system env. Local `presentation-keys.properties` (copy from example; gitignored). No hardcoded secrets. Fail-fast: gemini missing/unexecutable/version fail; unreadable `TEMPLATE_PPTX_PATH`/`SOURCE_DOCX_PATH`/`PRESENTATION_KEYS_PATH`. Stdout progress; logs ERROR only.
 
 ## Pipeline (`Application.run`)
 
 1. `DocxExtractor` → `DocumentContent` (blocks h1-6/para/lists/pipe-tables + flat summary)
 2. `TemplateScanner` → `${key}` + image anchors; warn split-run placeholders
-3. `PromptBuilder` → cached `prompts/prompt_*.md` + DOCX + `{{TEMPLATE_KEYS}}`; truncate summary ~100k
+3. `PromptBuilder` → cached `prompts/prompt_*.md` + `presentation-keys.properties` + DOCX + `{{TEMPLATE_KEYS}}`; truncate summary ~100k
 4. `GeminiClient` → stdin prompt, JSON out
 5. `ResponseValidator` → critical fail stops write (below)
 6. Copy template → temp (never mutate template)
@@ -35,7 +35,7 @@ Template: `${key}` in single run; disable spell-check-as-you-type.
 
 ## Keys
 
-16 req text + 1 opt (`nonDevCosts`) + 3 req image. Limits: `KeyContentLimits`, `prompt_presentation_keys.md`. Image queries 2-5 words. Prompt: numbered steps, JSON-only, stateless, DOCX facts only. Canonical: `prompts/prompt_{core_rules,voice_style,presentation_keys,image_keys,output_contract,docx_content}.md`.
+16 req text + 1 opt (`nonDevCosts`) + 3 req image. Limits: `KeyContentLimits`, `presentation-keys.properties`. Image queries 2-5 words. Prompt: numbered steps, JSON-only, stateless, DOCX facts only. Canonical prompts: `prompts/prompt_{core_rules,voice_style,image_keys,output_contract,docx_content}.md`.
 
 ## Validation
 
@@ -49,4 +49,4 @@ Template: `${key}` in single run; disable spell-check-as-you-type.
 
 ## Tests
 
-Unit: extractor, scanner, replacer, inserter, validator, limits, enforcer, normalizer, prompt builder, image service, config. Integration: gated on gemini CLI. Accept: `./gradlew build`; `./gradlew run` produces filled PPTX with images when configured; validator rejects bad keys/queries/limits.
+Unit: extractor, scanner, replacer, inserter, validator, limits, enforcer, normalizer, prompt builder, keys config loader, image service, config. Integration: gated on gemini CLI. Accept: `./gradlew build`; `./gradlew run` produces filled PPTX with images when configured; validator rejects bad keys/queries/limits.

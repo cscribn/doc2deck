@@ -3,6 +3,7 @@ package com.appfire.presentation.llm;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.appfire.presentation.config.PresentationKeysConfigLoader;
 import com.appfire.presentation.model.BlockType;
 import com.appfire.presentation.model.ContentBlock;
 import com.appfire.presentation.model.DocumentContent;
@@ -21,7 +22,9 @@ class PromptBuilderTest {
                 "Overview");
         TemplateScanResult scan = new TemplateScanResult(Set.of("problem1", "problem2"), List.of(), List.of());
 
-        PromptBuilder builder = new PromptBuilder(new PromptLoader(Path.of("prompts")));
+        PromptBuilder builder = new PromptBuilder(
+                new PromptLoader(Path.of("prompts")),
+                PresentationKeysConfigLoader.load(Path.of("presentation-keys.example.properties")));
         String prompt = builder.build(document, scan);
 
         assertTrue(prompt.contains("NON-NEGOTIABLE RULES:"));

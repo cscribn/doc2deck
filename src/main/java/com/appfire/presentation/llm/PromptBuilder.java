@@ -1,5 +1,6 @@
 package com.appfire.presentation.llm;
 
+import com.appfire.presentation.config.PresentationKeysConfig;
 import com.appfire.presentation.model.ContentBlock;
 import com.appfire.presentation.model.DocumentContent;
 import com.appfire.presentation.model.TemplateScanResult;
@@ -11,13 +12,15 @@ public final class PromptBuilder {
     private static final int MAX_SUMMARY_CHARS = 100_000;
 
     private final PromptLoader promptLoader;
+    private final PresentationKeysConfig keysConfig;
 
-    public PromptBuilder() {
-        this(new PromptLoader());
+    public PromptBuilder(PresentationKeysConfig keysConfig) {
+        this(new PromptLoader(), keysConfig);
     }
 
-    public PromptBuilder(PromptLoader promptLoader) {
+    public PromptBuilder(PromptLoader promptLoader, PresentationKeysConfig keysConfig) {
         this.promptLoader = promptLoader;
+        this.keysConfig = keysConfig;
     }
 
     public String build(DocumentContent document, TemplateScanResult scan) {
@@ -26,7 +29,7 @@ public final class PromptBuilder {
         prompt.append("\n\n");
         prompt.append(promptLoader.load("prompt_voice_style.md"));
         prompt.append("\n\n");
-        prompt.append(promptLoader.load("prompt_presentation_keys.md"));
+        prompt.append(keysConfig.formatForPrompt());
         prompt.append("\n\n");
         prompt.append(promptLoader.load("prompt_image_keys.md"));
         prompt.append("\n\n");

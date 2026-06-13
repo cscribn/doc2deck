@@ -5,6 +5,7 @@ out/
 
 # Environment and secrets
 .env
+presentation-keys.properties
 
 # IDE
 .idea/

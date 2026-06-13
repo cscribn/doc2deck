@@ -1,6 +1,7 @@
 package com.appfire.presentation;
 
 import com.appfire.presentation.config.AppConfig;
+import com.appfire.presentation.config.PresentationKeysConfigLoader;
 import com.appfire.presentation.extraction.DocxExtractor;
 import com.appfire.presentation.images.ImageAcquisitionService;
 import com.appfire.presentation.images.PresentationImageOptimizer;
@@ -45,7 +46,8 @@ public final class Application {
         ObjectMapper objectMapper = new ObjectMapper();
         DocxExtractor docxExtractor = new DocxExtractor();
         TemplateScanner templateScanner = new TemplateScanner();
-        PromptBuilder promptBuilder = new PromptBuilder();
+        PromptBuilder promptBuilder = new PromptBuilder(
+                PresentationKeysConfigLoader.load(config.presentationKeysPath()));
         GeminiClient geminiClient = new GeminiClient(config, objectMapper);
         ResponseValidator validator = new ResponseValidator();
         PptxTemplateReplacer templateReplacer = new PptxTemplateReplacer();
