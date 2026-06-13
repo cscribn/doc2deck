@@ -1,99 +1,52 @@
 # Requirements
 
-Authoritative functional specification. [README.md](README.md) is the operator guide (setup, troubleshooting).
+Authoritative functional spec. Setup/troubleshooting: README.md only.
 
-## Canonical sources
+## Sources
 
-| Concern | Source |
-|---------|--------|
-| Operator setup, troubleshooting | [README.md](README.md) |
-| Env variable list | [.env.example](.env.example) |
-| Env defaults (code truth) | [AppConfig.java](src/main/java/com/appfire/presentation/config/AppConfig.java) |
-| Gemini rules, presentation keys, JSON schema | [prompts/](prompts/) |
-| Dependency versions | [build.gradle.kts](build.gradle.kts) |
-| Package layout | `src/main/java/com/appfire/presentation/` |
-| Build tooling | `build.gradle.kts`, `settings.gradle.kts`, Gradle Wrapper; main class `com.appfire.presentation.Application` |
+`.env.example` (env list) | `AppConfig.java` (defaults) | `prompts/prompt_*.md` (Gemini rules/keys/schema) | `build.gradle.kts` (deps) | `src/main/java/com/appfire/presentation/` (code)
 
-## Overview
+## System
 
-Java CLI fills a fixed PowerPoint template from a DOCX source via the Gemini CLI. Text placeholders use `${variableName}` (docx4j); image slots use Pexels stock photos (Apache POI).
+Java CLI fills `template.pptx` from `source.docx` via Gemini CLI → `final_presentation.pptx`.
 
-**Artifacts:** `template.pptx` (placeholders), `source.docx` (narrative), `final_presentation.pptx` (output).
+Text: `${variableName}` (docx4j). Images: Pexels stock (POI). JDK 21 toolchain (`settings.gradle.kts`; `./gradlew -q javaToolchains`). Build/run/test: `./gradlew run` (no args). External `gemini` CLI auth (not Java SDK).
 
-**Stack:** JDK 21 (Gradle toolchain + Foojay resolver in `settings.gradle.kts`; confirm with `./gradlew -q javaToolchains`), `./gradlew` for build/run/test, docx4j + Apache POI, external `gemini` CLI (not Java SDK; CLI handles auth). Bare `java`/`javac`/`gradle` only for troubleshooting.
+## Config
 
-## Configuration
+`.env` (cwd) + system env. No hardcoded secrets. Fail-fast: gemini missing/unexecutable/version fail; unreadable `TEMPLATE_PPTX_PATH`/`SOURCE_DOCX_PATH`. Stdout progress; logs ERROR only.
 
-Load `.env` from working directory (key=value, `#` comments) plus system env; never hardcode secrets. Variable list: [.env.example](.env.example). Defaults: [AppConfig.java](src/main/java/com/appfire/presentation/config/AppConfig.java).
+## Pipeline (`Application.run`)
 
-**Startup:** Fail fast if Gemini CLI missing, not executable, or fails version check; fail if `TEMPLATE_PPTX_PATH` or `SOURCE_DOCX_PATH` missing/unreadable. Print step progress to stdout; console logs ERROR only (suppress INFO/WARN).
+1. `DocxExtractor` → `DocumentContent` (blocks h1-6/para/lists/pipe-tables + flat summary)
+2. `TemplateScanner` → `${key}` + image anchors; warn split-run placeholders
+3. `PromptBuilder` → cached `prompts/prompt_*.md` + DOCX + `{{TEMPLATE_KEYS}}`; truncate summary ~100k
+4. `GeminiClient` → stdin prompt, JSON out
+5. `ResponseValidator` → critical fail stops write (below)
+6. Copy template → temp (never mutate template)
+7. `PptxLayoutNormalizer.hardenStructure` if `LAYOUT_NORMALIZE_ENABLED`
+8. `PptxTemplateReplacer` → docx4j replace; text keys only; skip image/unpopulated optional; `ContentLengthEnforcer` + `TextSanitizer` (strip leading bullets)
+9. `OptionalPlaceholderCleaner` → remove `nonDevCosts` bullet when absent/unpopulated
+10. `PptxLayoutNormalizer.fitText` if enabled (skip slides 1,6,9; min 12pt body)
+11. `ImageAcquisitionService` → Pexels/curl 2-5w queries, `IMAGE_CACHE_DIR`; skip without `PEXELS_API_KEY`
+12. `ImageInserter` → POI insert; optional JPEG/PNG compress; `EmbeddedFontCleaner` if `FONT_CLEANUP_ENABLED`; write output
 
-**Run:** `./gradlew run` (no trailing targets or CLI args).
+Template: `${key}` in single run; disable spell-check-as-you-type.
 
-## Pipeline
+## Keys
 
-Strict serial order (`Application.run()`):
-
-1. **Extract** (`DocxExtractor`): Parse `source.docx` via `XWPFDocument` into ordered `ContentBlock` records (headings 1-6, paragraphs, lists, pipe-delimited table rows). Output `DocumentContent` with blocks + flat text summary.
-2. **Scan** (`TemplateScanner`): Open `template.pptx` via POI `XMLSlideShow`; detect `${variableName}` in text shapes and table cells; record image-key anchors (slide, shape ID, bounds). Warn on split-run placeholders.
-3. **Prompt** (`PromptBuilder`): Load cached `prompts/prompt_*.md` via `PromptLoader`; inject DOCX context and `{{TEMPLATE_KEYS}}` by substitution; concatenate sections. Truncate flat summary at ~100k chars with truncation warning in prompt.
-4. **Generate** (`GeminiClient`): Send prompt on stdin to `gemini` CLI; parse JSON response.
-5. **Validate** (`ResponseValidator`): Deterministic checks before any template write (see Validation).
-6. **Working copy:** Copy `template.pptx` to temp file. **Never modify `template.pptx`.**
-7. **Harden layout** (`PptxLayoutNormalizer.hardenStructure`, when `LAYOUT_NORMALIZE_ENABLED`): Disable autofit (`noAutofit`), enable word wrap on all text shapes.
-8. **Replace text** (`PptxTemplateReplacer`): docx4j `PresentationMLPackage` + `variableReplace()` on every slide. Map validated text keys only; exclude image keys and unpopulated optional keys. Enforce word limits via `ContentLengthEnforcer` (truncate + warn as safety net). Strip leading bullet chars (`TextSanitizer`); template provides bullets.
-9. **Clean optional** (`OptionalPlaceholderCleaner`): When `nonDevCosts` absent/unpopulated, remove its bullet paragraph via POI. Treat key-name-only or empty-after-sanitize values as unpopulated.
-10. **Fit text** (`PptxLayoutNormalizer.fitText`, when enabled): Bake explicit font sizes on content slides (skip static slides 1, 6, 9); min body 12pt for Google Drive/Slides compatibility.
-11. **Acquire images** (`ImageAcquisitionService`): Pexels search via `curl` using 2-5 word queries; cache under `IMAGE_CACHE_DIR`. Skip when `PEXELS_API_KEY` unset; warn and continue on fetch failure.
-12. **Insert and finalize** (`ImageInserter`): POI insert at pre-scanned anchors (or re-scan `${key}`); clear placeholder text. When `IMAGE_OPTIMIZATION_ENABLED`: compress all embedded JPEG (`ImageIO`, `IMAGE_JPEG_QUALITY`, same dimensions) and PNG (`pngquant-png`, preserve alpha); skip non-JPEG/PNG; replace only when smaller; warn and keep original on failure. Write `OUTPUT_PPTX_PATH`. When `FONT_CLEANUP_ENABLED`: `EmbeddedFontCleaner` removes unreferenced `.fntdata` fonts (via `ReferencedFontCollector` on slide/master/layout/notes/theme XML); keep theme-linked metadata without binaries; warn and leave file unchanged on failure.
-
-**Template authoring:** Each `${variableName}` in a single text run; disable spell-check-as-you-type to avoid split runs.
-
-## Prompt and keys
-
-Prompt templates: `prompts/prompt_<two_word_description>.md`. Rules, voice, keys, and JSON schema are canonical in:
-
-- [prompt_core_rules.md](prompts/prompt_core_rules.md), [prompt_voice_style.md](prompts/prompt_voice_style.md)
-- [prompt_presentation_keys.md](prompts/prompt_presentation_keys.md), [prompt_image_keys.md](prompts/prompt_image_keys.md)
-- [prompt_output_contract.md](prompts/prompt_output_contract.md), [prompt_docx_content.md](prompts/prompt_docx_content.md)
-
-**Keys:** 17 required text + 1 optional (`nonDevCosts`) + 3 image keys. Per-key word limits enforced at validation and truncated at replace time. Image queries: 2-5 word Pexels phrases. Prompt must number instruction steps; JSON-only response; stateless; DOCX-grounded facts only.
+16 req text + 1 opt (`nonDevCosts`) + 3 req image. Limits: `KeyContentLimits`, `prompt_presentation_keys.md`. Image queries 2-5 words. Prompt: numbered steps, JSON-only, stateless, DOCX facts only. Canonical: `prompts/prompt_{core_rules,voice_style,presentation_keys,image_keys,output_contract,docx_content}.md`.
 
 ## Validation
 
-`ResponseValidator` runs before template fill.
+**Critical** (non-zero exit, no output): JSON/`keys` fail; required key blank; text over word limit; image query not 2-5 words.
 
-Critical (exit non-zero; do not write `OUTPUT_PPTX_PATH`; log each failure with concrete example):
+**Advisory**: empty `sourceRefs`; template gap; unknown/extra Gemini key; `nonDevCosts` absent; `shortProjectDescription` >200 chars or contains "Flow API Monorepo"; split-run warnings.
 
-- JSON parse failure or missing `keys` object
-- Required text or image key missing or blank
-- Text key exceeds per-key word limit (`KeyContentLimits`)
-- Image key query not 2-5 words
+## Resilience & exit
 
-Advisory (log; continue when no critical failures):
+`GeminiClient`: `-p`, stdin, `--output-format json`, `--approval-mode plan`, `--skip-trust`; backoff 1s–30s × `GEMINI_MAX_RETRIES`. Non-zero: config, inputs, Gemini, validation critical, I/O.
 
-- Empty `sourceRefs` per key
-- Template placeholders without Gemini values
-- Gemini keys not in template scan
-- `nonDevCosts` absent
-- Split-run placeholder warnings from template scan
+## Tests
 
-## Resilience
-
-**GeminiClient:** `gemini -p` headless, prompt on stdin, `--output-format json`, `--approval-mode plan`, `--skip-trust`. Exponential backoff 1s-30s, up to `GEMINI_MAX_RETRIES`; retry rate limits, timeouts, transient CLI failures.
-
-**Exit codes:** Non-zero on missing config, unreadable inputs, Gemini failure, validation critical failure, or output I/O errors.
-
-## Testing
-
-**Unit tests:** `DocxExtractor` (root `source.docx` or `src/test/resources/` fixtures); `TemplateScanner`, `PptxTemplateReplacer`, `ImageInserter` against `template.pptx`; `ResponseValidator` with JSON fixtures (including word-limit rejection); `KeyContentLimits`, `ContentLengthEnforcer`, `PptxLayoutNormalizer`; `PromptBuilder`, `ImageAcquisitionService`, `AppConfig`.
-
-**Integration:** Full pipeline gated on `gemini` CLI availability.
-
-**Acceptance:**
-
-1. `./gradlew build` passes non-gated tests
-2. `./gradlew run` with valid `.env` produces `final_presentation.pptx`
-3. All text placeholders replaced; images inserted where configured
-4. JPEG/PNG compressed when optimization enabled and smaller size achievable
-5. Validator rejects missing keys, invalid image queries, over-limit text
+Unit: extractor, scanner, replacer, inserter, validator, limits, enforcer, normalizer, prompt builder, image service, config. Integration: gated on gemini CLI. Accept: `./gradlew build`; `./gradlew run` produces filled PPTX with images when configured; validator rejects bad keys/queries/limits.
