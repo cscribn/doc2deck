@@ -27,7 +27,7 @@ public final class AppConfig {
     private final boolean layoutNormalizeEnabled;
     private final Path presentationKeysPath;
     private final Path voiceStylePath;
-    private final Set<Integer> layoutStaticSlideIndices;
+    private final Set<Integer> layoutSkipTextFitSlideIndices;
 
     private AppConfig(
             String geminiCliPath,
@@ -44,7 +44,7 @@ public final class AppConfig {
             boolean layoutNormalizeEnabled,
             Path presentationKeysPath,
             Path voiceStylePath,
-            Set<Integer> layoutStaticSlideIndices) {
+            Set<Integer> layoutSkipTextFitSlideIndices) {
         this.geminiCliPath = geminiCliPath;
         this.templatePptxPath = templatePptxPath;
         this.sourceDocxPaths = List.copyOf(sourceDocxPaths);
@@ -59,7 +59,7 @@ public final class AppConfig {
         this.layoutNormalizeEnabled = layoutNormalizeEnabled;
         this.presentationKeysPath = presentationKeysPath;
         this.voiceStylePath = voiceStylePath;
-        this.layoutStaticSlideIndices = Set.copyOf(layoutStaticSlideIndices);
+        this.layoutSkipTextFitSlideIndices = Set.copyOf(layoutSkipTextFitSlideIndices);
     }
 
     public static AppConfig load() {
@@ -80,8 +80,8 @@ public final class AppConfig {
         boolean layoutNormalizeEnabled = parseBoolean(values.getOrDefault("LAYOUT_NORMALIZE_ENABLED", "true"), true);
         Path presentationKeys = Path.of(values.getOrDefault("PRESENTATION_KEYS_PATH", "presentation-keys.properties"));
         Path voiceStyle = Path.of(values.getOrDefault("VOICE_STYLE_PATH", "prompts/voice-styles/neutral.md"));
-        Set<Integer> staticSlideIndices = parseStaticSlideIndices(
-                values.getOrDefault("LAYOUT_STATIC_SLIDE_INDICES", ""));
+        Set<Integer> skipTextFitSlideIndices = parseSkipTextFitSlideIndices(
+                values.getOrDefault("LAYOUT_SKIP_TEXT_FIT_SLIDE_INDICES", ""));
 
         validateGeminiCli(cliPath);
         validateInputFile(pptx, "TEMPLATE_PPTX_PATH");
@@ -96,7 +96,7 @@ public final class AppConfig {
         return new AppConfig(
                 cliPath, pptx, sourceDocxPaths, output, model, retries, pexelsKey, imageCache,
                 clampJpegQuality(jpegQuality), optimizationEnabled, fontCleanupEnabled, layoutNormalizeEnabled,
-                presentationKeys, voiceStyle, staticSlideIndices);
+                presentationKeys, voiceStyle, skipTextFitSlideIndices);
     }
 
     private static Map<String, String> loadEnvFile(Path envPath) {
@@ -137,7 +137,7 @@ public final class AppConfig {
                 "PEXELS_API_KEY", "IMAGE_CACHE_DIR",
                 "IMAGE_JPEG_QUALITY", "IMAGE_OPTIMIZATION_ENABLED", "FONT_CLEANUP_ENABLED",
                 "LAYOUT_NORMALIZE_ENABLED", "PRESENTATION_KEYS_PATH",
-                "VOICE_STYLE_PATH", "LAYOUT_STATIC_SLIDE_INDICES")) {
+                "VOICE_STYLE_PATH", "LAYOUT_SKIP_TEXT_FIT_SLIDE_INDICES")) {
             String env = System.getenv(key);
             if (env != null && !env.isBlank()) {
                 values.put(key, env);
@@ -247,7 +247,7 @@ public final class AppConfig {
         return Math.max(0.0f, Math.min(1.0f, quality));
     }
 
-    private static Set<Integer> parseStaticSlideIndices(String raw) {
+    private static Set<Integer> parseSkipTextFitSlideIndices(String raw) {
         if (raw == null || raw.isBlank()) {
             return Set.of();
         }
@@ -261,7 +261,7 @@ public final class AppConfig {
                 indices.add(Integer.parseInt(trimmed));
             } catch (NumberFormatException e) {
                 throw new IllegalStateException(
-                        "Invalid LAYOUT_STATIC_SLIDE_INDICES value: " + raw
+                        "Invalid LAYOUT_SKIP_TEXT_FIT_SLIDE_INDICES value: " + raw
                                 + ". Use comma-separated 0-based slide indices and re-run ./gradlew run");
             }
         }
@@ -324,7 +324,7 @@ public final class AppConfig {
         return voiceStylePath;
     }
 
-    public Set<Integer> layoutStaticSlideIndices() {
-        return layoutStaticSlideIndices;
+    public Set<Integer> layoutSkipTextFitSlideIndices() {
+        return layoutSkipTextFitSlideIndices;
     }
 }

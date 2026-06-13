@@ -60,6 +60,23 @@ class PptxLayoutNormalizerTest {
         }
     }
 
+    @Test
+    void fitTextSkipsSlidesListedInSkipIndices() throws IOException {
+        Path workingCopy = tempDir.resolve("skip-fit.pptx");
+        createLongTextFixture(workingCopy);
+
+        PptxLayoutNormalizer normalizer = new PptxLayoutNormalizer(true, Set.of(1), List.of());
+        normalizer.hardenStructure(workingCopy);
+        normalizer.fitText(workingCopy);
+
+        try (InputStream input = Files.newInputStream(workingCopy);
+                XMLSlideShow slideShow = new XMLSlideShow(input)) {
+            XSLFTextShape skipped = findFirstTextShape(slideShow.getSlides().get(1));
+            double skippedFontSize = skipped.getTextParagraphs().get(0).getTextRuns().get(0).getFontSize();
+            assertTrue(skippedFontSize >= 16.0, "expected skipped slide to keep original font size, got " + skippedFontSize);
+        }
+    }
+
     private static void createLongTextFixture(Path path) throws IOException {
         try (XMLSlideShow slideShow = new XMLSlideShow()) {
             slideShow.createSlide();

@@ -60,7 +60,7 @@ public final class Application {
         EmbeddedFontCleaner fontCleaner = new EmbeddedFontCleaner(config.fontCleanupEnabled());
         PptxLayoutNormalizer layoutNormalizer = new PptxLayoutNormalizer(
                 config.layoutNormalizeEnabled(),
-                config.layoutStaticSlideIndices(),
+                config.layoutSkipTextFitSlideIndices(),
                 keysConfig.imageKeyNames());
         ImageInserter imageInserter = new ImageInserter(imageOptimizer, fontCleaner);
 

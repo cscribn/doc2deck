@@ -28,12 +28,12 @@ public final class PptxLayoutNormalizer {
     private static final double DEFAULT_FONT_PT = 16.0;
 
     private final boolean enabled;
-    private final Set<Integer> staticSlideIndices;
+    private final Set<Integer> skipTextFitSlideIndices;
     private final List<String> imageKeyNames;
 
-    public PptxLayoutNormalizer(boolean enabled, Set<Integer> staticSlideIndices, List<String> imageKeyNames) {
+    public PptxLayoutNormalizer(boolean enabled, Set<Integer> skipTextFitSlideIndices, List<String> imageKeyNames) {
         this.enabled = enabled;
-        this.staticSlideIndices = staticSlideIndices == null ? Set.of() : Set.copyOf(staticSlideIndices);
+        this.skipTextFitSlideIndices = skipTextFitSlideIndices == null ? Set.of() : Set.copyOf(skipTextFitSlideIndices);
         this.imageKeyNames = imageKeyNames == null ? List.of() : List.copyOf(imageKeyNames);
     }
 
@@ -57,7 +57,7 @@ public final class PptxLayoutNormalizer {
                 XMLSlideShow slideShow = new XMLSlideShow(input)) {
             List<XSLFSlide> slides = slideShow.getSlides();
             for (int slideIndex = 0; slideIndex < slides.size(); slideIndex++) {
-                if (staticSlideIndices.contains(slideIndex)) {
+                if (skipTextFitSlideIndices.contains(slideIndex)) {
                     continue;
                 }
                 fitSlideText(slides.get(slideIndex));
