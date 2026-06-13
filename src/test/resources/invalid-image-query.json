@@ -9,7 +9,7 @@
     "scale": "Affects 40+ microservices.",
     "whyNow": "Monorepo consolidation is urgent.",
     "ifUnsolved": "Integration debt compounds.",
-    "architectureApproach": "Central Flow API gateway.",
+    "architectureApproach": "Central API gateway.",
     "approachReasons": "Reduces duplication.",
     "personaBetterment": "Engineers ship faster.",
     "appfireBetterment": "Improves retention.",

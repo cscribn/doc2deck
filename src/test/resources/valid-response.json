@@ -9,7 +9,7 @@
     "scale": "Affects 40+ microservices across three product lines.",
     "whyNow": "Monorepo consolidation makes a shared API layer urgent.",
     "ifUnsolved": "Integration debt will compound and block releases.",
-    "architectureApproach": "Central Flow API gateway with typed SDK generation.",
+    "architectureApproach": "Central API gateway with typed SDK generation.",
     "approachReasons": "Reduces duplication and enforces contract consistency.",
     "personaBetterment": "Engineers ship integrations in hours instead of weeks.",
     "appfireBetterment": "Improves retention by reducing customer integration friction.",
