@@ -23,6 +23,34 @@ public final class DocxExtractor {
     private static final Logger LOG = LoggerFactory.getLogger(DocxExtractor.class);
 
     public DocumentContent extract(Path docxPath) throws IOException {
+        List<ContentBlock> blocks = parseBlocks(docxPath);
+        String summary = buildFlatSummary(blocks);
+        LOG.info("Extracted {} content blocks from {}", blocks.size(), docxPath);
+        return new DocumentContent(blocks, summary);
+    }
+
+    public DocumentContent extractAll(List<Path> docxPaths) throws IOException {
+        List<ContentBlock> allBlocks = new ArrayList<>();
+        StringBuilder summaryBuilder = new StringBuilder();
+        int index = 0;
+        for (Path path : docxPaths) {
+            String filename = path.getFileName().toString();
+            allBlocks.add(new ContentBlock(index++, BlockType.HEADING, 1, "Source: " + filename));
+            List<ContentBlock> fileBlocks = parseBlocks(path);
+            for (ContentBlock block : fileBlocks) {
+                allBlocks.add(reindex(block, index++));
+            }
+            if (!summaryBuilder.isEmpty()) {
+                summaryBuilder.append("\n\n");
+            }
+            summaryBuilder.append("--- ").append(filename).append(" ---\n");
+            summaryBuilder.append(buildFlatSummary(fileBlocks));
+        }
+        LOG.info("Extracted {} content blocks from {} source documents", allBlocks.size(), docxPaths.size());
+        return new DocumentContent(allBlocks, summaryBuilder.toString().trim());
+    }
+
+    private List<ContentBlock> parseBlocks(Path docxPath) throws IOException {
         try (InputStream input = Files.newInputStream(docxPath);
                 XWPFDocument document = new XWPFDocument(input)) {
             List<ContentBlock> blocks = new ArrayList<>();
@@ -30,10 +58,12 @@ public final class DocxExtractor {
             for (IBodyElement element : document.getBodyElements()) {
                 index = appendElement(blocks, element, index);
             }
-            String summary = buildFlatSummary(blocks);
-            LOG.info("Extracted {} content blocks from {}", blocks.size(), docxPath);
-            return new DocumentContent(blocks, summary);
+            return blocks;
         }
+    }
+
+    private ContentBlock reindex(ContentBlock block, int index) {
+        return new ContentBlock(index, block.type(), block.headingLevel(), block.text(), block.items());
     }
 
     private int appendElement(List<ContentBlock> blocks, IBodyElement element, int index) {

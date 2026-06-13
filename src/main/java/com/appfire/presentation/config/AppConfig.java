@@ -7,12 +7,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 public final class AppConfig {
 
     private final String geminiCliPath;
     private final Path templatePptxPath;
-    private final Path sourceDocxPath;
+    private final List<Path> sourceDocxPaths;
     private final Path outputPptxPath;
     private final String geminiModel;
     private final int geminiMaxRetries;
@@ -27,7 +28,7 @@ public final class AppConfig {
     private AppConfig(
             String geminiCliPath,
             Path templatePptxPath,
-            Path sourceDocxPath,
+            List<Path> sourceDocxPaths,
             Path outputPptxPath,
             String geminiModel,
             int geminiMaxRetries,
@@ -40,7 +41,7 @@ public final class AppConfig {
             Path presentationKeysPath) {
         this.geminiCliPath = geminiCliPath;
         this.templatePptxPath = templatePptxPath;
-        this.sourceDocxPath = sourceDocxPath;
+        this.sourceDocxPaths = List.copyOf(sourceDocxPaths);
         this.outputPptxPath = outputPptxPath;
         this.geminiModel = geminiModel;
         this.geminiMaxRetries = geminiMaxRetries;
@@ -59,7 +60,7 @@ public final class AppConfig {
 
         String cliPath = values.getOrDefault("GEMINI_CLI_PATH", "gemini");
         Path pptx = Path.of(values.getOrDefault("TEMPLATE_PPTX_PATH", "template.pptx"));
-        Path docx = Path.of(values.getOrDefault("SOURCE_DOCX_PATH", "source.docx"));
+        Path sourcesDir = Path.of(values.getOrDefault("SOURCES_DIR", "sources"));
         Path output = Path.of(values.getOrDefault("OUTPUT_PPTX_PATH", "final_presentation.pptx"));
         String model = values.getOrDefault("GEMINI_MODEL", "gemini-3.1-flash-lite");
         int retries = parseInt(values.getOrDefault("GEMINI_MAX_RETRIES", "3"), 3);
@@ -73,14 +74,14 @@ public final class AppConfig {
 
         validateGeminiCli(cliPath);
         validateInputFile(pptx, "TEMPLATE_PPTX_PATH");
-        validateInputFile(docx, "SOURCE_DOCX_PATH");
+        List<Path> sourceDocxPaths = resolveSourceDocxPaths(sourcesDir);
         validateInputFile(
                 presentationKeys,
                 "PRESENTATION_KEYS_PATH",
                 "Copy presentation-keys.example.properties to presentation-keys.properties");
 
         return new AppConfig(
-                cliPath, pptx, docx, output, model, retries, pexelsKey, imageCache,
+                cliPath, pptx, sourceDocxPaths, output, model, retries, pexelsKey, imageCache,
                 clampJpegQuality(jpegQuality), optimizationEnabled, fontCleanupEnabled, layoutNormalizeEnabled,
                 presentationKeys);
     }
@@ -118,7 +119,7 @@ public final class AppConfig {
 
     private static void mergeSystemEnv(Map<String, String> values) {
         for (String key : List.of(
-                "GEMINI_CLI_PATH", "TEMPLATE_PPTX_PATH", "SOURCE_DOCX_PATH",
+                "GEMINI_CLI_PATH", "TEMPLATE_PPTX_PATH", "SOURCES_DIR",
                 "OUTPUT_PPTX_PATH", "GEMINI_MODEL", "GEMINI_MAX_RETRIES",
                 "PEXELS_API_KEY", "IMAGE_CACHE_DIR",
                 "IMAGE_JPEG_QUALITY", "IMAGE_OPTIMIZATION_ENABLED", "FONT_CLEANUP_ENABLED",
@@ -156,6 +157,39 @@ public final class AppConfig {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while validating Gemini CLI", e);
         }
+    }
+
+    private static List<Path> resolveSourceDocxPaths(Path sourcesDir) {
+        if (!Files.isDirectory(sourcesDir)) {
+            throw new IllegalStateException(
+                    "Sources directory not found: " + sourcesDir
+                            + ". Create it, place one or more .docx files inside, and re-run ./gradlew run");
+        }
+        List<Path> docxPaths;
+        try (Stream<Path> stream = Files.list(sourcesDir)) {
+            docxPaths = stream
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().toLowerCase().endsWith(".docx"))
+                    .sorted()
+                    .toList();
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Failed to read sources directory: " + sourcesDir
+                            + ". Check directory permissions and re-run ./gradlew run",
+                    e);
+        }
+        if (docxPaths.isEmpty()) {
+            throw new IllegalStateException(
+                    "No .docx files found in " + sourcesDir
+                            + ". Place one or more .docx files in sources/ and re-run ./gradlew run");
+        }
+        for (Path path : docxPaths) {
+            validateInputFile(
+                    path,
+                    "SOURCES_DIR",
+                    "Ensure every .docx file in " + sourcesDir + " is readable and re-run ./gradlew run");
+        }
+        return docxPaths;
     }
 
     private static void validateInputFile(Path path, String envName) {
@@ -207,8 +241,8 @@ public final class AppConfig {
         return templatePptxPath;
     }
 
-    public Path sourceDocxPath() {
-        return sourceDocxPath;
+    public List<Path> sourceDocxPaths() {
+        return sourceDocxPaths;
     }
 
     public Path outputPptxPath() {

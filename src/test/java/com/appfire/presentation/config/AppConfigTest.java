@@ -1,6 +1,7 @@
 package com.appfire.presentation.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.appfire.presentation.TestFixtures;
@@ -23,6 +24,7 @@ class AppConfigTest {
         assertEquals("gemini", config.geminiCliPath());
         assertEquals("gemini-3.1-flash-lite", config.geminiModel());
         assertEquals(Path.of("presentation-keys.properties"), config.presentationKeysPath());
+        assertFalse(config.sourceDocxPaths().isEmpty());
     }
 
     private static boolean geminiCliAvailable() {

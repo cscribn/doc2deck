@@ -7,7 +7,7 @@ Operator guide. Behavioral spec: [requirements.md](requirements.md).
 1. Copy [.env.example](.env.example) to `.env`.
 2. Copy [presentation-keys.example.properties](presentation-keys.example.properties) to `presentation-keys.properties`.
 3. Install and authenticate Gemini CLI: `npm install -g @google/gemini-cli`, then run `gemini` once to sign in.
-4. Place `template.pptx` and `source.docx` at project root (or override paths in `.env`).
+4. Place `template.pptx` at project root and one or more `.docx` files in `sources/` (or override paths in `.env`).
 5. Run from project root: `./gradlew run` → `final_presentation.pptx` (step progress on stdout; errors only in logs).
 
 **Prerequisites:** JDK 21 (Gradle toolchain auto-provision; `./gradlew -q javaToolchains`), Gemini CLI, `curl` on PATH. Optional: `PEXELS_API_KEY` for slide images (skipped when unset).
@@ -27,7 +27,7 @@ Variables and commented defaults: [.env.example](.env.example). Code defaults: [
 
 - **Gemini CLI not found:** `npm install -g @google/gemini-cli` or set `GEMINI_CLI_PATH`
 - **Auth failure:** run `gemini` interactively once
-- **Input not found:** check `TEMPLATE_PPTX_PATH`, `SOURCE_DOCX_PATH`
+- **Input not found:** check `TEMPLATE_PPTX_PATH`, `SOURCES_DIR` (must contain at least one `.docx`)
 - **Presentation keys config not found:** copy `presentation-keys.example.properties` to `presentation-keys.properties`, or set `PRESENTATION_KEYS_PATH`
 - **Toolchain:** `./gradlew -q javaToolchains`; install JDK 21 if auto-download fails
 - **Validation failure:** fix missing keys, word-limit errors, or image queries (2-5 words)

@@ -8,13 +8,13 @@ Authoritative functional spec. Setup/troubleshooting: README.md only.
 
 ## System
 
-Java CLI fills `template.pptx` from `source.docx` via Gemini CLI → `final_presentation.pptx`.
+Java CLI fills `template.pptx` from `.docx` files in `sources/` via Gemini CLI → `final_presentation.pptx`.
 
 Text: `${variableName}` (docx4j). Images: Pexels stock (POI). JDK 21 toolchain (`settings.gradle.kts`; `./gradlew -q javaToolchains`). Build/run/test: `./gradlew run` (no args). External `gemini` CLI auth (not Java SDK).
 
 ## Config
 
-`.env` (cwd) + system env. Local `presentation-keys.properties` (copy from example; gitignored). No hardcoded secrets. Fail-fast: gemini missing/unexecutable/version fail; unreadable `TEMPLATE_PPTX_PATH`/`SOURCE_DOCX_PATH`/`PRESENTATION_KEYS_PATH`. Stdout progress; logs ERROR only.
+`.env` (cwd) + system env. Local `presentation-keys.properties` (copy from example; gitignored). No hardcoded secrets. Fail-fast: gemini missing/unexecutable/version fail; unreadable `TEMPLATE_PPTX_PATH`/`SOURCES_DIR` (no `.docx` files)/`PRESENTATION_KEYS_PATH`. Stdout progress; logs ERROR only.
 
 ## Pipeline (`Application.run`)
 

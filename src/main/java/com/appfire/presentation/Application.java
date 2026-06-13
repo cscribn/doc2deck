@@ -60,8 +60,8 @@ public final class Application {
         PptxLayoutNormalizer layoutNormalizer = new PptxLayoutNormalizer(config.layoutNormalizeEnabled());
         ImageInserter imageInserter = new ImageInserter(imageOptimizer, fontCleaner);
 
-        ConsoleProgress.step("Extracting content from source document...");
-        DocumentContent document = docxExtractor.extract(config.sourceDocxPath());
+        ConsoleProgress.step("Extracting content from source documents...");
+        DocumentContent document = docxExtractor.extractAll(config.sourceDocxPaths());
 
         ConsoleProgress.step("Scanning template for placeholders...");
         TemplateScanResult scan = templateScanner.scan(config.templatePptxPath());
