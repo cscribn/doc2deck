@@ -27,8 +27,11 @@ class PromptBuilderTest {
                 PresentationKeysConfigLoader.load(Path.of("presentation-keys.example.properties")));
         String prompt = builder.build(document, scan);
 
-        assertTrue(prompt.contains("NON-NEGOTIABLE RULES:"));
-        assertTrue(prompt.contains("VOICE AND STYLE (TEDx-inspired):"));
+        assertTrue(prompt.contains("EXTERNAL AI PROMPTING (NON-NEGOTIABLE):"));
+        assertTrue(prompt.contains("INSTRUCTIONS (execute in order):"));
+        assertTrue(prompt.contains("OUTPUT FORMAT AND CONSTRAINTS:"));
+        assertTrue(prompt.contains("SOURCE MATERIAL (cite block indices"));
+        assertTrue(prompt.contains("VOICE AND STYLE (rationale; not part of JSON deliverable):"));
         assertTrue(prompt.contains("PRESENTATION KEYS"));
         assertTrue(prompt.contains("IMAGE KEYS"));
         assertTrue(prompt.contains("DOCX CONTENT BLOCKS:"));

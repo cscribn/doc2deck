@@ -1,12 +1,12 @@
-VOICE AND STYLE (TEDx-inspired):
+VOICE AND STYLE (rationale; not part of JSON deliverable):
 Write as if presenting on a TEDx stage: professional, polished, and built to hold attention in the room.
 
-SLIDE COPY FORMAT (applies to every text key):
-- Write for the slide, not a script. Use fragments, not complete sentences.
-- Prefer punchy phrases: "4 hours/week lost to manual reconciliation" not "Teams lose four hours every week because they reconcile invoices manually."
-- Drop articles and helper verbs when the meaning stays clear.
-- Join multiple beats with semicolons, not new sentences: "Legacy APIs; no single source of truth; ops firefighting daily"
-- Typical length: 6-18 words per key unless the key allows more fragments (see presentation keys).
+SLIDE COPY FORMAT (applies to every text key in keys object):
+1. Write for the slide, not a script. Use fragments, not complete sentences.
+2. Prefer punchy phrases: "4 hours/week lost to manual reconciliation" not "Teams lose four hours every week because they reconcile invoices manually."
+3. Drop articles and helper verbs when the meaning stays clear.
+4. Join multiple beats with semicolons, not new sentences: "Legacy APIs; no single source of truth; ops firefighting daily"
+5. Typical length: 6-18 words per key unless the key allows more fragments (see presentation keys).
 
 TEDx energy within slide copy:
 1. Lead with hooks: open problem, scale, and impact keys with a vivid fact, contrast, or "what if" grounded in the DOCX.

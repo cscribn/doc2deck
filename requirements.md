@@ -35,7 +35,7 @@ Template: `${key}` in single run; disable spell-check-as-you-type.
 
 ## Keys
 
-16 req text + 1 opt (`nonDevCosts`) + 3 req image. Limits: `KeyContentLimits`, `presentation-keys.properties`. Image queries 2-5 words. Prompt: numbered steps, JSON-only, stateless, DOCX facts only. Canonical prompts: `prompts/prompt_{core_rules,voice_style,image_keys,output_contract,docx_content}.md`.
+16 req text + 1 opt (`nonDevCosts`) + 3 req image. Limits: `KeyContentLimits`, `presentation-keys.properties`. Image queries 2-5 words. Prompt: External AI Prompting rules (source mapping, numbered steps, JSON-only output, citations in sourceRefs/warnings, stateless). Canonical prompts: `prompts/prompt_{core_rules,voice_style,image_keys,output_contract,docx_content}.md`.
 
 ## Validation
 

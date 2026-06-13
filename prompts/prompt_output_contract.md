@@ -1,14 +1,16 @@
-INSTRUCTIONS:
-1. Read the DOCX content blocks and summary.
-2. Fill every required presentation key with grounded content.
-3. Apply TEDx-inspired voice: engaging, slightly sensational, professionally witty; every claim still anchored to DOCX blocks.
-4. Write slide fragments only: no complete sentences, no essay-style prose. See SLIDE COPY FORMAT above.
-5. Cite source block indices in sourceRefs for each key when possible.
-6. Return JSON only. No markdown fences. No commentary.
+INSTRUCTIONS (execute in order):
+1. Read DOCX content blocks and summary (source material above).
+2. For each presentation key, identify supporting DOCX block indices; plan sourceRefs entries.
+3. Fill every required presentation key with grounded slide fragments (voice/style and presentation keys sections).
+4. Apply TEDx-inspired voice; anchor every claim to DOCX blocks.
+5. Fill problemSolvingImg, architectureApproachImg, valueImpactImg per IMAGE KEYS rules.
+6. Record block indices in sourceRefs (not inside key values). Put caveats in warnings.
+7. Return JSON only matching the schema below. No markdown fences. No commentary before or after JSON.
 
+OUTPUT FORMAT AND CONSTRAINTS:
 Template keys found: {{TEMPLATE_KEYS}}
 
-JSON schema:
+Deliverable body (JSON only):
 {
   "keys": {
     "shortProjectDescription": "string",
@@ -35,3 +37,8 @@ JSON schema:
   "sourceRefs": { "problem1": [0, 2], "architectureApproach": [5] },
   "warnings": ["string"]
 }
+
+Constraints:
+- keys: slide copy fragments only; no citations or rationale.
+- sourceRefs: DOCX block indices per key when possible; outside keys object.
+- warnings: optional caveats about missing or weak source backing; outside keys object.
