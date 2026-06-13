@@ -20,8 +20,7 @@ public final class ResponseValidator {
     public ValidationResult validate(
             PresentationContentResponse response,
             TemplateScanResult scan,
-            PresentationKeysConfig keysConfig,
-            String forbiddenShortDescriptionPhrase) {
+            PresentationKeysConfig keysConfig) {
         List<String> critical = new ArrayList<>();
         List<String> advisory = new ArrayList<>();
 
@@ -40,7 +39,7 @@ public final class ResponseValidator {
             }
         }
 
-        validateShortDescription(response, keysConfig, forbiddenShortDescriptionPhrase, advisory);
+        validateShortDescription(response, keysConfig, advisory);
         validateTextKeyWordLimits(response, keysConfig, foundKeys, critical);
         validateImageQueries(response, keysConfig, foundKeys, critical);
         validateSourceRefs(response, requiredKeys, advisory);
@@ -59,7 +58,6 @@ public final class ResponseValidator {
     private void validateShortDescription(
             PresentationContentResponse response,
             PresentationKeysConfig keysConfig,
-            String forbiddenShortDescriptionPhrase,
             List<String> advisory) {
         String keyName = "shortProjectDescription";
         if (!keysConfig.configuredKeyNames().contains(keyName)) {
@@ -71,12 +69,6 @@ public final class ResponseValidator {
         }
         if (value.length() > MAX_SHORT_DESCRIPTION_CHARS) {
             advisory.add("shortProjectDescription exceeds " + MAX_SHORT_DESCRIPTION_CHARS + " characters");
-        }
-        String forbiddenPhrase = forbiddenShortDescriptionPhrase;
-        if (forbiddenPhrase != null
-                && !forbiddenPhrase.isBlank()
-                && value.toLowerCase().contains(forbiddenPhrase.toLowerCase())) {
-            advisory.add("shortProjectDescription must not contain \"" + forbiddenPhrase + "\" (already in template title)");
         }
     }
 

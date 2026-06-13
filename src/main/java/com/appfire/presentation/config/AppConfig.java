@@ -27,7 +27,6 @@ public final class AppConfig {
     private final boolean layoutNormalizeEnabled;
     private final Path presentationKeysPath;
     private final Path voiceStylePath;
-    private final String forbiddenShortDescriptionPhrase;
     private final Set<Integer> layoutStaticSlideIndices;
 
     private AppConfig(
@@ -45,7 +44,6 @@ public final class AppConfig {
             boolean layoutNormalizeEnabled,
             Path presentationKeysPath,
             Path voiceStylePath,
-            String forbiddenShortDescriptionPhrase,
             Set<Integer> layoutStaticSlideIndices) {
         this.geminiCliPath = geminiCliPath;
         this.templatePptxPath = templatePptxPath;
@@ -61,7 +59,6 @@ public final class AppConfig {
         this.layoutNormalizeEnabled = layoutNormalizeEnabled;
         this.presentationKeysPath = presentationKeysPath;
         this.voiceStylePath = voiceStylePath;
-        this.forbiddenShortDescriptionPhrase = forbiddenShortDescriptionPhrase;
         this.layoutStaticSlideIndices = Set.copyOf(layoutStaticSlideIndices);
     }
 
@@ -83,7 +80,6 @@ public final class AppConfig {
         boolean layoutNormalizeEnabled = parseBoolean(values.getOrDefault("LAYOUT_NORMALIZE_ENABLED", "true"), true);
         Path presentationKeys = Path.of(values.getOrDefault("PRESENTATION_KEYS_PATH", "presentation-keys.properties"));
         Path voiceStyle = Path.of(values.getOrDefault("VOICE_STYLE_PATH", "prompts/voice-styles/neutral.md"));
-        String forbiddenPhrase = values.getOrDefault("FORBIDDEN_SHORT_DESCRIPTION_PHRASE", "").trim();
         Set<Integer> staticSlideIndices = parseStaticSlideIndices(
                 values.getOrDefault("LAYOUT_STATIC_SLIDE_INDICES", ""));
 
@@ -100,7 +96,7 @@ public final class AppConfig {
         return new AppConfig(
                 cliPath, pptx, sourceDocxPaths, output, model, retries, pexelsKey, imageCache,
                 clampJpegQuality(jpegQuality), optimizationEnabled, fontCleanupEnabled, layoutNormalizeEnabled,
-                presentationKeys, voiceStyle, forbiddenPhrase, staticSlideIndices);
+                presentationKeys, voiceStyle, staticSlideIndices);
     }
 
     private static Map<String, String> loadEnvFile(Path envPath) {
@@ -141,8 +137,7 @@ public final class AppConfig {
                 "PEXELS_API_KEY", "IMAGE_CACHE_DIR",
                 "IMAGE_JPEG_QUALITY", "IMAGE_OPTIMIZATION_ENABLED", "FONT_CLEANUP_ENABLED",
                 "LAYOUT_NORMALIZE_ENABLED", "PRESENTATION_KEYS_PATH",
-                "VOICE_STYLE_PATH", "FORBIDDEN_SHORT_DESCRIPTION_PHRASE",
-                "LAYOUT_STATIC_SLIDE_INDICES")) {
+                "VOICE_STYLE_PATH", "LAYOUT_STATIC_SLIDE_INDICES")) {
             String env = System.getenv(key);
             if (env != null && !env.isBlank()) {
                 values.put(key, env);
@@ -327,10 +322,6 @@ public final class AppConfig {
 
     public Path voiceStylePath() {
         return voiceStylePath;
-    }
-
-    public String forbiddenShortDescriptionPhrase() {
-        return forbiddenShortDescriptionPhrase;
     }
 
     public Set<Integer> layoutStaticSlideIndices() {

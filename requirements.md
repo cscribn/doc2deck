@@ -14,7 +14,7 @@ Text: `${variableName}` (docx4j). Images: Pexels stock (POI). JDK 21 toolchain (
 
 ## Config
 
-`.env` (cwd) + system env. Local `presentation-keys.properties` (copy from example; gitignored). Env: `VOICE_STYLE_PATH` (default `prompts/voice-styles/neutral.md`), optional `FORBIDDEN_SHORT_DESCRIPTION_PHRASE`, optional `LAYOUT_STATIC_SLIDE_INDICES` (0-based comma list; empty = fit all slides). No hardcoded secrets. Fail-fast: gemini missing/unexecutable/version fail; unreadable `TEMPLATE_PPTX_PATH`/`SOURCES_DIR` (no `.docx` files)/`PRESENTATION_KEYS_PATH`/`VOICE_STYLE_PATH`; template placeholder without matching `presentation-keys.properties` entry. Stdout progress; logs ERROR only.
+`.env` (cwd) + system env. Local `presentation-keys.properties` (copy from example; gitignored). Env: `VOICE_STYLE_PATH` (default `prompts/voice-styles/neutral.md`), optional `LAYOUT_STATIC_SLIDE_INDICES` (0-based comma list; empty = fit all slides). No hardcoded secrets. Fail-fast: gemini missing/unexecutable/version fail; unreadable `TEMPLATE_PPTX_PATH`/`SOURCES_DIR` (no `.docx` files)/`PRESENTATION_KEYS_PATH`/`VOICE_STYLE_PATH`; template placeholder without matching `presentation-keys.properties` entry. Stdout progress; logs ERROR only.
 
 ## Pipeline (`Application.run`)
 
@@ -42,7 +42,7 @@ Template-driven: every `${key}` in the PPTX must have a `presentation-keys.prope
 
 **Critical** (non-zero exit, no output): JSON/`keys` fail; required template key blank; text over per-key word limit; image query outside 2-5 words (or key `maxWords`).
 
-**Advisory**: empty `sourceRefs`; template gap; unknown/extra Gemini key; optional key absent; `shortProjectDescription` >200 chars or contains `FORBIDDEN_SHORT_DESCRIPTION_PHRASE` when set; configured key not in template; split-run warnings.
+**Advisory**: empty `sourceRefs`; template gap; unknown/extra Gemini key; optional key absent; `shortProjectDescription` >200 chars; configured key not in template; split-run warnings.
 
 ## Resilience & exit
 

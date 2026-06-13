@@ -27,8 +27,7 @@ class PromptBuilderTest {
         PromptBuilder builder = new PromptBuilder(
                 new PromptLoader(Path.of("prompts")),
                 keysConfig,
-                Path.of("prompts/voice-styles/neutral.md"),
-                "");
+                Path.of("prompts/voice-styles/neutral.md"));
         String prompt = builder.build(document, scan);
 
         assertTrue(prompt.contains("EXTERNAL AI PROMPTING (NON-NEGOTIABLE):"));

@@ -20,31 +20,21 @@ public final class PromptBuilder {
     private final PromptLoader promptLoader;
     private final PresentationKeysConfig keysConfig;
     private final String voiceStyleContent;
-    private final String forbiddenPhraseRule;
 
     public PromptBuilder(AppConfig appConfig, PresentationKeysConfig keysConfig) {
-        this(
-                new PromptLoader(),
-                keysConfig,
-                appConfig.voiceStylePath(),
-                appConfig.forbiddenShortDescriptionPhrase());
+        this(new PromptLoader(), keysConfig, appConfig.voiceStylePath());
     }
 
-    public PromptBuilder(
-            PromptLoader promptLoader,
-            PresentationKeysConfig keysConfig,
-            Path voiceStylePath,
-            String forbiddenShortDescriptionPhrase) {
+    public PromptBuilder(PromptLoader promptLoader, PresentationKeysConfig keysConfig, Path voiceStylePath) {
         this.promptLoader = promptLoader;
         this.keysConfig = keysConfig;
         this.voiceStyleContent = loadVoiceStyle(voiceStylePath);
-        this.forbiddenPhraseRule = buildForbiddenPhraseRule(forbiddenShortDescriptionPhrase);
     }
 
     public String build(DocumentContent document, TemplateScanResult scan) {
         Set<String> templateKeys = scan.foundKeys();
         StringBuilder prompt = new StringBuilder();
-        prompt.append(buildCoreRules());
+        prompt.append(promptLoader.load("prompt_core_rules.md"));
         prompt.append("\n\n");
         prompt.append("VOICE AND STYLE (rationale; not part of JSON deliverable):\n");
         prompt.append(voiceStyleContent.trim());
@@ -58,12 +48,6 @@ public final class PromptBuilder {
         prompt.append(buildDocument(document));
         prompt.append(buildOutputContract(scan, templateKeys));
         return prompt.toString();
-    }
-
-    private String buildCoreRules() {
-        return promptLoader.apply(
-                promptLoader.load("prompt_core_rules.md"),
-                Map.of("FORBIDDEN_PHRASE_RULE", forbiddenPhraseRule));
     }
 
     private String buildImageKeysSection(Set<String> templateKeys) {
@@ -130,13 +114,5 @@ public final class PromptBuilder {
                             + ". Check VOICE_STYLE_PATH in .env and re-run ./gradlew run",
                     e);
         }
-    }
-
-    private static String buildForbiddenPhraseRule(String forbiddenPhrase) {
-        if (forbiddenPhrase == null || forbiddenPhrase.isBlank()) {
-            return "";
-        }
-        return "   For shortProjectDescription: never include \""
-                + forbiddenPhrase + "\" (already in the template title).\n";
     }
 }

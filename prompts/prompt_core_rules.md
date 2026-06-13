@@ -7,7 +7,6 @@ EXTERNAL AI PROMPTING (NON-NEGOTIABLE):
 
 CONTENT RULES:
 6. Fill every required presentation key with content grounded in DOCX blocks.
-{{FORBIDDEN_PHRASE_RULE}}
 7. Image keys must be 2-5 word Pexels search phrases, not sentences.
 8. All text values must be plain text without bullet prefixes (no •, -, *, or numbered list markers). The template provides bullets.
 9. All text values must be slide copy: short fragments or phrase clusters, not complete sentences. Drop filler words (the, a, an, is, are, was, were) when meaning stays clear. Use semicolons to join related fragments when a key needs more than one beat.

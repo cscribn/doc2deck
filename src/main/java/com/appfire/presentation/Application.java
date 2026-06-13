@@ -76,8 +76,7 @@ public final class Application {
         PresentationContentResponse response = geminiClient.generate(prompt);
 
         ConsoleProgress.step("Validating generated content...");
-        ResponseValidator.ValidationResult validation = validator.validate(
-                response, scan, keysConfig, config.forbiddenShortDescriptionPhrase());
+        ResponseValidator.ValidationResult validation = validator.validate(response, scan, keysConfig);
         if (!validation.passed()) {
             throw new IllegalStateException(
                     "Gemini response failed validation: " + validation.criticalFailures());

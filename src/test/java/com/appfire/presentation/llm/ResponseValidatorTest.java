@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +31,7 @@ class ResponseValidatorTest {
     void acceptsValidResponse() throws IOException {
         PresentationContentResponse response = loadFixture("valid-response.json");
         ResponseValidator.ValidationResult result = validator.validate(
-                response, fullTemplateScan(), keysConfig, "");
+                response, fullTemplateScan(), keysConfig);
         assertTrue(result.passed());
     }
 
@@ -40,7 +39,7 @@ class ResponseValidatorTest {
     void rejectsMissingRequiredKeys() throws IOException {
         PresentationContentResponse response = loadFixture("invalid-missing-keys.json");
         ResponseValidator.ValidationResult result = validator.validate(
-                response, fullTemplateScan(), keysConfig, "");
+                response, fullTemplateScan(), keysConfig);
         assertFalse(result.passed());
     }
 
@@ -48,7 +47,7 @@ class ResponseValidatorTest {
     void rejectsSingleWordImageQuery() throws IOException {
         PresentationContentResponse response = loadFixture("invalid-image-query.json");
         ResponseValidator.ValidationResult result = validator.validate(
-                response, fullTemplateScan(), keysConfig, "");
+                response, fullTemplateScan(), keysConfig);
         assertFalse(result.passed());
     }
 
@@ -59,22 +58,9 @@ class ResponseValidatorTest {
                 "problem1",
                 "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen");
         ResponseValidator.ValidationResult result = validator.validate(
-                response, fullTemplateScan(), keysConfig, "");
+                response, fullTemplateScan(), keysConfig);
         assertFalse(result.passed());
         assertTrue(result.criticalFailures().stream().anyMatch(msg -> msg.contains("problem1")));
-    }
-
-    @Test
-    void warnsWhenShortDescriptionRepeatsTemplateTitle() throws IOException {
-        PresentationContentResponse response = loadFixture("valid-response.json");
-        response.keys().put(
-                "shortProjectDescription",
-                "Flow API Monorepo: unified API layer for services");
-        ResponseValidator.ValidationResult result = validator.validate(
-                response, fullTemplateScan(), keysConfig, "Flow API Monorepo");
-        assertTrue(result.passed());
-        assertTrue(result.advisories().stream()
-                .anyMatch(msg -> msg.contains("Flow API Monorepo")));
     }
 
     private TemplateScanResult fullTemplateScan() {
