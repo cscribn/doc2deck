@@ -1,11 +1,9 @@
 package com.appfire.presentation.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public record PresentationContentResponse(
         Map<String, String> keys,
         Map<String, List<Integer>> sourceRefs,
@@ -27,9 +25,9 @@ public record PresentationContentResponse(
         return keys.get(key);
     }
 
-    public Map<String, String> textValues() {
+    public Map<String, String> textValues(java.util.Collection<String> textKeyNames) {
         Map<String, String> text = new HashMap<>();
-        for (String key : PresentationKeys.textKeys()) {
+        for (String key : textKeyNames) {
             String value = keys.get(key);
             if (value != null && !value.isBlank()) {
                 text.put(key, value);
@@ -38,9 +36,9 @@ public record PresentationContentResponse(
         return text;
     }
 
-    public Map<String, String> imageQueries() {
+    public Map<String, String> imageQueries(java.util.Collection<String> imageKeyNames) {
         Map<String, String> queries = new HashMap<>();
-        for (String key : PresentationKeys.imageKeys()) {
+        for (String key : imageKeyNames) {
             String value = keys.get(key);
             if (value != null && !value.isBlank()) {
                 queries.put(key, value);

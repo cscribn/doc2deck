@@ -2,7 +2,6 @@ package com.appfire.presentation.template;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.appfire.presentation.model.PresentationKeys;
 import org.junit.jupiter.api.Test;
 
 class ContentLengthEnforcerTest {
@@ -10,7 +9,7 @@ class ContentLengthEnforcerTest {
     @Test
     void leavesShortValuesUnchanged() {
         String value = "Short hook fragment";
-        assertEquals(value, ContentLengthEnforcer.enforce(PresentationKeys.SHORT_PROJECT_DESCRIPTION, value));
+        assertEquals(value, ContentLengthEnforcer.enforce("shortProjectDescription", value, 10));
     }
 
     @Test
@@ -22,9 +21,9 @@ class ContentLengthEnforcerTest {
     }
 
     @Test
-    void enforceUsesKeySpecificLimit() {
+    void enforceUsesProvidedLimit() {
         String value = "word ".repeat(20).trim();
-        String enforced = ContentLengthEnforcer.enforce(PresentationKeys.PROBLEM_1, value);
-        assertEquals(15, KeyContentLimits.countWords(enforced));
+        String enforced = ContentLengthEnforcer.enforce("problem1", value, 15);
+        assertEquals(15, WordCount.count(enforced));
     }
 }

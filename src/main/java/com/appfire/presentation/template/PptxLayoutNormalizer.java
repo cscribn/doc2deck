@@ -1,6 +1,5 @@
 package com.appfire.presentation.template;
 
-import com.appfire.presentation.model.PresentationKeys;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,14 +24,17 @@ import org.slf4j.LoggerFactory;
 public final class PptxLayoutNormalizer {
 
     private static final Logger LOG = LoggerFactory.getLogger(PptxLayoutNormalizer.class);
-    private static final Set<Integer> STATIC_SLIDE_INDICES = Set.of(0, 5, 8);
     private static final double MIN_FONT_PT = 12.0;
     private static final double DEFAULT_FONT_PT = 16.0;
 
     private final boolean enabled;
+    private final Set<Integer> staticSlideIndices;
+    private final List<String> imageKeyNames;
 
-    public PptxLayoutNormalizer(boolean enabled) {
+    public PptxLayoutNormalizer(boolean enabled, Set<Integer> staticSlideIndices, List<String> imageKeyNames) {
         this.enabled = enabled;
+        this.staticSlideIndices = staticSlideIndices == null ? Set.of() : Set.copyOf(staticSlideIndices);
+        this.imageKeyNames = imageKeyNames == null ? List.of() : List.copyOf(imageKeyNames);
     }
 
     public boolean isEnabled() {
@@ -55,7 +57,7 @@ public final class PptxLayoutNormalizer {
                 XMLSlideShow slideShow = new XMLSlideShow(input)) {
             List<XSLFSlide> slides = slideShow.getSlides();
             for (int slideIndex = 0; slideIndex < slides.size(); slideIndex++) {
-                if (STATIC_SLIDE_INDICES.contains(slideIndex)) {
+                if (staticSlideIndices.contains(slideIndex)) {
                     continue;
                 }
                 fitSlideText(slides.get(slideIndex));
@@ -169,7 +171,7 @@ public final class PptxLayoutNormalizer {
         if (text == null || text.isBlank()) {
             return false;
         }
-        for (String key : PresentationKeys.imageKeys()) {
+        for (String key : imageKeyNames) {
             if (text.contains("${" + key + "}")) {
                 return true;
             }

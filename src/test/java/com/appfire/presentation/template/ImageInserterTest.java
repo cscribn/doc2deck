@@ -5,10 +5,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.appfire.presentation.config.PresentationKeysConfigLoader;
 import com.appfire.presentation.images.PresentationImageOptimizer;
 import com.appfire.presentation.model.ImageKeyPlan;
 import com.appfire.presentation.model.ImageKeyPlan.ResolvedImageKey;
-import com.appfire.presentation.model.PresentationKeys;
 import com.appfire.presentation.model.TemplateScanResult;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -34,7 +34,8 @@ class ImageInserterTest {
         Path input = tempDir.resolve("input.pptx");
         Path output = tempDir.resolve("output.pptx");
         createTemplateWithImagePlaceholder(input);
-        TemplateScanResult scan = new TemplateScanner().scan(input);
+        var keysConfig = PresentationKeysConfigLoader.load(Path.of("presentation-keys.example.properties"));
+        TemplateScanResult scan = new TemplateScanner().scan(input, keysConfig);
 
         PresentationImageOptimizer optimizer = mock(PresentationImageOptimizer.class);
         EmbeddedFontCleaner fontCleaner = mock(EmbeddedFontCleaner.class);
@@ -42,9 +43,9 @@ class ImageInserterTest {
         when(fontCleaner.isEnabled()).thenReturn(true);
 
         ImageKeyPlan plan = new ImageKeyPlan(Map.of(
-                PresentationKeys.PROBLEM_SOLVING_IMG,
+                "problemSolvingImg",
                 new ResolvedImageKey(
-                        PresentationKeys.PROBLEM_SOLVING_IMG,
+                        "problemSolvingImg",
                         minimalJpeg(),
                         PictureData.PictureType.JPEG)));
 
@@ -59,7 +60,7 @@ class ImageInserterTest {
             XSLFSlideLayout layout = slideShow.getSlideMasters().get(0).getLayout(SlideLayout.TITLE_AND_CONTENT);
             XSLFSlide slide = slideShow.createSlide(layout);
             if (slide.getPlaceholder(Placeholder.BODY) instanceof XSLFTextShape body) {
-                body.setText("${" + PresentationKeys.PROBLEM_SOLVING_IMG + "}");
+                body.setText("${problemSolvingImg}");
             }
             try (OutputStream out = Files.newOutputStream(path)) {
                 slideShow.write(out);

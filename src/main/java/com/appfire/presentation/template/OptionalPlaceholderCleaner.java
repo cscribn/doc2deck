@@ -1,7 +1,8 @@
 package com.appfire.presentation.template;
 
+import com.appfire.presentation.config.PresentationKeysConfig;
 import com.appfire.presentation.model.PresentationContentResponse;
-import com.appfire.presentation.model.PresentationKeys;
+import com.appfire.presentation.model.KeyPopulation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -24,8 +25,9 @@ public final class OptionalPlaceholderCleaner {
 
     private static final Logger LOG = LoggerFactory.getLogger(OptionalPlaceholderCleaner.class);
 
-    public void clean(Path pptxPath, PresentationContentResponse response) throws IOException {
-        List<String> emptyOptionalKeys = findEmptyOptionalKeys(response);
+    public void clean(Path pptxPath, PresentationContentResponse response, PresentationKeysConfig keysConfig)
+            throws IOException {
+        List<String> emptyOptionalKeys = findEmptyOptionalKeys(response, keysConfig);
         if (emptyOptionalKeys.isEmpty()) {
             return;
         }
@@ -43,10 +45,12 @@ public final class OptionalPlaceholderCleaner {
         LOG.info("Removed placeholder bullets for optional key(s): {}", emptyOptionalKeys);
     }
 
-    private List<String> findEmptyOptionalKeys(PresentationContentResponse response) {
+    private List<String> findEmptyOptionalKeys(
+            PresentationContentResponse response,
+            PresentationKeysConfig keysConfig) {
         List<String> empty = new ArrayList<>();
-        for (String key : PresentationKeys.optionalTextKeys()) {
-            if (!PresentationKeys.isPopulated(key, response.keys().get(key))) {
+        for (String key : keysConfig.optionalTextKeyNames()) {
+            if (!KeyPopulation.isPopulated(key, response.keys().get(key))) {
                 empty.add(key);
             }
         }

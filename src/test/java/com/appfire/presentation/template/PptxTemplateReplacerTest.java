@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.appfire.presentation.TestFixtureGenerator;
 import com.appfire.presentation.TestFixtures;
+import com.appfire.presentation.config.PresentationKeysConfigLoader;
 import com.appfire.presentation.model.PresentationContentResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
@@ -38,7 +39,8 @@ class PptxTemplateReplacerTest {
         }
 
         Path output = tempDir.resolve("replaced.pptx");
-        new PptxTemplateReplacer().replace(TestFixtures.resolveTemplatePptx(), response, output);
+        var keysConfig = PresentationKeysConfigLoader.load(Path.of("presentation-keys.example.properties"));
+        new PptxTemplateReplacer().replace(TestFixtures.resolveTemplatePptx(), response, keysConfig, output);
 
         try (InputStream in = Files.newInputStream(output);
                 XMLSlideShow slideShow = new XMLSlideShow(in)) {

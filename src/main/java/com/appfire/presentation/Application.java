@@ -1,6 +1,7 @@
 package com.appfire.presentation;
 
 import com.appfire.presentation.config.AppConfig;
+import com.appfire.presentation.config.PresentationKeysConfig;
 import com.appfire.presentation.config.PresentationKeysConfigLoader;
 import com.appfire.presentation.extraction.DocxExtractor;
 import com.appfire.presentation.images.ImageAcquisitionService;
@@ -42,12 +43,12 @@ public final class Application {
     public static void run() throws Exception {
         ConsoleProgress.step("Loading configuration...");
         AppConfig config = AppConfig.load();
+        PresentationKeysConfig keysConfig = PresentationKeysConfigLoader.load(config.presentationKeysPath());
 
         ObjectMapper objectMapper = new ObjectMapper();
         DocxExtractor docxExtractor = new DocxExtractor();
         TemplateScanner templateScanner = new TemplateScanner();
-        PromptBuilder promptBuilder = new PromptBuilder(
-                PresentationKeysConfigLoader.load(config.presentationKeysPath()));
+        PromptBuilder promptBuilder = new PromptBuilder(config, keysConfig);
         GeminiClient geminiClient = new GeminiClient(config, objectMapper);
         ResponseValidator validator = new ResponseValidator();
         PptxTemplateReplacer templateReplacer = new PptxTemplateReplacer();
@@ -57,21 +58,26 @@ public final class Application {
         PresentationImageOptimizer imageOptimizer = new PresentationImageOptimizer(
                 config.imageOptimizationEnabled(), config.imageJpegQuality());
         EmbeddedFontCleaner fontCleaner = new EmbeddedFontCleaner(config.fontCleanupEnabled());
-        PptxLayoutNormalizer layoutNormalizer = new PptxLayoutNormalizer(config.layoutNormalizeEnabled());
+        PptxLayoutNormalizer layoutNormalizer = new PptxLayoutNormalizer(
+                config.layoutNormalizeEnabled(),
+                config.layoutStaticSlideIndices(),
+                keysConfig.imageKeyNames());
         ImageInserter imageInserter = new ImageInserter(imageOptimizer, fontCleaner);
 
         ConsoleProgress.step("Extracting content from source documents...");
         DocumentContent document = docxExtractor.extractAll(config.sourceDocxPaths());
 
         ConsoleProgress.step("Scanning template for placeholders...");
-        TemplateScanResult scan = templateScanner.scan(config.templatePptxPath());
+        TemplateScanResult scan = templateScanner.scan(config.templatePptxPath(), keysConfig);
+        keysConfig.validateAgainstTemplate(scan).forEach(msg -> LOG.warn("Presentation keys advisory: {}", msg));
 
         ConsoleProgress.step("Generating presentation content with Gemini...");
         String prompt = promptBuilder.build(document, scan);
         PresentationContentResponse response = geminiClient.generate(prompt);
 
         ConsoleProgress.step("Validating generated content...");
-        ResponseValidator.ValidationResult validation = validator.validate(response, scan);
+        ResponseValidator.ValidationResult validation = validator.validate(
+                response, scan, keysConfig, config.forbiddenShortDescriptionPhrase());
         if (!validation.passed()) {
             throw new IllegalStateException(
                     "Gemini response failed validation: " + validation.criticalFailures());
@@ -85,10 +91,10 @@ public final class Application {
                 ConsoleProgress.step("Hardening layout for cross-viewer compatibility...");
                 layoutNormalizer.hardenStructure(workingPptx);
             }
-            templateReplacer.replace(workingPptx, response, workingPptx);
+            templateReplacer.replace(workingPptx, response, keysConfig, workingPptx);
 
             ConsoleProgress.step("Cleaning empty optional sections...");
-            optionalCleaner.clean(workingPptx, response);
+            optionalCleaner.clean(workingPptx, response, keysConfig);
 
             if (config.layoutNormalizeEnabled()) {
                 ConsoleProgress.step("Fitting text to slide layout...");
@@ -100,7 +106,7 @@ public final class Application {
             } else {
                 ConsoleProgress.step("Acquiring slide images...");
             }
-            var imagePlan = imageService.acquire(response.imageQueries());
+            var imagePlan = imageService.acquire(response.imageQueries(keysConfig.imageKeyNames()));
 
             ConsoleProgress.step("Inserting images, optimizing, writing presentation, and cleaning fonts...");
             imageInserter.insert(workingPptx, imagePlan, scan, config.outputPptxPath());

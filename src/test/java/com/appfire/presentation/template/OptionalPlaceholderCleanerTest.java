@@ -2,8 +2,9 @@ package com.appfire.presentation.template;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import com.appfire.presentation.config.PresentationKeysConfig;
+import com.appfire.presentation.config.PresentationKeysConfigLoader;
 import com.appfire.presentation.model.PresentationContentResponse;
-import com.appfire.presentation.model.PresentationKeys;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -27,14 +28,16 @@ class OptionalPlaceholderCleanerTest {
     void removesOptionalPlaceholderBulletWhenKeyAbsent() throws Exception {
         Path template = tempDir.resolve("template.pptx");
         createTemplateWithOptionalBullet(template);
+        PresentationKeysConfig keysConfig = PresentationKeysConfigLoader.load(
+                Path.of("presentation-keys.example.properties"));
 
         PresentationContentResponse response = new PresentationContentResponse(
-                Map.of(PresentationKeys.SPRINTS_TO_DELIVER, "4 two-week sprints"),
+                Map.of("sprintsToDeliver", "4 two-week sprints"),
                 Map.of(),
                 java.util.List.of());
 
-        new PptxTemplateReplacer().replace(template, response, template);
-        new OptionalPlaceholderCleaner().clean(template, response);
+        new PptxTemplateReplacer().replace(template, response, keysConfig, template);
+        new OptionalPlaceholderCleaner().clean(template, response, keysConfig);
 
         try (InputStream in = Files.newInputStream(template);
                 XMLSlideShow slideShow = new XMLSlideShow(in)) {
@@ -42,7 +45,7 @@ class OptionalPlaceholderCleanerTest {
                     .filter(XSLFTextShape.class::isInstance)
                     .map(s -> ((XSLFTextShape) s).getText())
                     .reduce("", String::concat);
-            assertFalse(text.contains("${" + PresentationKeys.NON_DEV_COSTS + "}"));
+            assertFalse(text.contains("${nonDevCosts}"));
             assertFalse(text.toLowerCase().contains("nondevcosts"));
         }
     }
@@ -52,8 +55,7 @@ class OptionalPlaceholderCleanerTest {
             XSLFSlideLayout layout = slideShow.getSlideMasters().get(0).getLayout(SlideLayout.TITLE_AND_CONTENT);
             XSLFSlide slide = slideShow.createSlide(layout);
             if (slide.getPlaceholder(Placeholder.BODY) instanceof XSLFTextShape body) {
-                body.setText("${" + PresentationKeys.SPRINTS_TO_DELIVER + "}\n"
-                        + "${" + PresentationKeys.NON_DEV_COSTS + "}");
+                body.setText("${sprintsToDeliver}\n${nonDevCosts}");
             }
             try (OutputStream out = Files.newOutputStream(path)) {
                 slideShow.write(out);

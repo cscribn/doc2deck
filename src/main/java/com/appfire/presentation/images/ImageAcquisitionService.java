@@ -2,7 +2,6 @@ package com.appfire.presentation.images;
 
 import com.appfire.presentation.model.ImageKeyPlan;
 import com.appfire.presentation.model.ImageKeyPlan.ResolvedImageKey;
-import com.appfire.presentation.model.PresentationKeys;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
@@ -50,8 +49,9 @@ public final class ImageAcquisitionService {
 
         LOG.info("Acquiring images for {} key(s) via Pexels", imageQueries.size());
         int index = 0;
-        for (String key : PresentationKeys.imageKeys()) {
-            String query = imageQueries.get(key);
+        for (Map.Entry<String, String> entry : imageQueries.entrySet()) {
+            String key = entry.getKey();
+            String query = entry.getValue();
             if (query == null || query.isBlank()) {
                 LOG.warn("Image key '{}' has no query. Skipping.", key);
                 continue;

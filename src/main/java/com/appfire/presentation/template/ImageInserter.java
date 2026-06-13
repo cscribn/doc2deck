@@ -3,7 +3,6 @@ package com.appfire.presentation.template;
 import com.appfire.presentation.images.PresentationImageOptimizer;
 import com.appfire.presentation.model.ImageKeyPlan;
 import com.appfire.presentation.model.ImageKeyPlan.ResolvedImageKey;
-import com.appfire.presentation.model.PresentationKeys;
 import com.appfire.presentation.model.TemplateScanResult;
 import com.appfire.presentation.model.TemplateScanResult.ImageKeyAnchor;
 import java.awt.geom.Rectangle2D;
@@ -44,8 +43,9 @@ public final class ImageInserter {
         try (InputStream input = Files.newInputStream(pptxPath);
                 XMLSlideShow slideShow = new XMLSlideShow(input)) {
 
-            for (String key : PresentationKeys.imageKeys()) {
-                ResolvedImageKey image = imagePlan.images().get(key);
+            for (Map.Entry<String, ResolvedImageKey> entry : imagePlan.images().entrySet()) {
+                String key = entry.getKey();
+                ResolvedImageKey image = entry.getValue();
                 if (image == null) {
                     LOG.warn("No image acquired for key '{}'. Resolution: set PEXELS_API_KEY or check query.",
                             key);

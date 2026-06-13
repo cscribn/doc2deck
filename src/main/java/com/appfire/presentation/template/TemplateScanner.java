@@ -1,6 +1,6 @@
 package com.appfire.presentation.template;
 
-import com.appfire.presentation.model.PresentationKeys;
+import com.appfire.presentation.config.PresentationKeysConfig;
 import com.appfire.presentation.model.TemplateScanResult;
 import com.appfire.presentation.model.TemplateScanResult.ImageKeyAnchor;
 import java.awt.geom.Rectangle2D;
@@ -31,7 +31,7 @@ public final class TemplateScanner {
     private static final Logger LOG = LoggerFactory.getLogger(TemplateScanner.class);
     private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([a-zA-Z][a-zA-Z0-9_]*)\\}");
 
-    public TemplateScanResult scan(Path templatePath) throws IOException {
+    public TemplateScanResult scan(Path templatePath, PresentationKeysConfig keysConfig) throws IOException {
         try (InputStream input = Files.newInputStream(templatePath);
                 XMLSlideShow slideShow = new XMLSlideShow(input)) {
             Set<String> foundKeys = new HashSet<>();
@@ -40,7 +40,13 @@ public final class TemplateScanner {
 
             List<XSLFSlide> slides = slideShow.getSlides();
             for (int slideIndex = 0; slideIndex < slides.size(); slideIndex++) {
-                scanSlide(slides.get(slideIndex), slideIndex, foundKeys, splitRunWarnings, imageAnchors);
+                scanSlide(
+                        slides.get(slideIndex),
+                        slideIndex,
+                        foundKeys,
+                        splitRunWarnings,
+                        imageAnchors,
+                        keysConfig.imageKeyNames());
             }
 
             splitRunWarnings.forEach(msg -> LOG.warn("Template scan: {}", msg));
@@ -54,12 +60,13 @@ public final class TemplateScanner {
             int slideIndex,
             Set<String> foundKeys,
             List<String> splitRunWarnings,
-            List<ImageKeyAnchor> imageAnchors) {
+            List<ImageKeyAnchor> imageAnchors,
+            List<String> imageKeys) {
         for (XSLFShape shape : slide.getShapes()) {
             if (shape instanceof XSLFTextShape textShape) {
-                scanTextShape(textShape, slideIndex, foundKeys, splitRunWarnings, imageAnchors);
+                scanTextShape(textShape, slideIndex, foundKeys, splitRunWarnings, imageAnchors, imageKeys);
             } else if (shape instanceof XSLFTable table) {
-                scanTable(table, slideIndex, foundKeys, splitRunWarnings, imageAnchors);
+                scanTable(table, slideIndex, foundKeys, splitRunWarnings, imageAnchors, imageKeys);
             }
         }
     }
@@ -69,10 +76,11 @@ public final class TemplateScanner {
             int slideIndex,
             Set<String> foundKeys,
             List<String> splitRunWarnings,
-            List<ImageKeyAnchor> imageAnchors) {
+            List<ImageKeyAnchor> imageAnchors,
+            List<String> imageKeys) {
         for (XSLFTableRow row : table.getRows()) {
             for (XSLFTableCell cell : row.getCells()) {
-                scanTextShape(cell, slideIndex, foundKeys, splitRunWarnings, imageAnchors);
+                scanTextShape(cell, slideIndex, foundKeys, splitRunWarnings, imageAnchors, imageKeys);
             }
         }
     }
@@ -82,7 +90,8 @@ public final class TemplateScanner {
             int slideIndex,
             Set<String> foundKeys,
             List<String> splitRunWarnings,
-            List<ImageKeyAnchor> imageAnchors) {
+            List<ImageKeyAnchor> imageAnchors,
+            List<String> imageKeys) {
         String fullText = textShape.getText();
         collectKeys(fullText, foundKeys);
 
@@ -90,7 +99,7 @@ public final class TemplateScanner {
             checkSplitRuns(textShape, slideIndex, splitRunWarnings);
         }
 
-        for (String key : PresentationKeys.imageKeys()) {
+        for (String key : imageKeys) {
             if (fullText != null && fullText.contains("${" + key + "}")) {
                 Rectangle2D anchor = textShape.getAnchor();
                 imageAnchors.add(new ImageKeyAnchor(key, slideIndex, textShape.getShapeId(), anchor));

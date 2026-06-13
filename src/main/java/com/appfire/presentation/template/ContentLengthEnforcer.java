@@ -10,12 +10,11 @@ public final class ContentLengthEnforcer {
     private ContentLengthEnforcer() {
     }
 
-    public static String enforce(String key, String value) {
+    public static String enforce(String key, String value, int maxWords) {
         if (value == null || value.isBlank()) {
             return value;
         }
-        int maxWords = KeyContentLimits.maxWordsFor(key);
-        int wordCount = KeyContentLimits.countWords(value);
+        int wordCount = WordCount.count(value);
         if (wordCount <= maxWords) {
             return value;
         }

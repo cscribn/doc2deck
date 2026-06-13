@@ -1,6 +1,5 @@
 package com.appfire.presentation;
 
-import com.appfire.presentation.model.PresentationKeys;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -44,7 +43,7 @@ public final class TestFixtureGenerator {
             }
             XSLFSlide imageSlide = slideShow.createSlide(layout);
             if (imageSlide.getPlaceholder(Placeholder.BODY) instanceof XSLFTextShape imageBody) {
-                imageBody.setText("${" + PresentationKeys.PROBLEM_SOLVING_IMG + "}");
+                imageBody.setText("${problemSolvingImg}");
             }
             try (OutputStream out = Files.newOutputStream(path)) {
                 slideShow.write(out);

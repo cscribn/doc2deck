@@ -3,6 +3,7 @@ package com.appfire.presentation.llm;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.appfire.presentation.config.PresentationKeysConfig;
 import com.appfire.presentation.config.PresentationKeysConfigLoader;
 import com.appfire.presentation.model.BlockType;
 import com.appfire.presentation.model.ContentBlock;
@@ -21,10 +22,13 @@ class PromptBuilderTest {
                 List.of(new ContentBlock(0, BlockType.HEADING, 1, "Overview")),
                 "Overview");
         TemplateScanResult scan = new TemplateScanResult(Set.of("problem1", "problem2"), List.of(), List.of());
-
+        PresentationKeysConfig keysConfig = PresentationKeysConfigLoader.load(
+                Path.of("presentation-keys.example.properties"));
         PromptBuilder builder = new PromptBuilder(
                 new PromptLoader(Path.of("prompts")),
-                PresentationKeysConfigLoader.load(Path.of("presentation-keys.example.properties")));
+                keysConfig,
+                Path.of("prompts/voice-styles/neutral.md"),
+                "");
         String prompt = builder.build(document, scan);
 
         assertTrue(prompt.contains("EXTERNAL AI PROMPTING (NON-NEGOTIABLE):"));
@@ -36,7 +40,7 @@ class PromptBuilderTest {
         assertTrue(prompt.contains("IMAGE KEYS"));
         assertTrue(prompt.contains("DOCX CONTENT BLOCKS:"));
         assertTrue(prompt.contains("Template keys found: problem1, problem2"));
-        assertTrue(prompt.contains("\"problemSolvingImg\": \"string\""));
+        assertTrue(prompt.contains("\"problem1\": \"string\""));
         assertFalse(prompt.contains("LAYOUT CATALOG"));
         assertFalse(prompt.contains("CONTENT VARIATION"));
     }

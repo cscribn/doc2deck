@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
 import org.apache.poi.sl.usermodel.TextShape.TextAutofit;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
@@ -30,7 +32,7 @@ class PptxLayoutNormalizerTest {
 
         Path workingCopy = tempDir.resolve("working.pptx");
         Files.copy(template, workingCopy);
-        new PptxLayoutNormalizer(true).hardenStructure(workingCopy);
+        new PptxLayoutNormalizer(true, Set.of(), List.of()).hardenStructure(workingCopy);
 
         try (InputStream input = Files.newInputStream(workingCopy);
                 XMLSlideShow slideShow = new XMLSlideShow(input)) {
@@ -46,7 +48,7 @@ class PptxLayoutNormalizerTest {
         Path workingCopy = tempDir.resolve("fit.pptx");
         createLongTextFixture(workingCopy);
 
-        PptxLayoutNormalizer normalizer = new PptxLayoutNormalizer(true);
+        PptxLayoutNormalizer normalizer = new PptxLayoutNormalizer(true, Set.of(), List.of());
         normalizer.hardenStructure(workingCopy);
         normalizer.fitText(workingCopy);
 

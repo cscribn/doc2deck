@@ -1,9 +1,11 @@
 package com.appfire.presentation.llm;
 
+import com.appfire.presentation.config.PresentationKeysConfig;
+import com.appfire.presentation.model.KeyDefinition;
+import com.appfire.presentation.model.KeyPopulation;
 import com.appfire.presentation.model.PresentationContentResponse;
-import com.appfire.presentation.model.PresentationKeys;
 import com.appfire.presentation.model.TemplateScanResult;
-import com.appfire.presentation.template.KeyContentLimits;
+import com.appfire.presentation.template.WordCount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -14,11 +16,12 @@ public final class ResponseValidator {
 
     private static final Logger LOG = LoggerFactory.getLogger(ResponseValidator.class);
     private static final int MAX_SHORT_DESCRIPTION_CHARS = 200;
-    private static final String FORBIDDEN_SHORT_DESCRIPTION_PHRASE = "flow api monorepo";
-    private static final int MIN_IMAGE_QUERY_WORDS = 2;
-    private static final int MAX_IMAGE_QUERY_WORDS = 5;
 
-    public ValidationResult validate(PresentationContentResponse response, TemplateScanResult scan) {
+    public ValidationResult validate(
+            PresentationContentResponse response,
+            TemplateScanResult scan,
+            PresentationKeysConfig keysConfig,
+            String forbiddenShortDescriptionPhrase) {
         List<String> critical = new ArrayList<>();
         List<String> advisory = new ArrayList<>();
 
@@ -27,18 +30,21 @@ public final class ResponseValidator {
             return new ValidationResult(false, critical, advisory);
         }
 
-        for (String key : PresentationKeys.requiredKeys()) {
+        Set<String> foundKeys = scan.foundKeys();
+        List<String> requiredKeys = keysConfig.requiredKeysForTemplate(foundKeys);
+
+        for (String key : requiredKeys) {
             String value = response.keys().get(key);
-            if (value == null || value.isBlank()) {
+            if (!KeyPopulation.isPopulated(key, value)) {
                 critical.add("Required key '" + key + "' is missing or blank");
             }
         }
 
-        validateShortDescription(response, advisory);
-        validateTextKeyWordLimits(response, critical);
-        validateImageQueries(response, critical);
-        validateSourceRefs(response, advisory);
-        validateTemplateAlignment(response, scan, advisory);
+        validateShortDescription(response, keysConfig, forbiddenShortDescriptionPhrase, advisory);
+        validateTextKeyWordLimits(response, keysConfig, foundKeys, critical);
+        validateImageQueries(response, keysConfig, foundKeys, critical);
+        validateSourceRefs(response, requiredKeys, advisory);
+        validateTemplateAlignment(response, scan, keysConfig, advisory);
 
         boolean passed = critical.isEmpty();
         if (!passed) {
@@ -50,48 +56,79 @@ public final class ResponseValidator {
         return new ValidationResult(passed, critical, advisory);
     }
 
-    private void validateShortDescription(PresentationContentResponse response, List<String> advisory) {
-        String value = response.keys().get(PresentationKeys.SHORT_PROJECT_DESCRIPTION);
+    private void validateShortDescription(
+            PresentationContentResponse response,
+            PresentationKeysConfig keysConfig,
+            String forbiddenShortDescriptionPhrase,
+            List<String> advisory) {
+        String keyName = "shortProjectDescription";
+        if (!keysConfig.configuredKeyNames().contains(keyName)) {
+            return;
+        }
+        String value = response.keys().get(keyName);
         if (value == null || value.isBlank()) {
             return;
         }
         if (value.length() > MAX_SHORT_DESCRIPTION_CHARS) {
             advisory.add("shortProjectDescription exceeds " + MAX_SHORT_DESCRIPTION_CHARS + " characters");
         }
-        if (value.toLowerCase().contains(FORBIDDEN_SHORT_DESCRIPTION_PHRASE)) {
-            advisory.add("shortProjectDescription must not contain \"Flow API Monorepo\" (already in template title)");
+        String forbiddenPhrase = forbiddenShortDescriptionPhrase;
+        if (forbiddenPhrase != null
+                && !forbiddenPhrase.isBlank()
+                && value.toLowerCase().contains(forbiddenPhrase.toLowerCase())) {
+            advisory.add("shortProjectDescription must not contain \"" + forbiddenPhrase + "\" (already in template title)");
         }
     }
 
-    private void validateTextKeyWordLimits(PresentationContentResponse response, List<String> critical) {
-        for (String key : PresentationKeys.textKeys()) {
-            String value = response.keys().get(key);
-            if (!PresentationKeys.isPopulated(key, value)) {
+    private void validateTextKeyWordLimits(
+            PresentationContentResponse response,
+            PresentationKeysConfig keysConfig,
+            Set<String> foundKeys,
+            List<String> critical) {
+        for (KeyDefinition definition : keysConfig.keys().values()) {
+            if (!definition.isText() || !foundKeys.contains(definition.name())) {
                 continue;
             }
-            int wordCount = KeyContentLimits.countWords(value);
-            int maxWords = KeyContentLimits.maxWordsFor(key);
+            String value = response.keys().get(definition.name());
+            if (!KeyPopulation.isPopulated(definition.name(), value)) {
+                continue;
+            }
+            int wordCount = WordCount.count(value);
+            int maxWords = definition.maxWords();
             if (wordCount > maxWords) {
-                critical.add("Key '" + key + "' exceeds " + maxWords + "-word limit, got " + wordCount);
+                critical.add("Key '" + definition.name() + "' exceeds " + maxWords + "-word limit, got " + wordCount);
             }
         }
     }
 
-    private void validateImageQueries(PresentationContentResponse response, List<String> critical) {
-        for (String key : PresentationKeys.imageKeys()) {
-            String query = response.keys().get(key);
+    private void validateImageQueries(
+            PresentationContentResponse response,
+            PresentationKeysConfig keysConfig,
+            Set<String> foundKeys,
+            List<String> critical) {
+        for (KeyDefinition definition : keysConfig.keys().values()) {
+            if (!definition.isImage() || !foundKeys.contains(definition.name())) {
+                continue;
+            }
+            String query = response.keys().get(definition.name());
             if (query == null || query.isBlank()) {
                 continue;
             }
             int wordCount = query.trim().split("\\s+").length;
-            if (wordCount < MIN_IMAGE_QUERY_WORDS || wordCount > MAX_IMAGE_QUERY_WORDS) {
-                critical.add("Image key '" + key + "' query must be 2-5 words, got " + wordCount);
+            int minWords = PresentationKeysConfig.MIN_IMAGE_QUERY_WORDS;
+            int maxWords = keysConfig.maxImageQueryWords(definition.name());
+            if (wordCount < minWords || wordCount > maxWords) {
+                critical.add("Image key '" + definition.name() + "' query must be " + minWords + "-" + maxWords
+                        + " words, got " + wordCount);
             }
         }
     }
 
-    private void validateSourceRefs(PresentationContentResponse response, List<String> advisory) {
-        for (String key : PresentationKeys.requiredKeys()) {
+    private void validateSourceRefs(
+            PresentationContentResponse response,
+            List<String> requiredKeys,
+            List<String> advisory) {
+        for (String key : requiredKeys) {
             List<Integer> refs = response.sourceRefs().get(key);
             if (refs == null || refs.isEmpty()) {
                 advisory.add("Key '" + key + "' has empty sourceRefs");
@@ -102,28 +139,36 @@ public final class ResponseValidator {
     private void validateTemplateAlignment(
             PresentationContentResponse response,
             TemplateScanResult scan,
+            PresentationKeysConfig keysConfig,
             List<String> advisory) {
         Set<String> found = scan.foundKeys();
+        Set<String> configured = keysConfig.configuredKeyNames();
+
         for (String key : found) {
-            if (!PresentationKeys.isPopulated(key, response.keys().get(key))) {
-                if (PresentationKeys.optionalTextKeys().contains(key)) {
+            if (!KeyPopulation.isPopulated(key, response.keys().get(key))) {
+                KeyDefinition definition = keysConfig.definitionFor(key);
+                if (definition != null && definition.optional()) {
                     continue;
                 }
                 advisory.add("Template placeholder '${" + key + "}' has no Gemini value");
             }
         }
+
         for (String key : response.keys().keySet()) {
-            if (!PresentationKeys.allKeyNames().contains(key)) {
+            if (!configured.contains(key)) {
                 advisory.add("Gemini returned unknown key '" + key + "'");
-            } else if (!found.contains(key) && !PresentationKeys.isImageKey(key)) {
+            } else if (!found.contains(key) && keysConfig.definitionFor(key).isText()) {
                 advisory.add("Gemini key '" + key + "' not found in template scan");
             }
         }
-        if (!PresentationKeys.isPopulated(
-                PresentationKeys.NON_DEV_COSTS,
-                response.keys().get(PresentationKeys.NON_DEV_COSTS))) {
-            advisory.add("nonDevCosts absent (optional key)");
+
+        for (String optionalKey : keysConfig.optionalTextKeyNames()) {
+            if (found.contains(optionalKey)
+                    && !KeyPopulation.isPopulated(optionalKey, response.keys().get(optionalKey))) {
+                advisory.add(optionalKey + " absent (optional key)");
+            }
         }
+
         scan.splitRunWarnings().forEach(advisory::add);
     }
 

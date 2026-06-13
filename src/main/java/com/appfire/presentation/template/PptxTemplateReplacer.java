@@ -1,7 +1,8 @@
 package com.appfire.presentation.template;
 
+import com.appfire.presentation.config.PresentationKeysConfig;
 import com.appfire.presentation.model.PresentationContentResponse;
-import com.appfire.presentation.model.PresentationKeys;
+import com.appfire.presentation.model.KeyPopulation;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,7 +24,11 @@ public final class PptxTemplateReplacer {
 
     private static final Logger LOG = LoggerFactory.getLogger(PptxTemplateReplacer.class);
 
-    public void replace(Path templatePath, PresentationContentResponse response, Path outputPath)
+    public void replace(
+            Path templatePath,
+            PresentationContentResponse response,
+            PresentationKeysConfig keysConfig,
+            Path outputPath)
             throws IOException {
         Path writePath = outputPath;
         Path tempOutput = null;
@@ -34,7 +39,7 @@ public final class PptxTemplateReplacer {
         try {
             PresentationMLPackage pptPackage = PresentationMLPackage.load(new File(templatePath.toString()));
             MainPresentationPart mainPart = pptPackage.getMainPresentationPart();
-            Map<String, String> replacements = buildTextReplacements(response);
+            Map<String, String> replacements = buildTextReplacements(response, keysConfig);
 
             List<SlidePart> slideParts = mainPart.getSlideParts();
             for (SlidePart slidePart : slideParts) {
@@ -61,21 +66,21 @@ public final class PptxTemplateReplacer {
         return left.toAbsolutePath().normalize().equals(right.toAbsolutePath().normalize());
     }
 
-    private Map<String, String> buildTextReplacements(PresentationContentResponse response) {
+    private Map<String, String> buildTextReplacements(
+            PresentationContentResponse response,
+            PresentationKeysConfig keysConfig) {
         Map<String, String> replacements = new HashMap<>();
-        for (String key : PresentationKeys.textKeys()) {
-            if (PresentationKeys.isImageKey(key)) {
-                continue;
-            }
+        for (String key : keysConfig.textKeyNames()) {
             String value = response.keys().get(key);
-            if (!PresentationKeys.isPopulated(key, value)) {
+            if (!KeyPopulation.isPopulated(key, value)) {
                 continue;
             }
             String sanitized = TextSanitizer.sanitize(value);
             if (sanitized.isBlank()) {
                 continue;
             }
-            replacements.put(key, ContentLengthEnforcer.enforce(key, sanitized));
+            int maxWords = keysConfig.definitionFor(key).maxWords();
+            replacements.put(key, ContentLengthEnforcer.enforce(key, sanitized, maxWords));
         }
         return replacements;
     }

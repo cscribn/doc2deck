@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -24,6 +26,9 @@ public final class AppConfig {
     private final boolean fontCleanupEnabled;
     private final boolean layoutNormalizeEnabled;
     private final Path presentationKeysPath;
+    private final Path voiceStylePath;
+    private final String forbiddenShortDescriptionPhrase;
+    private final Set<Integer> layoutStaticSlideIndices;
 
     private AppConfig(
             String geminiCliPath,
@@ -38,7 +43,10 @@ public final class AppConfig {
             boolean imageOptimizationEnabled,
             boolean fontCleanupEnabled,
             boolean layoutNormalizeEnabled,
-            Path presentationKeysPath) {
+            Path presentationKeysPath,
+            Path voiceStylePath,
+            String forbiddenShortDescriptionPhrase,
+            Set<Integer> layoutStaticSlideIndices) {
         this.geminiCliPath = geminiCliPath;
         this.templatePptxPath = templatePptxPath;
         this.sourceDocxPaths = List.copyOf(sourceDocxPaths);
@@ -52,6 +60,9 @@ public final class AppConfig {
         this.fontCleanupEnabled = fontCleanupEnabled;
         this.layoutNormalizeEnabled = layoutNormalizeEnabled;
         this.presentationKeysPath = presentationKeysPath;
+        this.voiceStylePath = voiceStylePath;
+        this.forbiddenShortDescriptionPhrase = forbiddenShortDescriptionPhrase;
+        this.layoutStaticSlideIndices = Set.copyOf(layoutStaticSlideIndices);
     }
 
     public static AppConfig load() {
@@ -71,6 +82,10 @@ public final class AppConfig {
         boolean fontCleanupEnabled = parseBoolean(values.getOrDefault("FONT_CLEANUP_ENABLED", "true"), true);
         boolean layoutNormalizeEnabled = parseBoolean(values.getOrDefault("LAYOUT_NORMALIZE_ENABLED", "true"), true);
         Path presentationKeys = Path.of(values.getOrDefault("PRESENTATION_KEYS_PATH", "presentation-keys.properties"));
+        Path voiceStyle = Path.of(values.getOrDefault("VOICE_STYLE_PATH", "prompts/voice-styles/neutral.md"));
+        String forbiddenPhrase = values.getOrDefault("FORBIDDEN_SHORT_DESCRIPTION_PHRASE", "").trim();
+        Set<Integer> staticSlideIndices = parseStaticSlideIndices(
+                values.getOrDefault("LAYOUT_STATIC_SLIDE_INDICES", ""));
 
         validateGeminiCli(cliPath);
         validateInputFile(pptx, "TEMPLATE_PPTX_PATH");
@@ -80,10 +95,12 @@ public final class AppConfig {
                 "PRESENTATION_KEYS_PATH",
                 "Copy presentation-keys.example.properties to presentation-keys.properties");
 
+        validateInputFile(voiceStyle, "VOICE_STYLE_PATH");
+
         return new AppConfig(
                 cliPath, pptx, sourceDocxPaths, output, model, retries, pexelsKey, imageCache,
                 clampJpegQuality(jpegQuality), optimizationEnabled, fontCleanupEnabled, layoutNormalizeEnabled,
-                presentationKeys);
+                presentationKeys, voiceStyle, forbiddenPhrase, staticSlideIndices);
     }
 
     private static Map<String, String> loadEnvFile(Path envPath) {
@@ -123,7 +140,9 @@ public final class AppConfig {
                 "OUTPUT_PPTX_PATH", "GEMINI_MODEL", "GEMINI_MAX_RETRIES",
                 "PEXELS_API_KEY", "IMAGE_CACHE_DIR",
                 "IMAGE_JPEG_QUALITY", "IMAGE_OPTIMIZATION_ENABLED", "FONT_CLEANUP_ENABLED",
-                "LAYOUT_NORMALIZE_ENABLED", "PRESENTATION_KEYS_PATH")) {
+                "LAYOUT_NORMALIZE_ENABLED", "PRESENTATION_KEYS_PATH",
+                "VOICE_STYLE_PATH", "FORBIDDEN_SHORT_DESCRIPTION_PHRASE",
+                "LAYOUT_STATIC_SLIDE_INDICES")) {
             String env = System.getenv(key);
             if (env != null && !env.isBlank()) {
                 values.put(key, env);
@@ -233,6 +252,27 @@ public final class AppConfig {
         return Math.max(0.0f, Math.min(1.0f, quality));
     }
 
+    private static Set<Integer> parseStaticSlideIndices(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Set.of();
+        }
+        Set<Integer> indices = new HashSet<>();
+        for (String part : raw.split(",")) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            try {
+                indices.add(Integer.parseInt(trimmed));
+            } catch (NumberFormatException e) {
+                throw new IllegalStateException(
+                        "Invalid LAYOUT_STATIC_SLIDE_INDICES value: " + raw
+                                + ". Use comma-separated 0-based slide indices and re-run ./gradlew run");
+            }
+        }
+        return indices;
+    }
+
     public String geminiCliPath() {
         return geminiCliPath;
     }
@@ -283,5 +323,17 @@ public final class AppConfig {
 
     public Path presentationKeysPath() {
         return presentationKeysPath;
+    }
+
+    public Path voiceStylePath() {
+        return voiceStylePath;
+    }
+
+    public String forbiddenShortDescriptionPhrase() {
+        return forbiddenShortDescriptionPhrase;
+    }
+
+    public Set<Integer> layoutStaticSlideIndices() {
+        return layoutStaticSlideIndices;
     }
 }

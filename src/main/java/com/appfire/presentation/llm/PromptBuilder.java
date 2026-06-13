@@ -1,10 +1,16 @@
 package com.appfire.presentation.llm;
 
+import com.appfire.presentation.config.AppConfig;
 import com.appfire.presentation.config.PresentationKeysConfig;
 import com.appfire.presentation.model.ContentBlock;
 import com.appfire.presentation.model.DocumentContent;
 import com.appfire.presentation.model.TemplateScanResult;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class PromptBuilder {
@@ -13,29 +19,61 @@ public final class PromptBuilder {
 
     private final PromptLoader promptLoader;
     private final PresentationKeysConfig keysConfig;
+    private final String voiceStyleContent;
+    private final String forbiddenPhraseRule;
 
-    public PromptBuilder(PresentationKeysConfig keysConfig) {
-        this(new PromptLoader(), keysConfig);
+    public PromptBuilder(AppConfig appConfig, PresentationKeysConfig keysConfig) {
+        this(
+                new PromptLoader(),
+                keysConfig,
+                appConfig.voiceStylePath(),
+                appConfig.forbiddenShortDescriptionPhrase());
     }
 
-    public PromptBuilder(PromptLoader promptLoader, PresentationKeysConfig keysConfig) {
+    public PromptBuilder(
+            PromptLoader promptLoader,
+            PresentationKeysConfig keysConfig,
+            Path voiceStylePath,
+            String forbiddenShortDescriptionPhrase) {
         this.promptLoader = promptLoader;
         this.keysConfig = keysConfig;
+        this.voiceStyleContent = loadVoiceStyle(voiceStylePath);
+        this.forbiddenPhraseRule = buildForbiddenPhraseRule(forbiddenShortDescriptionPhrase);
     }
 
     public String build(DocumentContent document, TemplateScanResult scan) {
+        Set<String> templateKeys = scan.foundKeys();
         StringBuilder prompt = new StringBuilder();
-        prompt.append(promptLoader.load("prompt_core_rules.md"));
+        prompt.append(buildCoreRules());
         prompt.append("\n\n");
-        prompt.append(promptLoader.load("prompt_voice_style.md"));
+        prompt.append("VOICE AND STYLE (rationale; not part of JSON deliverable):\n");
+        prompt.append(voiceStyleContent.trim());
         prompt.append("\n\n");
-        prompt.append(keysConfig.formatForPrompt());
+        prompt.append(promptLoader.load("prompt_slide_copy_rules.md"));
         prompt.append("\n\n");
-        prompt.append(promptLoader.load("prompt_image_keys.md"));
+        prompt.append(keysConfig.formatForPrompt(templateKeys));
+        prompt.append("\n\n");
+        prompt.append(buildImageKeysSection(templateKeys));
         prompt.append("\n\n");
         prompt.append(buildDocument(document));
-        prompt.append(buildOutputContract(scan));
+        prompt.append(buildOutputContract(scan, templateKeys));
         return prompt.toString();
+    }
+
+    private String buildCoreRules() {
+        return promptLoader.apply(
+                promptLoader.load("prompt_core_rules.md"),
+                Map.of("FORBIDDEN_PHRASE_RULE", forbiddenPhraseRule));
+    }
+
+    private String buildImageKeysSection(Set<String> templateKeys) {
+        String definitions = keysConfig.formatImageKeysForPrompt(templateKeys);
+        if (definitions.isBlank()) {
+            definitions = "(no image keys in template)";
+        }
+        return promptLoader.apply(
+                promptLoader.load("prompt_image_keys.md"),
+                Map.of("IMAGE_KEY_DEFINITIONS", definitions));
     }
 
     private String buildDocument(DocumentContent document) {
@@ -71,12 +109,34 @@ public final class PromptBuilder {
         return "\nDOCX SUMMARY:\n" + summary + "\n\n";
     }
 
-    private String buildOutputContract(TemplateScanResult scan) {
-        String templateKeys = scan.foundKeys().stream()
+    private String buildOutputContract(TemplateScanResult scan, Set<String> templateKeys) {
+        String templateKeysList = scan.foundKeys().stream()
                 .sorted()
                 .collect(Collectors.joining(", "));
         return promptLoader.apply(
                 promptLoader.load("prompt_output_contract.md"),
-                Map.of("TEMPLATE_KEYS", templateKeys.isBlank() ? "(none detected)" : templateKeys));
+                Map.of(
+                        "TEMPLATE_KEYS", templateKeysList.isBlank() ? "(none detected)" : templateKeysList,
+                        "KEYS_JSON_SCHEMA", keysConfig.buildKeysJsonSchema(templateKeys),
+                        "IMAGE_KEY_STEP", keysConfig.buildImageKeyInstructionStep(templateKeys)));
+    }
+
+    private static String loadVoiceStyle(Path voiceStylePath) {
+        try {
+            return Files.readString(voiceStylePath, StandardCharsets.UTF_8).trim();
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Failed to read voice style file: " + voiceStylePath.toAbsolutePath()
+                            + ". Check VOICE_STYLE_PATH in .env and re-run ./gradlew run",
+                    e);
+        }
+    }
+
+    private static String buildForbiddenPhraseRule(String forbiddenPhrase) {
+        if (forbiddenPhrase == null || forbiddenPhrase.isBlank()) {
+            return "";
+        }
+        return "   For shortProjectDescription: never include \""
+                + forbiddenPhrase + "\" (already in the template title).\n";
     }
 }
