@@ -1,3 +1,7 @@
+---
+alwaysApply: true
+---
+
 # Agent Instructions
 
 Scope: applies to all coding agents unless overridden by a more specific section.
