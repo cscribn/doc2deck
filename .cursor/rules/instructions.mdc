@@ -4,14 +4,14 @@ alwaysApply: true
 
 # Agent Instructions
 
-Scope: applies to all coding agents unless overridden by a more specific section.
+Scope: applies to all agents unless overridden by specifics.
 
 ## Applications
 
 - One run command; use env vars for runtime modes.
 - Load config from `.env`; keep `.env.example` synced; never hardcode secrets.
-- No premature abstraction unless requested; prefer inline single-use logic.
-- Prefer explicit types over generic open-ended configs.
+- No premature abstraction unless requested.
+- Use explicit types over generic open-ended configs.
 - Proactively maintain `.gitignore` for artifacts, secrets, local env.
 
 ## Bash Shell Scripting
@@ -25,42 +25,34 @@ Scope: applies to all coding agents unless overridden by a more specific section
 
 ## Core Principles
 
-- If ambiguous, state your interpretation first.
-- Prioritize correctness. No fabrication or speculation; state uncertainty.
-- Do not use em/en dashes.
-- Edit only code related to the request unless explicitly asked.
+- Prioritize correctness; don't fabricate/speculate; state uncertainty/interpretation.
+- Don't use em/en dashes.
+- Edit only related code unless explicitly asked.
 - Authoritative spec: `requirements.md`. If request conflicts, ask which wins.
 - Supplemental detail in `requirements/*`: skip unless needed for task.
-- Operator guide: `README.md` (build/run/env); do not duplicate in requirements.
+- Operator guide: `README.md` (build/run/env); don't copy in requirements.
 
 ## GitHub CLI
 
-- Use `gh` CLI only (no Octokit/direct HTTP clients).
+- Use `gh` CLI (no Octokit/direct HTTP clients).
 - REST listing/commits: `gh api --paginate` (no `--jq`).
-- Use GraphQL only for PRs/reviews.
+- Use GraphQL for PRs/reviews.
 - Respect rate limits with wait-until-reset retry.
 
 ## Java & Spring Boot
 
 - Use `./gradlew` for build/run.
-- Use toolchains and standard src layout.
+- Use toolchains, src/ layout.
 - Keep controllers thin; services handle business/data flow.
-- Use JPA migrations and parameterized DB access.
+- Use JPA migrations; parameterized DB access.
 - Env vars for config (no CLI args).
-
-## JFreeChart
-
-- Use >= 1.5.x.
-- Override `StandardChartTheme`; white backgrounds, light gridlines, no shadows/gradients/outlines.
-- Set `java.awt.headless=true`.
-- PNG via `ChartUtils.saveChartAsPNG`; SVG via `SVGGraphics2D`.
 
 ## Jira API
 
 - Use `/rest/api/3/search/jql` for JQL.
 - Use pagination (`nextPageToken`, `isLast`, `maxResults`).
 - Handle 401/403/rate-limit explicitly.
-- Prefer bulk endpoints.
+- Use bulk endpoints.
 
 ## Local LLM
 
@@ -71,47 +63,26 @@ Scope: applies to all coding agents unless overridden by a more specific section
 - Keep prompts < 500 tokens, synthetic examples only.
 - Retry transient failures with bounded backoff.
 
-## PowerShell Scripting
-
-- `Set-StrictMode -Version Latest`
-- `$ErrorActionPreference = 'Stop'`
-- Use `Verb-Noun` functions with `[CmdletBinding()]`.
-- Use typed `param()` with validation.
-- Use `$PSScriptRoot`.
-- Prefer `Write-Output` for data.
-
 ## Python & Flask
 
 - Use `uv` for env/deps/run.
-- Use `isort` for imports.
-- Prefer strict typing (mypy).
-- Use `abc` for interfaces/contracts.
-- Use `@property`, no getters/setters.
-- Use env vars for config (no CLI args).
-- Flask: app factory + blueprints; DB logic outside routes; SQL parameterization only.
+- Use toolchains; src/ layout.
+- isort, mypy, abc, @property.
+- Env vars for config.
+- Flask: app factory + blueprints; DB outside routes; SQL params only.
 
 ## Quality
 
-- Keep functions small and cohesive (about 40 lines max, low complexity).
-- Remove dead code and unused imports.
-- Extract repeated logic when it appears 3+ times.
-- Add/update tests for meaningful behavior changes.
-- Keep README and `requirements.md` in sync with behavior/config changes.
+- Keep functions small, cohesive (<= 40 lines, low complexity).
+- Remove dead code, unused imports.
+- Extract repeated logic when appearing 3+ times.
+- Add/update tests for behavior changes.
+- Keep README, `requirements.md` in sync with behavior/config changes.
 - Use actionable error messages.
 
-## Response Style
-Respond terse like smart caveman. All technical substance stay. Only fluff die.
+## Responses
 
-Rules:
-- Drop: articles (a/an/the), filler (just/really/basically), pleasantries, hedging
-- Fragments OK. Short synonyms. Technical terms exact. Code unchanged.
+- Bullets over paragraphs.
+- Drop: articles, filler, pleasantries, hedging.
+- Fragments OK; short synonyms; technical terms exact; code unchanged.
 - Pattern: [thing] [action] [reason]. [next step].
-- Not: "Sure! I'd be happy to help you with that."
-- Yes: "Bug in auth middleware. Fix:"
-
-Switch level: /caveman lite|full|ultra|wenyan
-Stop: "stop caveman" or "normal mode"
-
-Auto-Clarity: drop caveman for security warnings, irreversible actions, user confused. Resume after.
-
-Boundaries: code/commits/PRs written normal.
