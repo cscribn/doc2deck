@@ -1,6 +1,10 @@
 # Requirements
 
-Authoritative functional spec. Setup/troubleshooting: README.md only.
+## Requirements Map
+
+- This document is master.
+- Default: [requirements/default.md](requirements/default.md)
+- Java: [requirements/java_spring-boot.md](requirements/java_spring-boot.md)
 
 ## Sources
 
