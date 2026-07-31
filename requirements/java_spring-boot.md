@@ -7,4 +7,3 @@
 - Env vars for config, not CLI args.
 - Local variable type inference: `var`; `record` for immutable data; `switch` pattern matching.
 - Raw Java preferred; Spring for dependency injection, scheduling.
-- Java owns orchestration, scoring, and raw evidence hydration; Antigravity CLI (`agy`) owns digest prose generation.
