@@ -56,7 +56,7 @@ public final class EmbeddedFontCleaner {
             applyOpcChanges(pkg, plan);
         } catch (Exception e) {
             LOG.warn(
-                    "Embedded font OPC cleanup failed. Resolution: verify template.pptx and re-run ./gradlew run",
+                    "Embedded font OPC cleanup failed. Resolution: verify template.pptx and re-run ./gradlew bootRun",
                     e);
         }
         if (plan != null) {
@@ -119,7 +119,7 @@ public final class EmbeddedFontCleaner {
         } catch (IOException e) {
             LOG.warn(
                     "Failed to update package metadata after embedded font cleanup. "
-                            + "Resolution: set FONT_CLEANUP_ENABLED=false and re-run ./gradlew run",
+                            + "Resolution: set FONT_CLEANUP_ENABLED=false and re-run ./gradlew bootRun",
                     e);
         }
     }

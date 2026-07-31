@@ -20,7 +20,9 @@ import org.apache.poi.xslf.usermodel.XSLFTextParagraph;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
+@Component
 public final class OptionalPlaceholderCleaner {
 
     private static final Logger LOG = LoggerFactory.getLogger(OptionalPlaceholderCleaner.class);

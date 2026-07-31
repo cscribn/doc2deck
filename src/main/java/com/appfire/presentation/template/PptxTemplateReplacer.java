@@ -18,8 +18,10 @@ import org.docx4j.openpackaging.parts.PresentationML.SlidePart;
 import org.pptx4j.Pptx4jException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import jakarta.xml.bind.JAXBException;
 
+@Component
 public final class PptxTemplateReplacer {
 
     private static final Logger LOG = LoggerFactory.getLogger(PptxTemplateReplacer.class);
@@ -54,7 +56,7 @@ public final class PptxTemplateReplacer {
             }
             throw new IOException(
                     "Failed to replace template placeholders. Ensure each ${key} is in a single text run "
-                            + "and re-run ./gradlew run",
+                            + "and re-run ./gradlew bootRun",
                     e);
         }
         if (tempOutput != null) {

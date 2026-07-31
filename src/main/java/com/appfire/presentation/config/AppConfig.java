@@ -111,7 +111,7 @@ public final class AppConfig {
             }
         } catch (IOException e) {
             throw new IllegalStateException(
-                    "Failed to read .env file. Check file permissions and re-run ./gradlew run", e);
+                    "Failed to read .env file. Check file permissions and re-run ./gradlew bootRun", e);
         }
         return values;
     }
@@ -155,17 +155,17 @@ public final class AppConfig {
                 process.destroyForcibly();
                 throw new IllegalStateException(
                         "Gemini CLI timed out: " + cliPath
-                                + ". Verify the gemini command is installed and re-run ./gradlew run");
+                                + ". Verify the gemini command is installed and re-run ./gradlew bootRun");
             }
             if (process.exitValue() != 0) {
                 throw new IllegalStateException(
                         "Gemini CLI not working: " + cliPath
-                                + ". Install with npm install -g @google/gemini-cli, authenticate, and re-run ./gradlew run");
+                                + ". Install with npm install -g @google/gemini-cli, authenticate, and re-run ./gradlew bootRun");
             }
         } catch (IOException e) {
             throw new IllegalStateException(
                     "Gemini CLI not found: " + cliPath
-                            + ". Install with npm install -g @google/gemini-cli and ensure it is on PATH, then re-run ./gradlew run",
+                            + ". Install with npm install -g @google/gemini-cli and ensure it is on PATH, then re-run ./gradlew bootRun",
                     e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -177,7 +177,7 @@ public final class AppConfig {
         if (!Files.isDirectory(sourcesDir)) {
             throw new IllegalStateException(
                     "Sources directory not found: " + sourcesDir
-                            + ". Create it, place one or more .docx files inside, and re-run ./gradlew run");
+                            + ". Create it, place one or more .docx files inside, and re-run ./gradlew bootRun");
         }
         List<Path> docxPaths;
         try (Stream<Path> stream = Files.list(sourcesDir)) {
@@ -189,25 +189,25 @@ public final class AppConfig {
         } catch (IOException e) {
             throw new IllegalStateException(
                     "Failed to read sources directory: " + sourcesDir
-                            + ". Check directory permissions and re-run ./gradlew run",
+                            + ". Check directory permissions and re-run ./gradlew bootRun",
                     e);
         }
         if (docxPaths.isEmpty()) {
             throw new IllegalStateException(
                     "No .docx files found in " + sourcesDir
-                            + ". Place one or more .docx files in sources/ and re-run ./gradlew run");
+                            + ". Place one or more .docx files in sources/ and re-run ./gradlew bootRun");
         }
         for (Path path : docxPaths) {
             validateInputFile(
                     path,
                     "SOURCES_DIR",
-                    "Ensure every .docx file in " + sourcesDir + " is readable and re-run ./gradlew run");
+                    "Ensure every .docx file in " + sourcesDir + " is readable and re-run ./gradlew bootRun");
         }
         return docxPaths;
     }
 
     private static void validateInputFile(Path path, String envName) {
-        validateInputFile(path, envName, "Set " + envName + " in .env to a valid path and re-run ./gradlew run");
+        validateInputFile(path, envName, "Set " + envName + " in .env to a valid path and re-run ./gradlew bootRun");
     }
 
     private static void validateInputFile(Path path, String envName, String resolution) {
@@ -262,7 +262,7 @@ public final class AppConfig {
             } catch (NumberFormatException e) {
                 throw new IllegalStateException(
                         "Invalid LAYOUT_SKIP_TEXT_FIT_SLIDE_INDICES value: " + raw
-                                + ". Use comma-separated 0-based slide indices and re-run ./gradlew run");
+                                + ". Use comma-separated 0-based slide indices and re-run ./gradlew bootRun");
             }
         }
         return indices;

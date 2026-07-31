@@ -6,7 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.stereotype.Component;
 
+@Component
 public final class PromptLoader {
 
     private final Path promptsDir;
@@ -37,14 +39,14 @@ public final class PromptLoader {
         if (!Files.isRegularFile(path)) {
             throw new IllegalStateException(
                     "Prompt file not found: " + path.toAbsolutePath()
-                            + ". Ensure the prompts directory exists at the project root and re-run ./gradlew run");
+                            + ". Ensure the prompts directory exists at the project root and re-run ./gradlew bootRun");
         }
         try {
             return Files.readString(path, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new IllegalStateException(
                     "Failed to read prompt file: " + path.toAbsolutePath()
-                            + ". Check file permissions and re-run ./gradlew run",
+                            + ". Check file permissions and re-run ./gradlew bootRun",
                     e);
         }
     }

@@ -24,7 +24,9 @@ import org.apache.poi.xslf.usermodel.XSLFTableRow;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
+@Component
 public final class ImageInserter {
 
     private static final Logger LOG = LoggerFactory.getLogger(ImageInserter.class);

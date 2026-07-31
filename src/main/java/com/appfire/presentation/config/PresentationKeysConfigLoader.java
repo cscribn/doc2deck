@@ -24,7 +24,7 @@ public final class PresentationKeysConfigLoader {
         if (!Files.exists(path) || !Files.isReadable(path)) {
             throw new IllegalStateException(
                     "Presentation keys config not found or unreadable: " + path.toAbsolutePath()
-                            + ". Copy presentation-keys.example.properties to presentation-keys.properties and re-run ./gradlew run");
+                            + ". Copy presentation-keys.example.properties to presentation-keys.properties and re-run ./gradlew bootRun");
         }
 
         Properties properties = new Properties();
@@ -33,7 +33,7 @@ public final class PresentationKeysConfigLoader {
         } catch (IOException e) {
             throw new IllegalStateException(
                     "Failed to read presentation keys config: " + path.toAbsolutePath()
-                            + ". Check file permissions and re-run ./gradlew run",
+                            + ". Check file permissions and re-run ./gradlew bootRun",
                     e);
         }
 
@@ -46,7 +46,7 @@ public final class PresentationKeysConfigLoader {
             throw new IllegalStateException(
                     "Presentation keys config missing required property: "
                             + PresentationKeysConfig.HEADER_KEY
-                            + ". Set it in presentation-keys.properties and re-run ./gradlew run");
+                            + ". Set it in presentation-keys.properties and re-run ./gradlew bootRun");
         }
 
         Map<String, String> instructions = new LinkedHashMap<>();
@@ -66,7 +66,7 @@ public final class PresentationKeysConfigLoader {
             if (instruction.isBlank()) {
                 throw new IllegalStateException(
                         "Presentation key instruction is blank: " + propertyName
-                                + ". Provide instruction text in presentation-keys.properties and re-run ./gradlew run");
+                                + ". Provide instruction text in presentation-keys.properties and re-run ./gradlew bootRun");
             }
             instructions.put(propertyName, instruction);
         }
@@ -74,7 +74,7 @@ public final class PresentationKeysConfigLoader {
         if (instructions.isEmpty()) {
             throw new IllegalStateException(
                     "Presentation keys config has no key definitions. "
-                            + "Add key instructions to presentation-keys.properties and re-run ./gradlew run");
+                            + "Add key instructions to presentation-keys.properties and re-run ./gradlew bootRun");
         }
 
         Map<String, KeyDefinition> keys = new LinkedHashMap<>();
@@ -104,7 +104,7 @@ public final class PresentationKeysConfigLoader {
         if (!METADATA_SUFFIXES.contains(suffix)) {
             throw new IllegalStateException(
                     "Unknown presentation key metadata property: " + propertyName
-                            + ". Use maxWords, optional, or type suffixes and re-run ./gradlew run");
+                            + ". Use maxWords, optional, or type suffixes and re-run ./gradlew bootRun");
         }
         String value = rawValue == null ? "" : rawValue.trim();
         switch (suffix) {
@@ -125,7 +125,7 @@ public final class PresentationKeysConfigLoader {
         } catch (NumberFormatException e) {
             throw new IllegalStateException(
                     "Invalid " + keyName + "." + suffix + " value: " + value
-                            + ". Set a positive integer in presentation-keys.properties and re-run ./gradlew run");
+                            + ". Set a positive integer in presentation-keys.properties and re-run ./gradlew bootRun");
         }
     }
 
@@ -138,7 +138,7 @@ public final class PresentationKeysConfigLoader {
         }
         throw new IllegalStateException(
                 "Invalid " + keyName + ".optional value: " + value
-                        + ". Use true or false in presentation-keys.properties and re-run ./gradlew run");
+                        + ". Use true or false in presentation-keys.properties and re-run ./gradlew bootRun");
     }
 
     private static KeyType parseKeyType(String keyName, String value) {
@@ -150,6 +150,6 @@ public final class PresentationKeysConfigLoader {
         }
         throw new IllegalStateException(
                 "Invalid " + keyName + ".type value: " + value
-                        + ". Use text or image in presentation-keys.properties and re-run ./gradlew run");
+                        + ". Use text or image in presentation-keys.properties and re-run ./gradlew bootRun");
     }
 }

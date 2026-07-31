@@ -12,7 +12,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
+@Component
 public final class GeminiClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(GeminiClient.class);
@@ -40,7 +42,7 @@ public final class GeminiClient {
                 if (attempts > config.geminiMaxRetries() || !isRetryable(e)) {
                     throw new IOException(
                             "Gemini CLI failed after " + attempts + " attempts. "
-                                    + "Verify the gemini CLI is installed and authenticated, then re-run ./gradlew run",
+                                    + "Verify the gemini CLI is installed and authenticated, then re-run ./gradlew bootRun",
                             e);
                 }
                 LOG.warn("Gemini CLI call failed (attempt {}). Retrying in {}ms. Resolution: check CLI auth and rate limits.",

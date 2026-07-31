@@ -17,7 +17,9 @@ import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
+@Component
 public final class DocxExtractor {
 
     private static final Logger LOG = LoggerFactory.getLogger(DocxExtractor.class);

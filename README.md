@@ -8,7 +8,7 @@ Operator guide. Behavioral spec: [requirements.md](requirements.md).
 2. Copy [presentation-keys.example.properties](presentation-keys.example.properties) to `presentation-keys.properties`.
 3. Install and authenticate Gemini CLI: `npm install -g @google/gemini-cli`, then run `gemini` once to sign in.
 4. Place `template.pptx` at project root and one or more `.docx` files in `sources/` (or override paths in `.env`).
-5. Run from project root: `./gradlew run` → `final_presentation.pptx` (step progress on stdout; errors only in logs).
+5. Run from project root: `./gradlew bootRun` → `final_presentation.pptx` (step progress on stdout; errors only in logs; full log in `presentation-generator.log`).
 
 **Prerequisites:** JDK 21 (Gradle toolchain auto-provision; `./gradlew -q javaToolchains`), Gemini CLI, `curl` on PATH. Optional: `PEXELS_API_KEY` for slide images (skipped when unset).
 
@@ -16,7 +16,7 @@ Operator guide. Behavioral spec: [requirements.md](requirements.md).
 
 ## Commands
 
-- `./gradlew run` — generate presentation (no CLI args)
+- `./gradlew bootRun` — generate presentation (no CLI args; `./gradlew run` aliases to `bootRun`)
 - `./gradlew build` — unit tests always; full pipeline integration test only when `gemini` is available
 
 ## Environment

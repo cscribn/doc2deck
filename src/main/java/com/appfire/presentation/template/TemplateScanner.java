@@ -25,7 +25,9 @@ import org.apache.poi.xslf.usermodel.XSLFTextRun;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
+@Component
 public final class TemplateScanner {
 
     private static final Logger LOG = LoggerFactory.getLogger(TemplateScanner.class);

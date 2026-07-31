@@ -62,7 +62,7 @@ public final class PresentationImageOptimizer {
             }
         } catch (IOException e) {
             LOG.warn(
-                    "Skipping picture {} compression. Resolution: verify image format and re-run ./gradlew run",
+                    "Skipping picture {} compression. Resolution: verify image format and re-run ./gradlew bootRun",
                     index,
                     e);
         }

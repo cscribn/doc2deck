@@ -89,7 +89,7 @@ public final class PresentationKeysConfig {
             if (!keys.containsKey(templateKey)) {
                 throw new IllegalStateException(
                         "Template placeholder '${" + templateKey + "}' has no entry in presentation-keys config. "
-                                + "Add " + templateKey + " to presentation-keys.properties and re-run ./gradlew run");
+                                + "Add " + templateKey + " to presentation-keys.properties and re-run ./gradlew bootRun");
             }
         }
 

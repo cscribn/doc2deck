@@ -14,13 +14,13 @@
 
 Java CLI fills any `template.pptx` from `.docx` files in `sources/` via Gemini CLI → `final_presentation.pptx`.
 
-Text: `${variableName}` (docx4j). Images: Pexels stock (POI). JDK 21 toolchain (`settings.gradle.kts`; `./gradlew -q javaToolchains`). Build/run/test: `./gradlew run` (no args). External `gemini` CLI auth (not Java SDK).
+Text: `${variableName}` (docx4j). Images: Pexels stock (POI). JDK 21 toolchain (`settings.gradle.kts`; `./gradlew -q javaToolchains`). Build/run/test: `./gradlew bootRun` (no args). External `gemini` CLI auth (not Java SDK). Logs: `presentation-generator.log` (overwritten each run); stdout progress and ERROR-level logs only.
 
 ## Config
 
 `.env` (cwd) + system env. Local `presentation-keys.properties` (copy from example; gitignored). Env: `VOICE_STYLE_PATH` (default `prompts/voice-styles/neutral.md`), optional `LAYOUT_SKIP_TEXT_FIT_SLIDE_INDICES` (0-based comma list; empty = fit all slides). No hardcoded secrets. Fail-fast: gemini missing/unexecutable/version fail; unreadable `TEMPLATE_PPTX_PATH`/`SOURCES_DIR` (no `.docx` files)/`PRESENTATION_KEYS_PATH`/`VOICE_STYLE_PATH`; template placeholder without matching `presentation-keys.properties` entry. Stdout progress; logs ERROR only.
 
-## Pipeline (`Application.run`)
+## Pipeline (`PipelineOrchestrator.runPipeline`)
 
 1. `DocxExtractor` → `DocumentContent` (blocks h1-6/para/lists/pipe-tables + flat summary)
 2. `TemplateScanner` → `${key}` + image anchors from configured image keys; warn split-run placeholders
@@ -54,4 +54,4 @@ Template-driven: every `${key}` in the PPTX must have a `presentation-keys.prope
 
 ## Tests
 
-Unit: extractor, scanner, replacer, inserter, validator, word count, enforcer, normalizer, prompt builder, keys config loader, image service, config. Integration: gated on gemini CLI. Accept: `./gradlew build`; `./gradlew run` produces filled PPTX with images when configured; validator rejects bad keys/queries/limits.
+Unit: extractor, scanner, replacer, inserter, validator, word count, enforcer, normalizer, prompt builder, keys config loader, image service, config. Integration: gated on gemini CLI. Accept: `./gradlew build`; `./gradlew bootRun` produces filled PPTX with images when configured; validator rejects bad keys/queries/limits.

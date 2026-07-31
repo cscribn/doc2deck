@@ -12,7 +12,9 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
 
+@Component
 public final class PromptBuilder {
 
     private static final int MAX_SUMMARY_CHARS = 100_000;
@@ -21,8 +23,8 @@ public final class PromptBuilder {
     private final PresentationKeysConfig keysConfig;
     private final String voiceStyleContent;
 
-    public PromptBuilder(AppConfig appConfig, PresentationKeysConfig keysConfig) {
-        this(new PromptLoader(), keysConfig, appConfig.voiceStylePath());
+    public PromptBuilder(PromptLoader promptLoader, AppConfig appConfig, PresentationKeysConfig keysConfig) {
+        this(promptLoader, keysConfig, appConfig.voiceStylePath());
     }
 
     public PromptBuilder(PromptLoader promptLoader, PresentationKeysConfig keysConfig, Path voiceStylePath) {
@@ -111,7 +113,7 @@ public final class PromptBuilder {
         } catch (IOException e) {
             throw new IllegalStateException(
                     "Failed to read voice style file: " + voiceStylePath.toAbsolutePath()
-                            + ". Check VOICE_STYLE_PATH in .env and re-run ./gradlew run",
+                            + ". Check VOICE_STYLE_PATH in .env and re-run ./gradlew bootRun",
                     e);
         }
     }
