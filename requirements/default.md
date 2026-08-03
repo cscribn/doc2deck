@@ -20,3 +20,4 @@
 
 - Explicit types used over generic open-ended configs.
 - Tests kept up to date with behavior; error messages are actionable.
+- For each verified regression, a lightweight test is created/updated.
