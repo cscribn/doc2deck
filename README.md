@@ -12,7 +12,7 @@ Operator guide. Behavioral spec: [requirements.md](requirements.md).
 
 **Prerequisites:** JDK 21 (Gradle toolchain auto-provision; `./gradlew -q javaToolchains`), Gemini CLI, `curl` on PATH. Optional: `PEXELS_API_KEY` for slide images (skipped when unset).
 
-**Template:** `${variableName}` placeholders in single uninterrupted text runs. Key instructions and per-key limits: local `presentation-keys.properties` (see [presentation-keys.example.properties](presentation-keys.example.properties)). Voice/tone: `VOICE_STYLE_PATH` in `.env` (see `prompts/voice-styles/`).
+**Template:** `${variableName}` placeholders in single uninterrupted text runs. Key instructions and per-key limits: local `presentation-keys.properties` (see [presentation-keys.example.properties](presentation-keys.example.properties)). Voice/tone: `VOICE_STYLE_PATH` in `.env` (see `prompts/voice-styles/`). Generated decks target live presentation (short on-slide reinforcement), not infodeck pre-reads; see [requirements.md](requirements.md). Generated decks target live presentation (short on-slide reinforcement), not infodeck pre-reads; use source DOCX for full detail.
 
 ## Commands
 

@@ -12,7 +12,7 @@
 
 ## System
 
-Java CLI fills any `template.pptx` from `.docx` files in `sources/` via Gemini CLI → `final_presentation.pptx`.
+Java CLI fills any `template.pptx` from `.docx` files in `sources/` via Gemini CLI → `final_presentation.pptx`. Output is intended for **live presentation** (complementary on-screen reinforcement per Fowler slide principles), not as an infodeck or pre-read; detailed narrative stays in source `.docx`.
 
 Text: `${variableName}` (docx4j). Images: Pexels stock (POI). JDK 21 toolchain (`settings.gradle.kts`; `./gradlew -q javaToolchains`). Build/run/test: `./gradlew bootRun` (no args). External `gemini` CLI auth (not Java SDK). Logs: `presentation-generator.log` (overwritten each run); stdout progress and ERROR-level logs only.
 
@@ -25,7 +25,7 @@ Text: `${variableName}` (docx4j). Images: Pexels stock (POI). JDK 21 toolchain (
 1. `DocxExtractor` → `DocumentContent` (blocks h1-6/para/lists/pipe-tables + flat summary)
 2. `TemplateScanner` → `${key}` + image anchors from configured image keys; warn split-run placeholders
 3. `PresentationKeysConfig.validateAgainstTemplate` → fail-fast on missing config; advisory on extra config keys
-4. `PromptBuilder` → cached `prompts/prompt_*.md` + voice style file + `presentation-keys.properties` + DOCX + dynamic JSON schema from template keys; truncate summary ~100k
+4. `PromptBuilder` → cached `prompts/prompt_*.md` (includes `prompt_slide_principles.md`) + voice style file + `presentation-keys.properties` + DOCX + dynamic JSON schema from template keys; truncate summary ~100k
 5. `GeminiClient` → stdin prompt, JSON out
 6. `ResponseValidator` → critical fail stops write (below)
 7. Copy template → temp (never mutate template)
@@ -40,7 +40,7 @@ Template: `${key}` in single run; disable spell-check-as-you-type.
 
 ## Keys
 
-Template-driven: every `${key}` in the PPTX must have a `presentation-keys.properties` entry. Per key: instruction, optional `maxWords`, `optional=true`, `type=image`. Defaults: `type=text`, `optional=false`, `maxWords=15` (text) or `5` (image). Image queries 2-5 words (max from `maxWords`). Prompt: External AI Prompting rules (source mapping, numbered steps, JSON-only output, citations in sourceRefs/warnings, stateless). Canonical prompts: `prompts/prompt_{core_rules,slide_copy_rules,image_keys,output_contract,docx_content}.md`; voice from `VOICE_STYLE_PATH`.
+Template-driven: every `${key}` in the PPTX must have a `presentation-keys.properties` entry. Per key: instruction, optional `maxWords`, `optional=true`, `type=image`. Defaults: `type=text`, `optional=false`, `maxWords=15` (text) or `5` (image). Image queries 2-5 words (max from `maxWords`). Prompt: External AI Prompting rules (source mapping, numbered steps, JSON-only output, citations in sourceRefs/warnings, stateless). Canonical prompts: `prompts/prompt_{core_rules,slide_copy_rules,slide_principles,image_keys,output_contract,docx_content}.md`; voice from `VOICE_STYLE_PATH`.
 
 ## Validation
 

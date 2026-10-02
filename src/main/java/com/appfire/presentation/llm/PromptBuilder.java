@@ -43,6 +43,8 @@ public final class PromptBuilder {
         prompt.append("\n\n");
         prompt.append(promptLoader.load("prompt_slide_copy_rules.md"));
         prompt.append("\n\n");
+        prompt.append(promptLoader.load("prompt_slide_principles.md"));
+        prompt.append("\n\n");
         prompt.append(keysConfig.formatForPrompt(templateKeys));
         prompt.append("\n\n");
         prompt.append(buildImageKeysSection(templateKeys));

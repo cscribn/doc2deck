@@ -8,3 +8,4 @@ TEDx energy within slide copy:
 4. Light humor when it fits: one witty phrase per slide section is enough. Never mock the persona or trivialize the problem.
 5. Create narrative momentum: each key should feel like the next beat in a story (tension, turn, payoff).
 6. Sound human when read aloud: rhythm over jargon. Define unavoidable acronyms once.
+7. Speakable narrative lives off-slide; keys are stage reinforcement for the audience, not cue cards for the presenter.

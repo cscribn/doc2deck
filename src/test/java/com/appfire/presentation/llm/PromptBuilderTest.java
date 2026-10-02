@@ -36,6 +36,8 @@ class PromptBuilderTest {
         assertTrue(prompt.contains("SOURCE MATERIAL (cite block indices"));
         assertTrue(prompt.contains("VOICE AND STYLE (rationale; not part of JSON deliverable):"));
         assertTrue(prompt.contains("PRESENTATION KEYS"));
+        assertTrue(prompt.contains("PRESENTATION SLIDE PRINCIPLES"));
+        assertTrue(prompt.contains("Do not steal the narrative"));
         assertTrue(prompt.contains("IMAGE KEYS"));
         assertTrue(prompt.contains("DOCX CONTENT BLOCKS:"));
         assertTrue(prompt.contains("Template keys found: problem1, problem2"));

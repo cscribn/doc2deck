@@ -6,3 +6,4 @@ Within slide copy:
 2. Use active voice and concrete language from the DOCX.
 3. Define unavoidable acronyms once.
 4. Build logical flow across keys without repeating the same beat.
+5. Speakable narrative lives off-slide (rehearsal, DOCX); each key is what the room should remember from the last beat, not a script paragraph.
