@@ -6,6 +6,8 @@
 - Default: [requirements/default.md](requirements/default.md)
 - Java: [requirements/java_spring-boot.md](requirements/java_spring-boot.md)
 
+**Project overrides (this repo):** Where [requirements/java_spring-boot.md](requirements/java_spring-boot.md) conflicts with this file, this file wins. In particular: JDK 21 Gradle toolchain in `build.gradle.kts` (not “system JVM only”); logging via `presentation-generator.log` plus stdout step progress and ERROR-only console (`logback-spring.xml`), not generic stdout/stderr-only SLF4J.
+
 ## Sources
 
 `.env.example` (env list) | `presentation-keys.example.properties` (key instructions) | `AppConfig.java` (defaults) | `prompts/prompt_*.md` + `prompts/voice-styles/*.md` (Gemini rules/schema) | `build.gradle.kts` (deps) | `src/main/java/com/appfire/presentation/` (code)
@@ -14,7 +16,7 @@
 
 Java CLI fills any `template.pptx` from `.docx` files in `sources/` via Gemini CLI → `final_presentation.pptx`. Output is intended for **live presentation** (complementary on-screen reinforcement per Fowler slide principles), not as an infodeck or pre-read; detailed narrative stays in source `.docx`.
 
-Text: `${variableName}` (docx4j). Images: Pexels stock (POI). JDK 21 toolchain (`settings.gradle.kts`; `./gradlew -q javaToolchains`). Build/run/test: `./gradlew bootRun` (no args). External `gemini` CLI auth (not Java SDK). Logs: `presentation-generator.log` (overwritten each run); stdout progress and ERROR-level logs only.
+Text: `${variableName}` (docx4j). Images: Pexels stock (POI). JDK 21 toolchain (`build.gradle.kts`; `./gradlew -q javaToolchains`). Build/run/test: `./gradlew bootRun` (no args). External `gemini` CLI auth (not Java SDK). Logs: `presentation-generator.log` (overwritten each run); stdout progress and ERROR-level logs only.
 
 ## Config
 
