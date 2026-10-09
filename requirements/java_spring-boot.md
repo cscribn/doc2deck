@@ -7,4 +7,4 @@
 - **Spring Scope**: Limit Spring strictly to DI and scheduled tasks. Core logic remains plain Java.
 - **Config**: Read settings from env vars or `application.yml`/`application.properties` with fallbacks. No CLI args.
 - **Logging**: Use SLF4J. Output to `stdout`/`stderr`. Silence Spring banner and noisy framework logs.
-- **Formatting**: Use standard formatters (e.g., Spotless) with generous line lengths; do not let strict lint rules override clarity.
+- **Formatting**: Do not let strict lint rules override clarity.
