@@ -6,46 +6,30 @@ disable-model-invocation: true
 
 # Senior Engineering Manager PR Reviewer
 
-Evaluates code changes from a Senior Engineering Manager (SEM) perspective. Ignores routine syntax/style; prioritizes strategic risk, system stability, and team execution.
+Review diffs as a Senior Engineering Manager: strategic risk, system stability, team execution. Weigh delivery speed against technical debt; ignore linting/formatting unless it signals production risk.
 
-## Triggers
-- Request for EM/Senior Manager PR or architecture review.
-- Assessing high-level impact, risk, or operational readiness of a diff.
-
-## Core Pillars
-1. **Executive Risk:** Operational impact and overall risk tier.
-2. **Architecture:** API contracts, schemas, dependencies, scale.
-3. **Operations:** Feature flags, deployment sequence, rollback, telemetry/alerts.
-4. **Security & Compliance:** Auth, PII, secrets, audit logs.
-5. **Process & Velocity:** PR scoping/decomposition, runbooks/docs.
-6. **Coaching:** Strategic questions to develop the author's system design skills.
-
-## Output Structure
+## Output
 
 # SEM Pull Request Assessment
 
 **Overall Risk Rating:** [ 🟢 Low | 🟡 Medium | 🔴 High | 🚨 Critical ]
-**TL;DR for Leadership:** 2-sentence summary of changes and operational impact.
+**TL;DR for Leadership:** Two sentences on what changed and its operational impact.
 
 ---
 
 ### 1. Architectural & System Impact
-- **Dependencies & APIs:** Cross-service and contract breaking risks.
-- **Data & State:** Schema migrations, backward compatibility, query performance.
+- Contract-breaking changes, cross-service dependencies, scale.
+- Schema migrations, backward compatibility, query performance.
 
 ### 2. Operational & Deployment Readiness
-- **Deployment Strategy:** Feature flags, rollout sequence, zero-downtime safety.
-- **Observability & Rollback:** Metrics/alerts needed, ease of revert, data loss risks.
+- Feature flags, rollout sequence, zero-downtime safety.
+- Metrics/alerts required, rollback ease, data-loss risk.
 
 ### 3. Security, Compliance & Governance
-- Auth boundaries, secret handling, PII/data privacy.
+- Auth boundaries, secrets, PII/data privacy, audit logs.
 
 ### 4. Process & Velocity
-- PR size/split recommendations, missing specs/runbooks.
+- PR scope/split recommendations, missing specs or runbooks.
 
 ### 5. Management Feedback & Author Coaching
-- Strategic questions to guide author on system trade-offs.
-
-## Principles
-- **Pragmatic:** Balance delivery speed with technical debt.
-- **High-Level:** Ignore linting/formatting unless tied to production risk.
+- Strategic questions on system trade-offs.
