@@ -63,8 +63,21 @@ class ResponseValidatorTest {
         assertTrue(result.criticalFailures().stream().anyMatch(msg -> msg.contains("problem1")));
     }
 
+    @Test
+    void surfacesDesignWarningsAsAdvisoryWithoutFailing() throws IOException {
+        PresentationContentResponse response = loadFixture("valid-response.json");
+        TemplateScanResult scan = new TemplateScanResult(
+                keysConfig.configuredKeyNames(),
+                java.util.List.of(),
+                java.util.List.of(),
+                java.util.List.of("Template uses 5 font families"));
+        ResponseValidator.ValidationResult result = validator.validate(response, scan, keysConfig);
+        assertTrue(result.passed());
+        assertTrue(result.advisories().contains("Template uses 5 font families"));
+    }
+
     private TemplateScanResult fullTemplateScan() {
-        return new TemplateScanResult(keysConfig.configuredKeyNames(), java.util.List.of(), java.util.List.of());
+        return new TemplateScanResult(keysConfig.configuredKeyNames(), java.util.List.of(), java.util.List.of(), java.util.List.of());
     }
 
     private PresentationContentResponse loadFixture(String name) throws IOException {

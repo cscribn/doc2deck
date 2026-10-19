@@ -83,7 +83,7 @@ class PresentationKeysConfigLoaderTest {
     @Test
     void validateAgainstTemplateFailsWhenTemplateKeyMissingFromConfig() {
         PresentationKeysConfig config = PresentationKeysConfigLoader.parse(baseProperties());
-        TemplateScanResult scan = new TemplateScanResult(Set.of("missingKey"), java.util.List.of(), java.util.List.of());
+        TemplateScanResult scan = new TemplateScanResult(Set.of("missingKey"), java.util.List.of(), java.util.List.of(), java.util.List.of());
 
         IllegalStateException error = assertThrows(
                 IllegalStateException.class, () -> config.validateAgainstTemplate(scan));

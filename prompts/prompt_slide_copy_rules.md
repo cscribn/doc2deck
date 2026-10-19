@@ -4,6 +4,8 @@ SLIDE COPY FORMAT (applies to every text key in keys object):
 3. Drop articles and helper verbs when the meaning stays clear.
 4. One beat per key by default. Join at most two related beats with semicolons only when the presentation key instruction and maxWords allow it.
 5. Typical length: 3-12 words per key unless the key's maxWords and instruction allow more fragments (see presentation keys).
+6. Sentence case by default. No ALL CAPS except acronyms and proper nouns.
+7. No URLs, citations, slide numbers, logos, or copyright text in key values. Citations go in sourceRefs; links and resources belong in a closing QR code or leave-behind, not on individual slides.
 
 Do not: write infodeck-style bullet dumps, essay-style prose, stand-up comedy, sarcasm, hype without source backing, clickbait phrasing, or emojis.
 

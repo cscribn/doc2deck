@@ -21,7 +21,7 @@ class PromptBuilderTest {
         DocumentContent document = new DocumentContent(
                 List.of(new ContentBlock(0, BlockType.HEADING, 1, "Overview")),
                 "Overview");
-        TemplateScanResult scan = new TemplateScanResult(Set.of("problem1", "problem2"), List.of(), List.of());
+        TemplateScanResult scan = new TemplateScanResult(Set.of("problem1", "problem2"), List.of(), List.of(), List.of());
         PresentationKeysConfig keysConfig = PresentationKeysConfigLoader.load(
                 Path.of("presentation-keys.example.properties"));
         PromptBuilder builder = new PromptBuilder(

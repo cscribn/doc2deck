@@ -7,7 +7,8 @@ import java.util.Set;
 public record TemplateScanResult(
         Set<String> foundKeys,
         List<String> splitRunWarnings,
-        List<ImageKeyAnchor> imageAnchors) {
+        List<ImageKeyAnchor> imageAnchors,
+        List<String> designWarnings) {
 
     public TemplateScanResult {
         if (foundKeys == null) {
@@ -18,6 +19,9 @@ public record TemplateScanResult(
         }
         if (imageAnchors == null) {
             imageAnchors = List.of();
+        }
+        if (designWarnings == null) {
+            designWarnings = List.of();
         }
     }
 

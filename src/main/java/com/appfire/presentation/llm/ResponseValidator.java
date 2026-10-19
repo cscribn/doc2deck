@@ -164,6 +164,7 @@ public final class ResponseValidator {
         }
 
         scan.splitRunWarnings().forEach(advisory::add);
+        scan.designWarnings().forEach(advisory::add);
     }
 
     public record ValidationResult(boolean passed, List<String> criticalFailures, List<String> advisories) {

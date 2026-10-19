@@ -51,9 +51,22 @@ public final class TemplateScanner {
                         keysConfig.imageKeyNames());
             }
 
+            List<String> designWarnings = lintDesign(slideShow);
+
             splitRunWarnings.forEach(msg -> LOG.warn("Template scan: {}", msg));
+            designWarnings.forEach(msg -> LOG.warn("Template design: {}", msg));
             LOG.info("Template scan found {} placeholder key(s)", foundKeys.size());
-            return new TemplateScanResult(foundKeys, splitRunWarnings, imageAnchors);
+            return new TemplateScanResult(foundKeys, splitRunWarnings, imageAnchors, designWarnings);
+        }
+    }
+
+    private List<String> lintDesign(XMLSlideShow slideShow) throws IOException {
+        try {
+            return TemplateDesignLinter.lint(slideShow);
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException("Template design lint failed", e);
         }
     }
 

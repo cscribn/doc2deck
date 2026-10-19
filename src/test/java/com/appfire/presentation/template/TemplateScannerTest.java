@@ -26,6 +26,5 @@ class TemplateScannerTest {
 
         assertTrue(result.foundKeys().contains("shortProjectDescription")
                 || result.foundKeys().contains("problem1")
-                || !result.foundKeys().isEmpty());
-    }
+                || !result.foundKeys().isEmpty());    }
 }

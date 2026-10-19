@@ -45,7 +45,7 @@ final class ReferencedFontCollector {
         }
     }
 
-    private static String readPart(PackagePart part) throws IOException {
+    static String readPart(PackagePart part) throws IOException {
         try (InputStream input = part.getInputStream()) {
             return new String(IOUtils.toByteArray(input), StandardCharsets.UTF_8);
         }

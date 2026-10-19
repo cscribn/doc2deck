@@ -25,7 +25,7 @@ Text: `${variableName}` (docx4j). Images: Pexels stock (POI). JDK 21 toolchain (
 ## Pipeline (`PipelineOrchestrator.runPipeline`)
 
 1. `DocxExtractor` → `DocumentContent` (blocks h1-6/para/lists/pipe-tables + flat summary)
-2. `TemplateScanner` → `${key}` + image anchors from configured image keys; warn split-run placeholders
+2. `TemplateScanner` → `${key}` + image anchors from configured image keys; warn split-run placeholders; `TemplateDesignLinter` advisory (slide/layout/master parts: >3 `a:latin` font families, >3 layouts used by slides, >6 non-grey `srgbClr` colors)
 3. `PresentationKeysConfig.validateAgainstTemplate` → fail-fast on missing config; advisory on extra config keys
 4. `PromptBuilder` → cached `prompts/prompt_*.md` (includes `prompt_slide_principles.md`) + voice style file + `presentation-keys.properties` + DOCX + dynamic JSON schema from template keys; truncate summary ~100k
 5. `GeminiClient` → stdin prompt, JSON out
@@ -42,13 +42,13 @@ Template: `${key}` in single run; disable spell-check-as-you-type.
 
 ## Keys
 
-Template-driven: every `${key}` in the PPTX must have a `presentation-keys.properties` entry. Per key: instruction, optional `maxWords`, `optional=true`, `type=image`. Defaults: `type=text`, `optional=false`, `maxWords=15` (text) or `5` (image). Image queries 2-5 words (max from `maxWords`). Prompt: External AI Prompting rules (source mapping, numbered steps, JSON-only output, citations in sourceRefs/warnings, stateless). Canonical prompts: `prompts/prompt_{core_rules,slide_copy_rules,slide_principles,image_keys,output_contract,docx_content}.md`; voice from `VOICE_STYLE_PATH`.
+Template-driven: every `${key}` in the PPTX must have a `presentation-keys.properties` entry. Per key: instruction, optional `maxWords`, `optional=true`, `type=image`. Defaults: `type=text`, `optional=false`, `maxWords=15` (text) or `5` (image). Image queries 2-5 words (max from `maxWords`). Prompt: External AI Prompting rules (source mapping, numbered steps, JSON-only output, citations in sourceRefs/warnings, stateless). Slide copy: sentence case (no ALL CAPS except acronyms/proper nouns); no URLs, citations, slide numbers, logos, or copyright in key values. Image queries favor uncluttered compositions (no text-heavy images, logos, watermarks). Canonical prompts: `prompts/prompt_{core_rules,slide_copy_rules,slide_principles,image_keys,output_contract,docx_content}.md`; voice from `VOICE_STYLE_PATH`.
 
 ## Validation
 
 **Critical** (non-zero exit, no output): JSON/`keys` fail; required template key blank; text over per-key word limit; image query outside 2-5 words (or key `maxWords`).
 
-**Advisory**: empty `sourceRefs`; template gap; unknown/extra Gemini key; optional key absent; `shortProjectDescription` >200 chars; configured key not in template; split-run warnings.
+**Advisory**: empty `sourceRefs`; template gap; unknown/extra Gemini key; optional key absent; `shortProjectDescription` >200 chars; configured key not in template; split-run warnings; template design warnings (fonts, layouts, colors).
 
 ## Resilience & exit
 
@@ -56,4 +56,4 @@ Template-driven: every `${key}` in the PPTX must have a `presentation-keys.prope
 
 ## Tests
 
-Unit: extractor, scanner, replacer, inserter, validator, word count, enforcer, normalizer, prompt builder, keys config loader, image service, config. Integration: gated on gemini CLI. Accept: `./gradlew build`; `./gradlew bootRun` produces filled PPTX with images when configured; validator rejects bad keys/queries/limits.
+Unit: extractor, scanner, design linter, replacer, inserter, validator, word count, enforcer, normalizer, prompt builder, keys config loader, image service, config. Integration: gated on gemini CLI. Accept: `./gradlew build`; `./gradlew bootRun` produces filled PPTX with images when configured; validator rejects bad keys/queries/limits.

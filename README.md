@@ -14,6 +14,13 @@ Operator guide. Behavioral spec: [requirements.md](requirements.md).
 
 **Template:** `${variableName}` placeholders in single uninterrupted text runs. Key instructions and per-key limits: local `presentation-keys.properties` (see [presentation-keys.example.properties](presentation-keys.example.properties)). Voice/tone: `VOICE_STYLE_PATH` in `.env` (see `prompts/voice-styles/`). Generated decks target live presentation (short on-slide reinforcement), not infodeck pre-reads; use source DOCX for full detail. See [requirements.md](requirements.md).
 
+**Template design** (advisory warnings at scan; never fail the run):
+- 1-3 fonts; sans-serif for body (e.g. Inter, Open Sans); serif only for titles
+- Max 6 colors plus black, white, greys; reuse one palette across decks
+- 2-3 layouts (title + blank); no floodmarks (logos, slide numbers, copyright on every slide)
+- Sentence case; check legibility at 50% zoom
+- Share links and citations via a closing QR code, not on individual slides
+
 ## Commands
 
 - `./gradlew bootRun` — generate presentation (no CLI args; `./gradlew run` aliases to `bootRun`)
@@ -35,5 +42,6 @@ Variables and commented defaults: [.env.example](.env.example). Code defaults: [
 - **Prompt file not found:** run from project root (`./prompts/` must be visible)
 - **Placeholders not replaced:** single text run per `${key}`; disable spell-check-as-you-type
 - **No images:** set `PEXELS_API_KEY`; ensure `curl` is on PATH
+- **`Template design:` warnings:** advisory only (fonts >3, layouts used >3, non-grey colors >6); simplify the template to clear them
 
 Pipeline and validation rules: [requirements.md](requirements.md).

@@ -8,6 +8,7 @@ These slides support a live talk. They are not an infodeck, email pre-read, or h
 4. One beat per key unless the key instruction explicitly allows 2-3 fragments.
 5. Visual-first: for slides with image keys, keep paired text keys especially short; image search phrases should evoke the concrete scene or emotion of that beat (specific, not generic stock tropes).
 6. Not a handout: omit detail that belongs in the source DOCX. Do not write prose suitable for distribution without a presenter.
+7. Billboard, not print: copy must stay legible at half size on a projector; no clutter or floodmarks (logos, slide numbers, copyright notices).
 
 Good vs bad (same underlying fact):
 - Bad (infodeck): "Teams lose four hours weekly reconciling invoices manually; legacy APIs block automation; no single source of truth."
