@@ -1,6 +1,6 @@
 # Java & Spring Boot
 
-- **Entry Point & Tooling**: `./gradlew bootRun` using system JVM (`java -version`). No pinned Gradle toolchains. If system JDK > Spring Boot max, set `options.release` in `build.gradle` and define `springBoot.mainClass`.
+- **Entry Point & Tooling**: `./gradlew bootRun` using system JVM (`java -version`). No pinned Gradle toolchains. `README.md` includes instructions on how to upgrade the version of Java being used.
 - **Gradle**: Enable `org.gradle.configuration-cache=true` in `gradle.properties`. Ensure `./gradlew test` and `./gradlew bootRun` pass with it active.
 - **Code Clarity**: Favor simple, sequential logic over deep inheritance, single-impl interfaces, or generic abstractions. Keep packages flat.
 - **Idioms & DTOs**: Use `var` when type is obvious, `record` (or plain classes) for immutable DTOs, and `switch` pattern matching over `if-else` chains.
