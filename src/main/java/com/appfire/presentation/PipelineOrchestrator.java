@@ -1,10 +1,15 @@
 package com.appfire.presentation;
 
 import com.appfire.presentation.config.AppConfig;
+import com.appfire.presentation.config.DeckFormat;
+import com.appfire.presentation.config.HtmlDeckOutlineConfig;
 import com.appfire.presentation.config.PresentationKeysConfig;
 import com.appfire.presentation.extraction.DocxExtractor;
+import com.appfire.presentation.html.HtmlDeckWriter;
 import com.appfire.presentation.images.ImageAcquisitionService;
 import com.appfire.presentation.llm.GeminiClient;
+import com.appfire.presentation.llm.HtmlDeckPromptBuilder;
+import com.appfire.presentation.llm.HtmlDeckResponseValidator;
 import com.appfire.presentation.llm.PromptBuilder;
 import com.appfire.presentation.llm.ResponseValidator;
 import com.appfire.presentation.model.DocumentContent;
@@ -29,42 +34,54 @@ public class PipelineOrchestrator {
 
     private final AppConfig config;
     private final PresentationKeysConfig keysConfig;
+    private final HtmlDeckOutlineConfig htmlOutlineConfig;
     private final DocxExtractor docxExtractor;
     private final TemplateScanner templateScanner;
     private final PromptBuilder promptBuilder;
+    private final HtmlDeckPromptBuilder htmlDeckPromptBuilder;
     private final GeminiClient geminiClient;
     private final ResponseValidator validator;
+    private final HtmlDeckResponseValidator htmlDeckValidator;
     private final PptxTemplateReplacer templateReplacer;
     private final ImageAcquisitionService imageService;
     private final OptionalPlaceholderCleaner optionalCleaner;
     private final PptxLayoutNormalizer layoutNormalizer;
     private final ImageInserter imageInserter;
+    private final HtmlDeckWriter htmlDeckWriter;
 
     public PipelineOrchestrator(
             AppConfig config,
             PresentationKeysConfig keysConfig,
+            HtmlDeckOutlineConfig htmlOutlineConfig,
             DocxExtractor docxExtractor,
             TemplateScanner templateScanner,
             PromptBuilder promptBuilder,
+            HtmlDeckPromptBuilder htmlDeckPromptBuilder,
             GeminiClient geminiClient,
             ResponseValidator validator,
+            HtmlDeckResponseValidator htmlDeckValidator,
             PptxTemplateReplacer templateReplacer,
             ImageAcquisitionService imageService,
             OptionalPlaceholderCleaner optionalCleaner,
             PptxLayoutNormalizer layoutNormalizer,
-            ImageInserter imageInserter) {
+            ImageInserter imageInserter,
+            HtmlDeckWriter htmlDeckWriter) {
         this.config = config;
         this.keysConfig = keysConfig;
+        this.htmlOutlineConfig = htmlOutlineConfig;
         this.docxExtractor = docxExtractor;
         this.templateScanner = templateScanner;
         this.promptBuilder = promptBuilder;
+        this.htmlDeckPromptBuilder = htmlDeckPromptBuilder;
         this.geminiClient = geminiClient;
         this.validator = validator;
+        this.htmlDeckValidator = htmlDeckValidator;
         this.templateReplacer = templateReplacer;
         this.imageService = imageService;
         this.optionalCleaner = optionalCleaner;
         this.layoutNormalizer = layoutNormalizer;
         this.imageInserter = imageInserter;
+        this.htmlDeckWriter = htmlDeckWriter;
     }
 
     public void runPipeline() throws Exception {
@@ -73,6 +90,39 @@ public class PipelineOrchestrator {
         ConsoleProgress.step("Extracting content from source documents...");
         DocumentContent document = docxExtractor.extractAll(config.sourceDocxPaths());
 
+        if (config.deckFormat() == DeckFormat.HTML) {
+            runHtmlPipeline(document);
+            return;
+        }
+        runPptxPipeline(document);
+    }
+
+    private void runHtmlPipeline(DocumentContent document) throws Exception {
+        ConsoleProgress.step("Generating HTML deck content with Gemini...");
+        String prompt = htmlDeckPromptBuilder.build(document);
+        var response = geminiClient.generateHtmlDeck(prompt);
+
+        ConsoleProgress.step("Validating generated HTML deck content...");
+        HtmlDeckResponseValidator.ValidationResult validation = htmlDeckValidator.validate(response);
+        if (!validation.passed()) {
+            throw new IllegalStateException(
+                    "Gemini HTML deck response failed validation: " + validation.criticalFailures());
+        }
+
+        if (config.pexelsApiKey().isBlank()) {
+            ConsoleProgress.step("Skipping image acquisition (PEXELS_API_KEY not set)...");
+        } else {
+            ConsoleProgress.step("Acquiring slide images...");
+        }
+        var imageQueries = HtmlDeckWriter.queriesBySlideIndex(response);
+        var imagePlan = imageService.acquire(imageQueries);
+
+        ConsoleProgress.step("Writing HTML presentation...");
+        htmlDeckWriter.write(config.outputHtmlPath(), response, htmlOutlineConfig, imagePlan);
+        ConsoleProgress.complete(config.outputHtmlPath());
+    }
+
+    private void runPptxPipeline(DocumentContent document) throws Exception {
         ConsoleProgress.step("Scanning template for placeholders...");
         TemplateScanResult scan = templateScanner.scan(config.templatePptxPath(), keysConfig);
         keysConfig.validateAgainstTemplate(scan).forEach(msg -> LOG.warn("Presentation keys advisory: {}", msg));

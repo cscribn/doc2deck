@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{DECK_TITLE}}</title>
+<style>
+{{BASE_CSS}}
+{{LAYOUTS_CSS}}
+</style>
+<script>window.__DECK_MS__={{MILESTONES_JSON}};</script>
+</head>
+<body>
+{{ICONS_SVG}}
+<div id="viewport">
+  <div id="stage">
+    <div id="bg"></div>
+    <div id="track">
+{{TRACK}}
+    </div>
+    <div id="hud">
+      <div class="mchip"><span class="dot"></span><span class="mtext"></span>
+        <span class="ai"><svg class="ic"><use href="#i-sparkles"/></svg><span></span></span></div>
+      <div class="counter"></div>
+    </div>
+    <nav id="tl" aria-label="Timeline"></nav>
+  </div>
+</div>
+<aside id="notes" aria-live="polite"></aside>
+<div id="overview" role="dialog" aria-label="All slides"><h3>All slides · press O or Esc to close</h3><div class="ov-grid"></div></div>
+<script>
+{{RUNTIME_JS}}
+</script>
+</body>
+</html>

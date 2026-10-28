@@ -1,6 +1,7 @@
 package com.appfire.presentation.llm;
 
 import com.appfire.presentation.config.AppConfig;
+import com.appfire.presentation.model.HtmlDeckContentResponse;
 import com.appfire.presentation.model.PresentationContentResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,12 +32,19 @@ public final class GeminiClient {
     }
 
     public PresentationContentResponse generate(String prompt) throws IOException {
+        return parsePresentationResponse(invokeWithRetries(prompt));
+    }
+
+    public HtmlDeckContentResponse generateHtmlDeck(String prompt) throws IOException {
+        return parseHtmlDeckResponse(invokeWithRetries(prompt));
+    }
+
+    private String invokeWithRetries(String prompt) throws IOException {
         int attempts = 0;
         long backoff = BASE_BACKOFF_MS;
         while (true) {
             try {
-                String responseText = invokeGeminiCli(prompt);
-                return parseResponse(responseText);
+                return invokeGeminiCli(prompt);
             } catch (IOException e) {
                 attempts++;
                 if (attempts > config.geminiMaxRetries() || !isRetryable(e)) {
@@ -63,7 +71,7 @@ public final class GeminiClient {
                 "--skip-trust");
 
         ProcessBuilder builder = new ProcessBuilder(command);
-        builder.redirectError(ProcessBuilder.Redirect.DISCARD);
+        builder.redirectErrorStream(true);
         Process process = builder.start();
 
         writePrompt(process, prompt);
@@ -119,9 +127,14 @@ public final class GeminiClient {
         return response.asText();
     }
 
-    private PresentationContentResponse parseResponse(String text) throws IOException {
+    private PresentationContentResponse parsePresentationResponse(String text) throws IOException {
         String json = stripMarkdownFences(text);
         return objectMapper.readValue(json, PresentationContentResponse.class);
+    }
+
+    private HtmlDeckContentResponse parseHtmlDeckResponse(String text) throws IOException {
+        String json = stripMarkdownFences(text);
+        return objectMapper.readValue(json, HtmlDeckContentResponse.class);
     }
 
     private String stripMarkdownFences(String text) {

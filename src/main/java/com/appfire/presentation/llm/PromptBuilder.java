@@ -1,6 +1,5 @@
 package com.appfire.presentation.llm;
 
-import com.appfire.presentation.config.AppConfig;
 import com.appfire.presentation.config.PresentationKeysConfig;
 import com.appfire.presentation.model.ContentBlock;
 import com.appfire.presentation.model.DocumentContent;
@@ -12,9 +11,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.springframework.stereotype.Component;
 
-@Component
 public final class PromptBuilder {
 
     private static final int MAX_SUMMARY_CHARS = 100_000;
@@ -22,10 +19,6 @@ public final class PromptBuilder {
     private final PromptLoader promptLoader;
     private final PresentationKeysConfig keysConfig;
     private final String voiceStyleContent;
-
-    public PromptBuilder(PromptLoader promptLoader, AppConfig appConfig, PresentationKeysConfig keysConfig) {
-        this(promptLoader, keysConfig, appConfig.voiceStylePath());
-    }
 
     public PromptBuilder(PromptLoader promptLoader, PresentationKeysConfig keysConfig, Path voiceStylePath) {
         this.promptLoader = promptLoader;

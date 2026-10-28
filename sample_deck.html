@@ -1,0 +1,1363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Top 10% · AI-assisted performance cycle</title>
+<style>
+/* ===== Theme: Appfire brand (brand.appfire.com). Primary: Flow, Beam, Screentime, Keyboard, Terminal. Secondary: Luminosity, Ember, Afterglow ===== */
+:root{
+  --flow:#397BFF; --beam:#8DFCF1; --screentime:#FFFFFF; --keyboard:#E6E3EC; --terminal:#090A0F;
+  --luminosity:#A97DFF; --ember:#FF996C; --afterglow:#FFF6B6;
+  --bg:var(--terminal); --bg2:#12141c; --panel:#14161f; --panel2:#1c1f2a;
+  --ink:var(--screentime); --muted:color-mix(in srgb,var(--keyboard) 62%,var(--terminal));
+  --faint:rgba(255,255,255,.08); --edge:rgba(255,255,255,.14);
+  --m0:var(--keyboard); --m1:var(--beam); --m2:var(--flow); --m3:var(--luminosity); --m4:var(--afterglow); --m5:var(--ember); --m6:var(--keyboard);
+  --ai:var(--beam); --ai1:var(--beam); --ai2:var(--beam); --aiB:var(--flow); --ai3:var(--luminosity);
+  --good:var(--beam); --warn:var(--ember); --bad:#FF544F; --gold:var(--afterglow);
+  --spring:cubic-bezier(.34,1.56,.64,1); --out:cubic-bezier(.16,1,.3,1); --pan:cubic-bezier(.65,0,.25,1);
+  --base:.15s;
+  font-family:"Area Normal",AreaNormal,Arial,Helvetica,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+/* ===== Stage ===== */
+#viewport{position:fixed;inset:0;background:radial-gradient(120% 90% at 50% 0%,#151823,var(--bg) 65%);touch-action:pan-y}
+#stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%) scale(var(--scale,1));overflow:hidden}
+#stage::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+  background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.6px);background-size:32px 32px;
+  -webkit-mask-image:radial-gradient(70% 70% at 50% 45%,#000,transparent);mask-image:radial-gradient(70% 70% at 50% 45%,#000,transparent)}
+#bg{position:absolute;top:0;left:0;height:900px;transition:transform 1.2s var(--pan);z-index:0}
+.blob{position:absolute;top:-180px;width:1400px;height:1260px;border-radius:50%;opacity:.13;
+  background:radial-gradient(closest-side,var(--bc),transparent)}
+#track{position:absolute;inset:0;transition:transform 1.2s var(--pan);z-index:2}
+#track.instant,#bg.instant{transition:none}
+.slide{position:absolute;top:0;width:1600px;height:900px;opacity:.1;transform:scale(.92);
+  transition:opacity 1s ease,transform 1.2s var(--pan);pointer-events:none}
+.slide.is-active{opacity:1;transform:none;pointer-events:auto}
+.slide>.notes{display:none}
+.kicker{position:absolute;left:120px;top:96px;font-size:17px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--c)}
+.title{position:absolute;left:120px;top:124px;font-size:50px;font-weight:600;letter-spacing:-.02em;line-height:1.08;max-width:1360px}
+.is-active .kicker{animation:k-fu .7s var(--out) var(--base) backwards}
+.is-active .title{animation:k-fu .8s var(--out) calc(var(--base) + .08s) backwards}
+
+/* ===== HUD ===== */
+#hud{position:absolute;left:44px;right:44px;top:30px;display:flex;justify-content:space-between;align-items:center;z-index:5;pointer-events:none}
+.mchip{display:flex;gap:12px;align-items:center;font-size:15px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.mchip .dot{width:12px;height:12px;border-radius:50%;background:var(--mc);box-shadow:0 0 14px var(--mc);transition:background .6s,box-shadow .6s}
+.mchip b{color:var(--ink);font-weight:600}
+.mchip .ai{display:none;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;font-size:13px;color:#090a0f;
+  background:linear-gradient(90deg,var(--beam),var(--aiB))}
+.mchip .ai.on{display:inline-flex}
+.mchip .ai .ic{width:14px;height:14px;stroke-width:2.4}
+.counter{font-size:15px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.06em}
+.counter b{color:var(--ink)}
+
+/* ===== Timeline ===== */
+#tl{position:absolute;left:0;right:0;bottom:0;height:100px;z-index:5}
+.tl-base{position:absolute;left:150px;right:150px;top:66px;height:2px;background:var(--faint)}
+.tl-seg{position:absolute;top:65px;height:4px;border-radius:2px;background:var(--mc);opacity:.35;transition:opacity .5s}
+.tl-seg.on{opacity:1;box-shadow:0 0 12px var(--mc)}
+.tl-lab{position:absolute;top:22px;translate:-50% 0;display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600;
+  color:var(--muted);white-space:nowrap;padding:4px 8px;border-radius:8px;transition:color .4s}
+.tl-lab b{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:12px;color:var(--bg);background:var(--mc);opacity:.6;transition:opacity .4s}
+.tl-lab.on{color:var(--ink)} .tl-lab.on b{opacity:1}
+.tl-lab.minor{font-weight:600;font-size:13px;opacity:.7}
+.tl-tick{position:absolute;top:67px;width:14px;height:14px;translate:-50% -50%;border-radius:50%;
+  background:var(--bg);border:2px solid var(--mc);transition:background .4s,transform .3s}
+.tl-tick:hover{transform:scale(1.4)}
+.tl-tick.past{background:var(--mc)}
+.tl-tick.ai{width:24px;height:24px;border:0;background:none;color:var(--ai2);display:grid;place-items:center}
+.tl-tick.ai .ic{width:22px;height:22px;stroke-width:2;filter:drop-shadow(0 0 6px var(--ai2))}
+.tl-mark{position:absolute;top:67px;width:30px;height:30px;translate:-50% -50%;border-radius:50%;pointer-events:none;
+  border:2px solid var(--mc);box-shadow:0 0 18px var(--mc),inset 0 0 10px var(--mc);transition:left 1.2s var(--pan),border-color .6s,box-shadow .6s}
+.tl-nav{position:absolute;top:67px;translate:-50% -50%;width:40px;height:40px;border-radius:50%;font-size:26px;line-height:1;
+  color:var(--muted);border:1px solid var(--edge);background:rgba(255,255,255,.03);display:grid;place-items:center;transition:color .3s,border-color .3s}
+.tl-nav:hover{color:var(--ink);border-color:var(--ink)}
+
+/* ===== Notes & overview (outside the scaled stage) ===== */
+#notes{position:fixed;right:18px;bottom:18px;width:min(460px,44vw);max-height:62vh;overflow:auto;z-index:20;
+  background:rgba(9,10,15,.94);border:1px solid var(--edge);border-radius:16px;padding:20px 22px;
+  font-size:15px;line-height:1.55;color:#dcd9e2;box-shadow:0 20px 60px rgba(0,0,0,.5);
+  transform:translateY(calc(100% + 30px));transition:transform .45s var(--out)}
+#notes.show{transform:none}
+#notes h4{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+#notes ul{padding-left:18px} #notes li{margin:6px 0} #notes b{color:#fff}
+#overview{position:fixed;inset:0;z-index:30;background:rgba(9,10,15,.92);backdrop-filter:blur(6px);display:none;
+  padding:6vh 6vw;overflow:auto}
+#overview.show{display:block}
+#overview h3{font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:20px}
+.ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.ov-card{text-align:left;padding:16px;border-radius:14px;background:var(--panel);border:1px solid var(--edge);border-top:4px solid var(--mc);
+  display:flex;flex-direction:column;gap:6px;transition:transform .2s,border-color .2s}
+.ov-card:hover,.ov-card.cur{transform:translateY(-3px);border-color:var(--mc)}
+.ov-card .n{font-size:12px;font-weight:800;color:var(--mc);letter-spacing:.1em}
+.ov-card .t{font-size:16px;font-weight:600;line-height:1.3}
+
+/* ===== Building blocks ===== */
+.ic{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;width:24px;height:24px;flex:none}
+.abs{position:absolute}
+.ctr{position:absolute;translate:-50% -50%}
+.av{width:var(--s,96px);height:var(--s,96px);border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 32% 28%,color-mix(in srgb,var(--ac,var(--c)) 55%,#1c1f2a),#12141c 75%);
+  border:2px solid var(--ac,var(--c));box-shadow:0 0 0 7px color-mix(in srgb,var(--ac,var(--c)) 14%,transparent),0 12px 30px rgba(0,0,0,.45)}
+.av>.ic{width:54%;height:54%;color:#fff;stroke-width:1.6}
+.av.ghost{background:transparent;border-style:dashed;box-shadow:none;opacity:.75}
+.chip{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:14px;white-space:nowrap;
+  background:linear-gradient(180deg,#1c1f2a,#14161f);border:1px solid var(--edge);font-size:19px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.chip>.ic{width:24px;height:24px;color:var(--cc,var(--c))}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:99px;font-size:14px;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;background:color-mix(in srgb,var(--tc,var(--c)) 18%,transparent);color:var(--tc,var(--c));border:1px solid color-mix(in srgb,var(--tc,var(--c)) 45%,transparent)}
+.tag .ic{width:15px;height:15px;stroke-width:2.4}
+.lbl{font-size:18px;font-weight:600;color:var(--muted);text-align:center;white-space:nowrap}
+.doc{position:absolute;border-radius:18px;padding:26px 28px;background:linear-gradient(180deg,#1c1f2a,#14161f);
+  border:1.5px solid var(--edge);box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.doc .hd{display:flex;align-items:center;gap:12px;font-weight:800;font-size:19px;margin-bottom:20px;color:#fff}
+.doc .hd .ic{color:var(--c);width:26px;height:26px}
+.ln{height:12px;border-radius:6px;background:rgba(255,255,255,.15);margin:14px 0}
+.ln.c{background:color-mix(in srgb,var(--c) 55%,transparent)}
+.nb{display:inline-grid;grid-template-columns:repeat(3,1fr);gap:2px;width:var(--nbs,30px);height:var(--nbs,30px);flex:none}
+.nb i{border-radius:2px;background:rgba(255,255,255,.16)}
+.nb i.on{background:var(--nbc,var(--gold));box-shadow:0 0 8px var(--nbc,var(--gold))}
+
+/* AI orb */
+.orb{width:var(--s,200px);height:var(--s,200px)}
+.orb .ring{position:absolute;inset:-12px;border-radius:50%;
+  background:conic-gradient(from 0deg,var(--beam),var(--aiB),var(--ai3),transparent 70%,var(--beam));
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px))}
+.orb .core{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--flow) 40%,var(--terminal)),#0b0d14 72%);
+  box-shadow:0 0 70px rgba(57,123,255,.4),inset 0 0 40px rgba(141,252,241,.22);border:1px solid rgba(141,252,241,.4)}
+.orb .core .ic{width:44%;height:44%;color:#8dfcf1;stroke-width:1.5}
+.orb .name{position:absolute;left:50%;top:calc(100% + 26px);translate:-50% 0;font-size:24px;font-weight:800;white-space:nowrap;color:var(--beam)}
+.is-active .orb .ring{animation:k-spin 5s linear infinite}
+.is-active .orb .core{animation:k-glow 2.6s ease-in-out infinite}
+
+/* ===== Animation primitives: play only on the active slide. Resting state = final state, so fill is "backwards":
+   a finished animation lets go and the element renders from its own style (holding end frames can stop painting in Chromium). ===== */
+@keyframes k-pop{from{opacity:0;transform:scale(.3)}70%{opacity:1;transform:scale(1.07)}}
+@keyframes k-fu{from{opacity:0;transform:translateY(28px)}}
+@keyframes k-fd{from{opacity:0;transform:translateY(-28px)}}
+@keyframes k-fi{from{opacity:0}}
+@keyframes k-fo{from{opacity:1}}
+@keyframes k-fly{from{opacity:0;transform:translate(var(--fx,0),var(--fy,0)) scale(var(--fs,.5))}}
+@keyframes k-gx{from{transform:scaleX(0)}}
+@keyframes k-gy{from{transform:scaleY(0)}}
+@keyframes k-draw{from{stroke-dashoffset:1}}
+@keyframes k-stamp{from{opacity:0;transform:scale(2.6) rotate(-24deg)}60%{opacity:1;transform:scale(.94) rotate(var(--rot,-8deg))}}
+@keyframes k-spin{to{transform:rotate(360deg)}}
+@keyframes k-glow{50%{box-shadow:0 0 110px rgba(57,123,255,.6),inset 0 0 50px rgba(141,252,241,.38)}}
+@keyframes k-float{50%{transform:translateY(-10px)}}
+@keyframes k-ripple{from{opacity:.9;transform:scale(.6)}to{opacity:0;transform:scale(2.2)}}
+@keyframes k-travel{0%{opacity:0;transform:translate(0,0) scale(.5)}15%,80%{opacity:1}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(1)}}
+@keyframes k-dash{to{stroke-dashoffset:-48}}
+.is-active .pop{animation:k-pop .7s var(--spring) calc(var(--base) + var(--d,0s)) backwards}
+.is-active .fu{animation:k-fu .8s var(--out) calc(var(--base) + var(--d,0s)) backwards}
+.is-active .fd{animation:k-fd .8s var(--out) calc(var(--base) + var(--d,0s)) backwards}
+.is-active .fi{animation:k-fi .9s ease calc(var(--base) + var(--d,0s)) backwards}
+.is-active .fly{animation:k-fly 1s var(--out) calc(var(--base) + var(--d,0s)) backwards}
+.is-active .gx{transform-origin:left center;animation:k-gx .9s var(--out) calc(var(--base) + var(--d,0s)) backwards}
+.is-active .gy{transform-origin:center bottom;animation:k-gy .9s var(--out) calc(var(--base) + var(--d,0s)) backwards}
+.dr{stroke-dasharray:1 1}
+.is-active .dr{animation:k-draw 1.1s var(--out) calc(var(--base) + var(--d,0s)) backwards}
+.stamp{transform:rotate(var(--rot,-8deg))}
+.is-active .stamp{animation:k-stamp .75s var(--out) calc(var(--base) + var(--d,0s)) backwards}
+.fo{opacity:0}
+.is-active .fo{animation:k-fo .45s ease calc(var(--base) + var(--d,0s)) backwards}
+.ptcl{opacity:0}
+.is-active .ptcl{animation:k-travel var(--dur,2.4s) ease-in-out calc(var(--base) + var(--d,0s)) infinite}
+.flow{stroke-dasharray:6 10}
+.is-active .flow{animation:k-dash 1.4s linear infinite}
+
+/* --- S1 title --- */
+@keyframes k-dim{from{opacity:1}}
+.s1-left{position:absolute;left:120px;top:190px;width:640px}
+.s1-h{font-size:150px;font-weight:950;letter-spacing:-.05em;line-height:.95;margin:26px 0 22px}
+.s1-h span{color:var(--afterglow)}
+.s1-sub{font-size:28px;font-weight:600;color:var(--muted);letter-spacing:-.01em}
+.s1-sub b{color:var(--ink)}
+.s1-ms{display:flex;gap:18px;margin-top:54px}
+.s1-ms .av{--s:64px}
+.s1-keys{position:absolute;left:120px;top:760px;font-size:15px;color:var(--muted);display:flex;gap:18px}
+.s1-keys kbd{font:inherit;font-weight:800;color:var(--ink);padding:2px 8px;border:1px solid var(--edge);border-radius:6px;margin-right:6px}
+.s1-grid{position:absolute;left:870px;top:200px;display:grid;grid-template-columns:repeat(10,46px);gap:11px}
+.s1-grid .p{position:relative;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;opacity:.25;
+  background:#171a24;border:1.5px solid rgba(255,255,255,.18)}
+.s1-grid .p>.ic{width:24px;height:24px;color:#b9b7c0}
+.s1-grid .p.top{opacity:1}
+.s1-grid .gl{position:absolute;inset:-2px;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 35% 30%,#fff6b6,#ff996c 75%);box-shadow:0 0 26px rgba(255,246,182,.85)}
+.s1-grid .gl .ic{width:24px;height:24px;color:#090a0f;stroke-width:2.2}
+.is-active .s1-grid .p{animation:k-pop .5s var(--spring) calc(var(--base) + var(--d)) backwards,k-dim 1s ease calc(var(--base) + 1.9s) backwards}
+.is-active .s1-grid .p.top{animation:k-pop .5s var(--spring) calc(var(--base) + var(--d)) backwards}
+.is-active .s1-grid .gl{animation:k-pop .7s var(--spring) calc(var(--base) + 2s + var(--g)) backwards}
+.s1-cap{position:absolute;left:870px;top:780px;width:571px;display:flex;justify-content:space-between;font-size:16px;font-weight:600;color:var(--muted)}
+.s1-cap b{color:var(--gold)}
+
+/* --- S2 journey --- */
+.s2-road{position:absolute;left:150px;top:517px;width:1300px;height:6px;border-radius:3px;
+  background:linear-gradient(90deg,var(--m1),var(--m2),var(--m3),var(--m4),var(--m5));box-shadow:0 0 22px rgba(169,125,255,.45)}
+.s2-node{top:520px}
+.s2-node .av{--s:104px}
+.s2-node .num{position:absolute;left:50%;top:120px;translate:-50% 0;font-size:15px;font-weight:800;letter-spacing:.12em;color:var(--ac)}
+.s2-node .lbl{position:absolute;left:50%;top:144px;translate:-50% 0;color:var(--ink);font-size:21px;line-height:1.2;white-space:normal;width:190px}
+.s2-node .av::after{content:"";position:absolute;inset:-8px;border-radius:50%;border:3px solid var(--ac);opacity:0}
+@keyframes s2-hit{0%{opacity:0;transform:scale(.9)}3%{opacity:1;transform:scale(1)}14%{opacity:0;transform:scale(1.5)}100%{opacity:0}}
+.is-active .s2-node .av::after{animation:s2-hit 9s ease-out calc(var(--base) + 2.2s + var(--hd)) infinite}
+.s2-ai .orb{--s:78px}
+.s2-ai .orb .name{top:auto;bottom:calc(100% + 20px);font-size:22px}
+.s2-ai .stem{position:absolute;left:50%;top:39px;width:0;height:100px;border-left:2px dashed rgba(141,252,241,.6)}
+.s2-doc{position:absolute;left:230px;top:430px;translate:-50% -50%;width:48px;height:58px;border-radius:9px;display:grid;place-items:center;
+  background:linear-gradient(180deg,#fff6b6,#fff6b6);box-shadow:0 0 26px rgba(255,246,182,.7);opacity:0}
+.s2-doc .ic{width:28px;height:28px;color:#090a0f;stroke-width:2.1}
+@keyframes s2-trip{0%{transform:translateX(0);opacity:0}5%,12%{transform:translateX(0);opacity:1}20%,30%{transform:translateX(285px)}
+  38%,48%{transform:translateX(570px)}56%,66%{transform:translateX(855px)}74%,88%{transform:translateX(1140px);opacity:1}96%,100%{transform:translateX(1140px);opacity:0}}
+.is-active .s2-doc{animation:s2-trip 9s cubic-bezier(.65,0,.35,1) calc(var(--base) + 2.2s) infinite}
+.s2-legend{position:absolute;left:0;right:0;top:770px;display:flex;justify-content:center;gap:28px}
+
+/* --- S3 self-evaluation --- */
+.s3-g{display:flex;gap:10px;align-items:center;margin-top:20px}
+.s3-g>.ic{width:22px;height:22px;color:var(--c)}
+.s3-g .ln{margin:0}
+.s3-pen{position:absolute;left:1000px;top:330px;width:64px;height:64px;color:var(--c);filter:drop-shadow(0 0 12px var(--c))}
+.s3-pen .ic{width:64px;height:64px;stroke-width:1.6}
+@keyframes s3-pen{0%{opacity:0;transform:translate(-40px,0)}6%{opacity:1}
+  20%{transform:translate(10px,40px) rotate(-6deg)}35%{transform:translate(-30px,90px)}50%{transform:translate(5px,150px) rotate(-6deg)}
+  65%{transform:translate(-25px,200px)}80%{transform:translate(10px,250px) rotate(-6deg)}}
+.s3-pen{transform:translate(40px,240px)}
+.is-active .s3-pen{animation:s3-pen 2.3s ease-in-out calc(var(--base) + .8s) backwards}
+.s3-link{position:absolute;left:0;top:0;width:1600px;height:900px;overflow:visible;pointer-events:none}
+.s3-link path{stroke:var(--c);stroke-width:3;fill:none}
+.s3-stamp{position:absolute;left:820px;top:640px;font-size:22px;padding:10px 18px;border:3px solid var(--c);border-radius:12px;color:var(--c);
+  font-weight:800;letter-spacing:.14em;text-transform:uppercase;display:flex;gap:10px;align-items:center;background:rgba(9,10,15,.85);--rot:-8deg}
+.s3-stamp .ic{width:26px;height:26px;stroke-width:2.4}
+
+/* --- S4 peer & upward reviews --- */
+.s4-svg{position:absolute;left:0;top:0;width:1600px;height:900px;pointer-events:none}
+.s4-svg line{stroke:rgba(255,255,255,.22);stroke-width:2.5;stroke-dasharray:4 9}
+.s4-svg line.up{stroke:var(--m2)}
+.s4-b{position:absolute;translate:-50% -50%;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;
+  background:var(--c);color:#090a0f;box-shadow:0 0 18px var(--c)}
+.s4-b .ic{width:24px;height:24px;stroke-width:2}
+.s4-b.up{background:var(--m2);color:#090a0f;box-shadow:0 0 18px var(--m2)}
+.s4-count{position:absolute;right:-8px;top:-8px;min-width:54px;height:54px;padding:0 12px;border-radius:27px;display:flex;gap:6px;align-items:center;justify-content:center;
+  background:#fff;color:#090a0f;font-size:24px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.s4-count .ic{width:20px;height:20px;stroke-width:2.2}
+.s4-cap{position:absolute;translate:-50% 0;white-space:nowrap}
+.s4-svg line.nom{stroke:var(--m2);stroke-dasharray:2 9;stroke-width:3}
+.s4-pin{position:absolute;right:-4px;top:-4px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  background:var(--m2);color:#090a0f;box-shadow:0 0 12px var(--m2)}
+.s4-pin .ic{width:18px;height:18px;stroke-width:2.8}
+
+/* --- S5 evidence --- */
+.s5-folder{width:270px;height:210px;border-radius:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  background:radial-gradient(circle at 35% 25%,color-mix(in srgb,var(--c) 35%,#1c1f2a),#14161f 80%);border:2px solid var(--c);
+  box-shadow:0 0 0 10px color-mix(in srgb,var(--c) 12%,transparent),0 0 70px color-mix(in srgb,var(--c) 35%,transparent)}
+.s5-folder>.ic{width:96px;height:96px;color:#fff;stroke-width:1.4}
+.s5-fill{width:190px;height:12px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden}
+.s5-fill i{display:block;height:100%;background:linear-gradient(90deg,var(--c),#8dfcf1);border-radius:6px}
+.is-active .s5-fill i{animation-duration:3.4s;animation-timing-function:cubic-bezier(.3,.1,.3,1)}
+.s5-dot{position:absolute;translate:-50% -50%;width:16px;height:16px;border-radius:50%;background:var(--c);box-shadow:0 0 16px var(--c),0 0 4px #fff}
+.s5-dot.p{background:var(--m1);box-shadow:0 0 16px var(--m1),0 0 4px #fff}
+.s5-sys{--cc:#e6e3ec}
+.s5-man{--cc:#e6e3ec;font-size:16px;padding:8px 13px;border:1.5px dashed rgba(255,255,255,.35);background:rgba(9,10,15,.9)}
+.s5-pen{position:absolute;right:-10px;top:-12px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--gold);color:#090a0f}
+.s5-pen .ic{width:15px;height:15px;stroke-width:2.6}
+.s5-pp{position:absolute;translate:-50% -50%;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;
+  background:var(--gold);color:#090a0f;box-shadow:0 0 14px rgba(255,246,182,.7)}
+.s5-pp .ic{width:18px;height:18px;stroke-width:2.4}
+
+/* --- S6 template --- */
+.s6-row{display:flex;align-items:center;gap:14px;height:54px;padding:0 14px;margin-top:9px;border-radius:12px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07)}
+.s6-row.opt{border:1.5px dashed rgba(255,255,255,.28);background:none}
+.s6-row .ri{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c)}
+.s6-row .ri .ic{width:20px;height:20px}
+.s6-row .rl{font-size:18px;font-weight:600;width:220px;flex:none;white-space:nowrap}
+.s6-row .rl small{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-left:8px}
+.s6-row .bar{flex:1;height:10px;border-radius:5px;background:rgba(255,255,255,.08);overflow:hidden}
+.s6-row .bar i{display:block;height:100%;background:var(--c);border-radius:5px}
+.s6-row .ok{width:26px;height:26px;color:var(--good);stroke-width:2.6}
+.s6-sq{flex:1;display:flex;gap:5px}
+.s6-sq i{flex:1;height:18px;border-radius:4px;background:var(--c)}
+.s6-flag{position:absolute;left:400px;top:206px;display:flex;gap:12px;align-items:center;padding:12px 20px 12px 16px;border-radius:14px;
+  background:var(--gold);color:#090a0f;font-size:20px;font-weight:800;box-shadow:0 10px 30px rgba(255,246,182,.35);--rot:-5deg;z-index:2}
+.s6-flag .ic{width:28px;height:28px;stroke-width:2.4}
+.s6-side{position:absolute;display:flex;flex-direction:column;gap:22px}
+.s6-side .tag{align-self:flex-start;margin-bottom:4px}
+
+/* --- S7 coach --- */
+.s7-svg{position:absolute;left:0;top:0;width:1600px;height:900px;pointer-events:none;overflow:visible}
+.s7-svg .arc{fill:none;stroke-width:3;stroke:url(#s7-grad)}
+.s7-f{position:absolute;left:228px;display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:12px;font-size:17px;font-weight:600;white-space:nowrap;
+  background:color-mix(in srgb,var(--good) 14%,#14161f);border:1.5px solid var(--good);box-shadow:0 10px 26px rgba(0,0,0,.45)}
+.s7-f .sw{position:relative;width:22px;height:22px}
+.s7-f .sw .ic{position:absolute;inset:0;width:22px;height:22px;stroke-width:2.3}
+.s7-f .sw .a1{color:var(--warn)} .s7-f .sw .a2{color:var(--good)}
+@keyframes s7-res{from{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,#14161f)}}
+.is-active .s7-f{animation:k-fly 1s var(--out) calc(var(--base) + var(--d)) backwards,s7-res .5s ease calc(var(--base) + var(--r)) backwards}
+.is-active .s7-f .a1{animation-delay:calc(var(--base) + var(--r))}
+.is-active .s7-f .a2{animation-delay:calc(var(--base) + var(--r) + .1s)}
+.s7-gauge{position:absolute;left:730px;top:440px;width:220px;text-align:center}
+.s7-gauge svg{width:220px;height:120px;overflow:visible}
+.s7-gauge path{fill:none;stroke-width:14;stroke-linecap:round}
+.s7-gauge .bgp{stroke:rgba(255,255,255,.1)}
+.s7-gauge .fg{stroke:url(#s7-grad);stroke-dasharray:100 100;stroke-dashoffset:8}
+@keyframes s7-g{from{stroke-dashoffset:60}}
+.is-active .s7-gauge .fg{animation:s7-g 1.4s var(--out) calc(var(--base) + 3s) backwards}
+.s7-gauge .v{margin-top:-62px;font-size:44px;font-weight:800;letter-spacing:-.02em}
+.s7-gauge .v small{font-size:22px;color:var(--muted)}
+.s7-gauge .lbl{font-size:15px;letter-spacing:.14em;text-transform:uppercase}
+.s7-al{position:absolute;translate:-50% -50%}
+
+/* --- S8 9-box --- */
+.s8-cell{position:absolute;width:156px;height:156px;border-radius:14px;padding:12px 10px;text-align:center;
+  font-size:14px;font-weight:800;line-height:1.15;color:color-mix(in srgb,var(--tc) 65%,#fff);
+  background:color-mix(in srgb,var(--tc) 13%,transparent);border:1.5px solid color-mix(in srgb,var(--tc) 35%,transparent)}
+.s8-cell.on{background:color-mix(in srgb,var(--tc) 38%,transparent);border-color:var(--tc);box-shadow:0 0 40px color-mix(in srgb,var(--tc) 45%,transparent);color:#fff}
+.s8-cell .st{position:absolute;right:8px;bottom:8px;width:18px;height:18px;color:var(--gold);fill:var(--gold);stroke-width:1.2}
+@keyframes s8-on{from{background:color-mix(in srgb,var(--tc) 13%,transparent);border-color:color-mix(in srgb,var(--tc) 35%,transparent);box-shadow:none}}
+.is-active .s8-cell.on{animation:k-pop .7s var(--spring) calc(var(--base) + var(--d)) backwards,s8-on .6s ease calc(var(--base) + 2.3s) backwards}
+.s8-tick{position:absolute;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.s8-axis{position:absolute;background:rgba(255,255,255,.35)}
+.s8-tok{position:absolute;left:1020px;top:518px;translate:-50% -50%}
+@keyframes s8-arc{from{opacity:0;transform:translate(-720px,0) scale(.6)}12%{opacity:1}50%{transform:translate(-360px,-240px) scale(.9)}}
+.is-active .s8-tok{animation:s8-arc 1.4s cubic-bezier(.45,0,.25,1) calc(var(--base) + 1s) backwards}
+.s8-rip{position:absolute;left:1020px;top:518px;width:150px;height:150px;translate:-50% -50%;border-radius:50%;border:3px solid var(--c);opacity:0}
+.is-active .s8-rip{animation:k-ripple 1.1s ease-out calc(var(--base) + 2.35s) backwards}
+.s8-row{display:flex;align-items:center;gap:12px;margin-top:18px;font-weight:600;font-size:17px}
+
+/* --- S9 internal calibration --- */
+.s9-svg{position:absolute;left:0;top:0;width:1600px;height:900px;pointer-events:none}
+.s9-svg line{stroke:color-mix(in srgb,var(--c) 60%,transparent);stroke-width:2.5;stroke-dasharray:4 8}
+.s9-grid{position:absolute;top:500px}
+.s9-grid .nb{--nbs:186px;gap:6px}
+.s9-grid .nb i{border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.s9-t{position:absolute;width:34px;height:34px;translate:-50% -50%;border-radius:50%;z-index:2;
+  background:radial-gradient(circle at 35% 30%,#e4fffc,var(--m1) 70%);box-shadow:0 0 14px color-mix(in srgb,var(--m1) 70%,transparent)}
+@keyframes s9-mv{from{transform:translateY(var(--my))}}
+.is-active .s9-t.mv{animation:k-pop .7s var(--spring) calc(var(--base) + 1.3s) backwards,s9-mv .9s var(--spring) calc(var(--base) + 2.6s) backwards}
+.s9-delta{position:absolute;translate:-50% -50%;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;z-index:3;
+  background:var(--c);color:#090a0f;font-weight:800;font-size:16px;box-shadow:0 0 14px var(--c)}
+.s9-bar{position:absolute;left:290px;top:560px;width:1040px;height:4px;border-radius:2px;z-index:1;
+  background:linear-gradient(90deg,transparent,var(--c) 6%,var(--c) 94%,transparent);box-shadow:0 0 16px var(--c)}
+.s9-talk{position:absolute;translate:-50% -50%;width:40px;height:34px;border-radius:12px;display:grid;place-items:center;opacity:0;
+  background:#fff;color:#1c1f2a}
+.s9-talk .ic{width:22px;height:22px;stroke-width:2.2}
+@keyframes s9-talk{0%{opacity:0;transform:scale(.4)}8%{opacity:1;transform:scale(1)}28%{opacity:1;transform:scale(1)}36%,100%{opacity:0;transform:scale(.8)}}
+.is-active .s9-talk{animation:s9-talk 3.6s ease calc(var(--base) + var(--d)) infinite}
+
+/* --- S10 sign-offs & completed --- */
+.s10-doc{border-color:var(--c);box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 14%,transparent),0 24px 60px rgba(0,0,0,.45)}
+@keyframes s10-lock{from{border-color:rgba(255,255,255,.14);box-shadow:0 24px 60px rgba(0,0,0,.45)}}
+.is-active .s10-doc{animation:k-fu .8s var(--out) calc(var(--base) + .2s) backwards,s10-lock .6s ease calc(var(--base) + 3.3s) backwards}
+.s10-row{display:flex;align-items:center;gap:12px;margin:22px 0;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.04);font-weight:600;font-size:17px}
+.s10-row>.ic{color:var(--c)}
+.s10-old{position:relative;margin-left:auto;opacity:.55}
+.s10-old .nb{--nbs:36px;--nbc:#e6e3ec}
+.s10-old .strike{position:absolute;left:-6px;right:-6px;top:50%;height:3px;border-radius:2px;background:var(--bad);rotate:-20deg}
+.s10-cm{position:absolute;left:880px;width:360px;display:flex;gap:16px;align-items:center;padding:16px 18px;border-radius:16px;
+  background:linear-gradient(180deg,#1e212c,#161923);border:1px solid var(--edge);border-left:4px solid var(--c);box-shadow:0 14px 34px rgba(0,0,0,.4)}
+.s10-cm .rb{width:58px;height:58px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:16px;letter-spacing:.04em;
+  background:color-mix(in srgb,var(--c) 25%,#14161f);border:2px solid var(--c);color:#fff}
+.s10-cm .cl{flex:1} .s10-cm .ln{margin:8px 0;height:10px}
+.s10-cm .who{font-size:14px;font-weight:800;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.s10-stamp{position:absolute;left:470px;top:610px;font-size:30px;padding:12px 22px;border:4px solid var(--c);border-radius:14px;color:var(--c);
+  font-weight:800;letter-spacing:.16em;text-transform:uppercase;display:flex;gap:12px;align-items:center;background:rgba(9,10,15,.88);--rot:-10deg;
+  box-shadow:0 0 40px color-mix(in srgb,var(--c) 40%,transparent)}
+.s10-stamp .ic{width:32px;height:32px;stroke-width:2.4}
+
+/* --- S11 scorer --- */
+.s11-svg{position:absolute;left:0;top:0;width:1600px;height:900px;pointer-events:none}
+.s11-svg line{stroke:var(--ai2);stroke-width:2.5;opacity:.55}
+.s11-sys{position:absolute;translate:-50% -50%;display:flex;flex-direction:column;align-items:center;gap:8px}
+.s11-sys .bx{width:66px;height:66px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(180deg,#1e212c,#14161f);
+  border:1.5px solid color-mix(in srgb,var(--ai2) 50%,transparent);box-shadow:0 0 22px rgba(141,252,241,.18)}
+.s11-sys .bx .ic{width:32px;height:32px;color:#e6e3ec}
+.s11-sys span{font-size:15px;font-weight:600;color:var(--muted)}
+.s11-man{position:absolute;left:250px;top:700px;translate:-50% -50%;display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:14px;
+  border:1.5px dashed rgba(255,255,255,.35);background:rgba(9,10,15,.9);color:#e6e3ec}
+.s11-man .ic{width:22px;height:22px}
+.s11-man b{font-size:15px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.s11-man .pn{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--gold);color:#090a0f}
+.s11-man .pn .ic{width:15px;height:15px;stroke-width:2.6}
+.s11-stack{position:absolute;left:250px;top:500px;translate:-50% -50%;width:150px;height:190px}
+.s11-stack .pg{position:absolute;inset:0;border-radius:14px;background:linear-gradient(180deg,#1e212c,#14161f);border:1.5px solid var(--m3);
+  display:grid;place-items:center;box-shadow:0 10px 26px rgba(0,0,0,.4)}
+.s11-stack .pg .ic{width:46px;height:46px;color:var(--m3)}
+.s11-pkt{position:absolute;translate:-50% -50%;width:40px;height:50px;border-radius:8px;display:grid;place-items:center;
+  background:var(--m3);color:#090a0f;box-shadow:0 0 18px var(--m3)}
+.s11-pkt .ic{width:22px;height:22px;stroke-width:2.2}
+.s11-out{position:absolute;left:1210px;top:330px;width:290px}
+.s11-r{display:flex;align-items:center;gap:12px;height:58px}
+.s11-r .dt{width:34px;height:34px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#e4fffc,var(--m1) 70%)}
+.s11-r .br{flex:1;height:14px;border-radius:7px;background:rgba(255,255,255,.08);overflow:hidden}
+.s11-r .br i{display:block;height:100%;border-radius:7px;background:linear-gradient(90deg,var(--beam),var(--aiB))}
+.s11-r b{width:44px;text-align:right;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.s11-sp{position:absolute;translate:-50% -50%;width:14px;height:14px;border-radius:50%;background:var(--ai2);box-shadow:0 0 14px var(--ai2),0 0 4px #fff}
+
+/* --- S12 calibration groups --- */
+.s12-tray{position:absolute;top:470px;width:330px;height:270px;translate:-50% 0;border-radius:22px;
+  background:linear-gradient(180deg,rgba(255,246,182,.08),rgba(255,246,182,.02));border:1.5px solid color-mix(in srgb,var(--c) 45%,transparent)}
+.s12-tray .th{display:flex;align-items:center;justify-content:center;gap:10px;height:62px;border-bottom:1px solid rgba(255,255,255,.08)}
+.s12-tray .lv{padding:5px 11px;border-radius:10px;background:var(--c);color:#090a0f;font-weight:800;font-size:17px}
+.s12-tray .bn{font-size:15px;font-weight:800}
+.s12-tray .nb{--nbs:34px;--nbc:var(--c)}
+.s12-tok{position:absolute;width:62px;height:62px;translate:-50% -50%;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--dc) 70%,#fff),var(--dc) 75%);border:2px solid rgba(255,255,255,.6);
+  box-shadow:0 0 16px color-mix(in srgb,var(--dc) 60%,transparent)}
+.s12-tok .ic{width:30px;height:30px;color:#090a0f;stroke-width:2}
+@keyframes s12-sort{0%{opacity:0;transform:translate(var(--fx),var(--fy)) scale(.3)}14%{opacity:1;transform:translate(var(--fx),var(--fy)) scale(1)}
+  46%{transform:translate(var(--fx),var(--fy)) scale(1)}}
+.is-active .s12-tok{animation:s12-sort 2.8s cubic-bezier(.6,0,.25,1) calc(var(--base) + var(--d)) backwards}
+.s12-legend{position:absolute;left:120px;top:214px;display:flex;gap:22px;align-items:center}
+.s12-dept{display:inline-flex;align-items:center;gap:8px;font-size:16px;font-weight:600;color:var(--muted)}
+.s12-dept i{width:16px;height:16px;border-radius:50%;background:var(--dc)}
+
+/* --- S13 calibration session --- */
+.s13-table{position:absolute;left:470px;top:395px;width:660px;height:250px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(255,246,182,.10),rgba(255,246,182,.03));border:2px solid color-mix(in srgb,var(--c) 45%,transparent);
+  box-shadow:inset 0 0 60px rgba(0,0,0,.35)}
+.s13-list{position:absolute;left:620px;top:425px;width:360px}
+.s13-r{display:flex;align-items:center;gap:10px;height:38px}
+.s13-r .n{width:22px;font-weight:800;color:var(--c);font-size:16px}
+.s13-r .dt{width:24px;height:24px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#e4fffc,var(--m1) 70%)}
+.s13-r .br{flex:1;height:12px;border-radius:6px;background:rgba(255,255,255,.08);position:relative}
+.s13-r .br i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:linear-gradient(90deg,var(--beam),var(--aiB))}
+@keyframes s13-w{from{width:var(--w0)}}
+.is-active .s13-r .br i.adj{animation:s13-w 1s var(--out) calc(var(--base) + 2.8s) backwards}
+.s13-r b{width:30px;text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.s13-r .fx{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none}
+.s13-r .fx .ic{width:16px;height:16px;stroke-width:3}
+.s13-r .fx.up{background:var(--good);color:#090a0f} .s13-r .fx.dn{background:var(--bad);color:#090a0f}
+.s13-r .fx.cm{background:#fff;color:#1c1f2a}
+.s13-mini{position:absolute;width:30px;height:30px;translate:-50% -50%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#e4fffc,var(--m1) 70%);
+  box-shadow:0 0 10px color-mix(in srgb,var(--m1) 60%,transparent)}
+
+/* --- S14 rank, don't regrade --- */
+.s14-panel{position:absolute;top:236px;height:540px;border-radius:24px;border:1.5px solid var(--edge);background:rgba(255,255,255,.02)}
+.s14-panel>.tag{position:absolute;left:24px;top:22px}
+.s14-old{left:120px;width:480px;opacity:.85}
+.s14-new{left:640px;width:840px;border-color:color-mix(in srgb,var(--c) 50%,transparent);background:linear-gradient(180deg,rgba(255,246,182,.06),transparent)}
+.s14-grid{position:absolute;left:140px;top:150px}
+.s14-grid .nb{--nbs:220px;gap:8px}
+.s14-grid .nb i{border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.s14-hop{position:absolute;left:250px;top:260px;translate:-50% -50%;width:52px;height:52px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#e4fffc,var(--m1) 70%);box-shadow:0 0 16px var(--m1)}
+@keyframes s14-hop{0%,18%{transform:translate(76px,-76px)}32%,50%{transform:translate(0,0)}64%,82%{transform:translate(76px,0)}100%{transform:translate(76px,-76px)}}
+.is-active .s14-hop{animation:s14-hop 3.2s cubic-bezier(.5,0,.3,1.3) calc(var(--base) + .6s) infinite}
+.s14-x{position:absolute;left:250px;top:260px;translate:-50% -50%;width:240px;height:240px;color:var(--bad);--rot:0deg;filter:drop-shadow(0 0 16px rgba(255,84,79,.6))}
+.s14-x .ic{width:240px;height:240px;stroke-width:2.2}
+.s14-cap{position:absolute;left:0;right:0;bottom:30px;display:flex;justify-content:center;gap:14px}
+.s14-card{position:absolute;left:40px;width:760px;height:64px;display:flex;align-items:center;gap:18px;padding:0 20px;border-radius:16px;
+  background:linear-gradient(180deg,#1e212c,#161923);border:1px solid var(--edge);box-shadow:0 10px 24px rgba(0,0,0,.35)}
+.s14-card .rk{width:46px;font-size:26px;font-weight:800;color:var(--c)}
+.s14-card .dt{width:38px;height:38px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#e4fffc,var(--m1) 70%)}
+.s14-card .ai{display:flex;align-items:center;gap:6px;font-weight:800;color:var(--ai2);font-size:17px}
+.s14-card .ai .ic{width:18px;height:18px}
+.s14-card .ln{flex:1;margin:0;height:10px}
+.s14-card .gr{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.05)}
+.s14-card .gr .nb{--nbs:28px;--nbc:var(--c)}
+.s14-card .gr .ic{width:20px;height:20px;color:var(--c)}
+@keyframes s14-mv{from{transform:translateY(var(--fy))}}
+.is-active .s14-card{animation:k-fi .5s ease calc(var(--base) + var(--d)) backwards,s14-mv 1.1s var(--out) calc(var(--base) + 2s) backwards}
+.s14-card.up{z-index:2}
+
+/* --- S15 senior leadership cut --- */
+.s15-r{position:absolute;left:620px;width:400px;height:40px}
+.s15-r .in{height:100%;display:flex;align-items:center;gap:12px;padding:0 14px;border-radius:11px;
+  background:linear-gradient(180deg,#1e212c,#161923);border:1px solid var(--edge);border-left:5px solid var(--gc)}
+.s15-r .n{width:26px;font-weight:800;font-size:16px;color:var(--muted)}
+.s15-r .dt{width:22px;height:22px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#e4fffc,var(--m1) 70%)}
+.s15-r .br{flex:1;height:10px;border-radius:5px;background:rgba(255,255,255,.08)}
+.s15-r .br i{display:block;height:100%;border-radius:5px;background:rgba(255,255,255,.35)}
+.s15-r .in.above{border-color:rgba(255,246,182,.7);border-left-color:var(--gc);box-shadow:0 0 18px rgba(255,246,182,.25)}
+.s15-r .in.above .n{color:var(--gold)}
+.s15-r .in.above .br i{background:linear-gradient(90deg,#fff6b6,#ff996c)}
+@keyframes s15-gold{from{border-color:rgba(255,255,255,.14);box-shadow:none}}
+.is-active .s15-r .in.above{animation:s15-gold .6s ease calc(var(--base) + 4.2s) backwards}
+.s15-r .in.below{opacity:.42;transform:translateY(22px);filter:grayscale(1)}
+@keyframes s15-drop{from{opacity:1;transform:none;filter:none}}
+.is-active .s15-r .in.below{animation:s15-drop .9s var(--spring) calc(var(--base) + 4.3s + var(--k)) backwards}
+.s15-cut{position:absolute;left:560px;top:522px;width:520px;height:0;border-top:3px dashed var(--c);filter:drop-shadow(0 0 8px var(--c))}
+.s15-cut .ic{position:absolute;left:-46px;top:-21px;width:40px;height:40px;color:var(--c);stroke-width:2}
+@keyframes s15-cut{0%{opacity:0;transform:translateY(200px)}12%{opacity:1;transform:translateY(200px)}45%{transform:translateY(-110px)}75%{transform:translateY(34px)}}
+.is-active .s15-cut{animation:s15-cut 2.4s cubic-bezier(.45,0,.3,1) calc(var(--base) + 1.7s) backwards}
+.s15-dn{position:absolute;left:1036px;width:30px;height:30px;color:var(--muted)}
+.s15-dn .ic{width:30px;height:30px}
+
+/* --- S16 promotion --- */
+.s16-svg{position:absolute;left:0;top:0;width:1600px;height:900px;pointer-events:none;overflow:visible}
+.s16-svg path{fill:none;stroke-width:3;stroke:rgba(255,255,255,.35)}
+.s16-svg path.big{stroke:var(--gold);stroke-width:4;filter:drop-shadow(0 0 8px rgba(255,246,182,.6))}
+.s16-step{position:absolute;bottom:130px;width:150px;border-radius:14px 14px 4px 4px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--sc) 26%,#1c1f2a),#14161f);border:1.5px solid var(--sc);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px;padding:0 8px 14px;text-align:center;font-weight:800;font-size:15px;line-height:1.15}
+.s16-step .nb{--nbs:30px;--nbc:#fff}
+.s16-stack{position:absolute;width:150px;display:flex;flex-direction:column-reverse;align-items:center;gap:5px}
+.s16-stack i{display:block;width:96px;height:15px;border-radius:5px;background:#e6e3ec;box-shadow:0 2px 0 rgba(0,0,0,.3)}
+
+/* --- S17 recap --- */
+.s17-road{position:absolute;left:220px;top:347px;width:1160px;height:5px;border-radius:3px;
+  background:linear-gradient(90deg,var(--m1),var(--m2),var(--m3),var(--m4),var(--m5))}
+.s17-card{position:absolute;top:510px;width:270px;height:220px;border-radius:22px;padding:28px 24px;display:flex;flex-direction:column;gap:18px;
+  background:linear-gradient(180deg,#1e212c,#14161f);border:1.5px solid var(--edge);border-top:4px solid var(--kc);box-shadow:0 18px 40px rgba(0,0,0,.4)}
+.s17-card .ic{width:52px;height:52px;color:var(--kc);stroke-width:1.6}
+.s17-card b{font-size:25px;line-height:1.15;font-weight:800}
+.s17-card span{font-size:16px;color:var(--muted);font-weight:600}
+
+
+@media (prefers-reduced-motion:reduce){
+  .is-active *,.is-active{animation:none!important}
+  #track,#bg,.slide,.tl-mark{transition:none!important}
+  .ptcl{display:none}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/><path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8M18 13.4c2.4.8 4 3.1 4 5.6"/></symbol>
+  <symbol id="i-tie" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/><path d="M12 13l-1.6 2.2L12 20l1.6-4.8z"/></symbol>
+  <symbol id="i-crown" viewBox="0 0 24 24"><path d="M3 19h18"/><path d="M4 16L3 7l5 4 4-6 4 6 5-4-1 9z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 11h6M9 15h6M9 18h4"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></symbol>
+  <symbol id="i-msg" viewBox="0 0 24 24"><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M8 10.5h.01M12 10.5h.01M16 10.5h.01" stroke-width="2.6"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6h6l2 2h10v11H3z"/><path d="M3 11h18"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9zM9 12h6M9 16h4"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z"/><path d="M15 7v10" stroke-dasharray="2 2"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></symbol>
+  <symbol id="i-pr" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/><path d="M6 8.2v7.6M18 15.8V10a3 3 0 0 0-3-3h-4M12.5 4.5L10.5 7l2 2.5"/></symbol>
+  <symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.2"/><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="7" r="2.2"/><path d="M6 7.2v9.6M18 9.2c0 5-6 4.5-11 8"/></symbol>
+  <symbol id="i-frame" viewBox="0 0 24 24"><path d="M8 3v18M16 3v18M3 8h18M3 16h18"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 21h18M6 17v-5M11 17V6M16 17v-8M20 17v-3"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M18.5 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M3.5 17a8.5 8.5 0 1 1 17 0"/><path d="M12 17l4.5-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-checkc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.8 2.8L16.5 9"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+  <symbol id="i-q" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7v.4M12 17v.3"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11M12 15v2"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h12l-2.5 4.5L17 13H5"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 4v16M8 20h8M5 7h14M12 4l0 0"/><path d="M5 7l-3 6.5a3.2 3.2 0 0 0 6 0zM19 7l-3 6.5a3.2 3.2 0 0 0 6 0z"/></symbol>
+  <symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+  <symbol id="i-cut" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.6 7.6L20 18M8.6 16.4L20 6"/></symbol>
+  <symbol id="i-rank" viewBox="0 0 24 24"><path d="M10 6h11M10 12h8M10 18h5"/><path d="M4 4.5l1.5-1V9M3.5 15.5a1.5 1.5 0 1 1 2.6 1L3.5 20H7"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V5l8-3v19M12 9h8v12M2 21h20M7.5 8h1.5M7.5 12h1.5M7.5 16h1.5M15 13h2M15 17h2"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.8 5.8 6.2.9-4.5 4.4 1 6.3L12 17.5l-5.5 2.9 1-6.3L3 9.7l6.2-.9z"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-loop" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20.5V16h-4.5"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2.5V6M15 2.5V6M9 18v3.5M15 18v3.5M2.5 9H6M2.5 15H6M18 9h3.5M18 15h3.5"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+  <symbol id="i-brief" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V4.5h6V7M3 12.5h18"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v15M6 13l6 6 6-6"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 20V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-sprout" viewBox="0 0 24 24"><path d="M12 21v-9"/><path d="M12 12c0-4 3-7 8-7 0 5-3 7-8 7zM12 14c0-3-2.5-5.5-7-5.5 0 4 2.5 5.5 7 5.5z"/></symbol>
+</defs></svg>
+<div id="viewport">
+  <div id="stage">
+    <div id="bg"></div>
+    <div id="track">
+<!-- 01 · Title -->
+<section class="slide" id="s1" data-m="0" data-title="Top 10%">
+  <div class="s1-left">
+    <span class="tag fu" style="--d:.05s;--tc:var(--ai2)"><svg class="ic"><use href="#i-sparkles"/></svg>AI-assisted performance cycle</span>
+    <h1 class="s1-h fu" style="--d:.15s">Top <span>10%</span></h1>
+    <p class="s1-sub fu" style="--d:.3s"><b>Evidence</b> in · <b>Ranking</b> out · One clear <b>line</b></p>
+    <div class="s1-ms">
+      <div class="av pop" style="--ac:var(--m1);--d:.6s"><svg class="ic"><use href="#i-pen"/></svg></div>
+      <div class="av pop" style="--ac:var(--m2);--d:.7s"><svg class="ic"><use href="#i-brief"/></svg></div>
+      <div class="av pop" style="--ac:var(--m3);--d:.8s"><svg class="ic"><use href="#i-users"/></svg></div>
+      <div class="av pop" style="--ac:var(--m4);--d:.9s"><svg class="ic"><use href="#i-sliders"/></svg></div>
+      <div class="av pop" style="--ac:var(--m5);--d:1s"><svg class="ic"><use href="#i-crown"/></svg></div>
+    </div>
+  </div>
+  <div class="s1-keys fi" style="--d:2.6s"><span><kbd>→</kbd>next</span><span><kbd>N</kbd>notes</span><span><kbd>O</kbd>overview</span><span><kbd>F</kbd>fullscreen</span></div>
+  <div class="s1-grid" id="s1-grid"></div>
+  <div class="s1-cap fi" style="--d:2.6s"><span>100 people</span><span><b>10</b> above the line</span></div>
+  <script>
+    (() => {
+      const top = [3, 17, 24, 38, 41, 56, 62, 79, 85, 93];
+      let h = '';
+      for (let i = 0; i < 100; i++) {
+        const r = Math.floor(i / 10), c = i % 10, t = top.indexOf(i);
+        h += `<div class="p${t >= 0 ? ' top' : ''}" style="--d:${((r + c) * .035 + .3).toFixed(3)}s${t >= 0 ? `;--g:${(t * .09).toFixed(2)}s` : ''}">`
+          + `<svg class="ic"><use href="#i-user"/></svg>`
+          + (t >= 0 ? `<b class="gl"><svg class="ic"><use href="#i-user"/></svg></b>` : '') + '</div>';
+      }
+      document.getElementById('s1-grid').innerHTML = h;
+    })();
+  </script>
+  <aside class="notes"><ul>
+    <li><b>Top 10%</b> is Appfire's AI-assisted performance review cycle: one document per person, five milestones, two AI agents.</li>
+    <li>The name comes from the end of the cycle: senior leadership draws a line so the top tier stays small, roughly the top 10%. Leadership sets it by judgment each cycle, aiming at roughly 10%.</li>
+    <li>What changes from the old practice: documents are coached against one rubric, an AI score is the starting point for calibration, and calibration ranks people instead of changing their grades.</li>
+  </ul></aside>
+</section>
+
+<!-- 02 · Journey -->
+<section class="slide" id="s2" data-m="0" data-title="One document. Five milestones. Two agents.">
+  <div class="kicker">The journey</div>
+  <h2 class="title">One document. Five milestones. Two agents.</h2>
+  <div class="s2-road gx" style="--d:.2s"></div>
+  <div class="s2-ai ctr pop" style="left:515px;top:360px;width:78px;height:78px;--d:1.5s">
+    <div class="stem" style="height:70px"></div>
+    <div class="orb abs" style="left:0;top:0"><div class="ring"></div><div class="core"><svg class="ic"><use href="#i-sparkles"/></svg></div><div class="name">Coach</div></div>
+  </div>
+  <div class="s2-ai ctr pop" style="left:942px;top:360px;width:78px;height:78px;--d:1.7s">
+    <div class="stem" style="height:120px"></div>
+    <div class="orb abs" style="left:0;top:0"><div class="ring"></div><div class="core"><svg class="ic"><use href="#i-sparkles"/></svg></div><div class="name">Scorer</div></div>
+  </div>
+  <div class="s2-node ctr pop" style="left:230px;--ac:var(--m1);--d:.45s;--hd:.18s"><div class="av"><svg class="ic"><use href="#i-pen"/></svg></div><span class="num">01</span><span class="lbl">Self-evaluation</span></div>
+  <div class="s2-node ctr pop" style="left:515px;--ac:var(--m2);--d:.6s;--hd:1.53s"><div class="av"><svg class="ic"><use href="#i-brief"/></svg></div><span class="num">02</span><span class="lbl">Manager evaluation</span></div>
+  <div class="s2-node ctr pop" style="left:800px;--ac:var(--m3);--d:.75s;--hd:3.15s"><div class="av"><svg class="ic"><use href="#i-users"/></svg></div><span class="num">03</span><span class="lbl">Internal calibration</span></div>
+  <div class="s2-node ctr pop" style="left:1085px;--ac:var(--m4);--d:.9s;--hd:4.77s"><div class="av"><svg class="ic"><use href="#i-sliders"/></svg></div><span class="num">04</span><span class="lbl">Calibration</span></div>
+  <div class="s2-node ctr pop" style="left:1370px;--ac:var(--m5);--d:1.05s;--hd:6.39s"><div class="av"><svg class="ic"><use href="#i-crown"/></svg></div><span class="num">05</span><span class="lbl">Senior leadership</span></div>
+  <div class="s2-doc"><svg class="ic"><use href="#i-doc"/></svg></div>
+  <div class="s2-legend">
+    <span class="chip fu" style="--d:2s;--cc:var(--gold)"><svg class="ic"><use href="#i-doc"/></svg>One document per person</span>
+    <span class="chip fu" style="--d:2.1s;--cc:var(--ai2)"><svg class="ic"><use href="#i-sparkles"/></svg>AI agent · advisory</span>
+  </div>
+  <aside class="notes"><ul>
+    <li><b>M1 Self-evaluation</b>: the employee writes a self-evaluation; colleagues write peer reviews and upward reviews for their bosses.</li>
+    <li><b>M2 Manager evaluation</b>: the manager collects evidence and fills in the template, helped by <b>the Coach</b> (AI agent 1), then submits a 9-box placement.</li>
+    <li><b>M3 Internal calibration</b>: peer managers align with their Director; Director, Senior Manager and VP comments and score changes go into the document, which is then Completed.</li>
+    <li><b>M4 Calibration</b>: <b>the Scorer</b> (AI agent 2) scores every completed document; cross-department groups rank their people.</li>
+    <li><b>M5 Senior leadership</b>: Director+ draw the line on the top tier.</li>
+    <li>The same document travels through every milestone. Both agents are advisory: people decide.</li>
+  </ul></aside>
+</section>
+
+<!-- 03 · M1 self-evaluation -->
+<section class="slide" id="s3" data-m="1" data-title="The employee writes a self-evaluation">
+  <div class="kicker">Step 1.1</div>
+  <h2 class="title">The employee writes a self-evaluation</h2>
+  <svg class="s3-link"><path class="dr" pathLength="1" style="--d:.5s" d="M430 500 C 520 500, 540 470, 636 470"/></svg>
+  <div class="ctr pop" style="left:330px;top:500px;--d:.15s">
+    <div class="av" style="--s:190px"><svg class="ic"><use href="#i-user"/></svg></div>
+    <div class="lbl" style="margin-top:26px">Employee</div>
+  </div>
+  <div class="doc fu" style="left:640px;top:250px;width:380px;height:470px;--d:.45s">
+    <div class="hd"><svg class="ic"><use href="#i-pen"/></svg>Self-evaluation</div>
+    <div class="s3-g"><svg class="ic"><use href="#i-target"/></svg><div class="ln c gx" style="width:40%;--d:.9s"></div></div>
+    <div class="ln gx" style="width:100%;--d:1.05s"></div>
+    <div class="ln gx" style="width:78%;--d:1.2s"></div>
+    <div class="s3-g"><svg class="ic"><use href="#i-trend"/></svg><div class="ln c gx" style="width:34%;--d:1.45s"></div></div>
+    <div class="ln gx" style="width:92%;--d:1.6s"></div>
+    <div class="ln gx" style="width:64%;--d:1.75s"></div>
+    <div class="s3-g"><svg class="ic"><use href="#i-sprout"/></svg><div class="ln c gx" style="width:38%;--d:2s"></div></div>
+    <div class="ln gx" style="width:86%;--d:2.15s"></div>
+    <div class="ln gx" style="width:50%;--d:2.3s"></div>
+  </div>
+  <div class="s3-pen"><svg class="ic"><use href="#i-pen"/></svg></div>
+  <div class="s3-stamp stamp" style="--d:3s"><svg class="ic"><use href="#i-checkc"/></svg>Submitted</div>
+  <span class="chip pop abs" style="left:1180px;top:340px;--d:1.3s"><svg class="ic"><use href="#i-target"/></svg>Delivered</span>
+  <span class="chip pop abs" style="left:1180px;top:460px;--d:1.85s"><svg class="ic"><use href="#i-trend"/></svg>Impact</span>
+  <span class="chip pop abs" style="left:1180px;top:580px;--d:2.4s"><svg class="ic"><use href="#i-sprout"/></svg>Growth</span>
+  <aside class="notes"><ul>
+    <li><b>Who:</b> the employee. <b>When:</b> the cycle opens.</li>
+    <li>Describe what they delivered, how, its impact and complexity, and where they want to grow. Link the evidence: Jira issues, pull requests, pages.</li>
+    <li>It's an input, not a verdict: the Coach and the Scorer treat every statement as a claim to verify.</li>
+    <li><b>Output:</b> a submitted self-evaluation, before the M1 deadline.</li>
+  </ul></aside>
+</section>
+
+<!-- 04 · M1 peer & upward reviews -->
+<section class="slide" id="s4" data-m="1" data-title="Colleagues review each other, and their bosses">
+  <div class="kicker">Step 1.2</div>
+  <h2 class="title">Colleagues review each other, and their bosses</h2>
+  <svg class="s4-svg">
+    <line class="nom fi" style="--d:.6s" x1="800" y1="300" x2="430" y2="430"/><line class="nom fi" style="--d:.7s" x1="800" y1="300" x2="430" y2="660"/>
+    <line class="fi" style="--d:1.1s" x1="430" y1="430" x2="800" y2="520"/><line class="fi" style="--d:1.1s" x1="430" y1="660" x2="800" y2="520"/>
+    <line class="fi" style="--d:1.2s" x1="1170" y1="430" x2="800" y2="520"/><line class="fi" style="--d:1.2s" x1="1170" y1="660" x2="800" y2="520"/>
+    <line class="up fi" style="--d:1.2s" x1="800" y1="520" x2="800" y2="300"/>
+  </svg>
+  <span class="ptcl s4-b" style="left:430px;top:430px;--tx:370px;--ty:90px;--d:1.5s"><svg class="ic"><use href="#i-msg"/></svg></span>
+  <span class="ptcl s4-b" style="left:430px;top:660px;--tx:370px;--ty:-140px;--d:2s"><svg class="ic"><use href="#i-msg"/></svg></span>
+  <span class="ptcl s4-b" style="left:1170px;top:430px;--tx:-370px;--ty:90px;--d:2.5s"><svg class="ic"><use href="#i-msg"/></svg></span>
+  <span class="ptcl s4-b" style="left:1170px;top:660px;--tx:-370px;--ty:-140px;--d:3s"><svg class="ic"><use href="#i-msg"/></svg></span>
+  <span class="ptcl s4-b up" style="left:800px;top:520px;--tx:0px;--ty:-220px;--d:3.5s;--dur:2s"><svg class="ic"><use href="#i-up"/></svg></span>
+  <div class="ctr pop" style="left:800px;top:300px;--d:.3s"><div class="av" style="--s:104px;--ac:var(--m2)"><svg class="ic"><use href="#i-tie"/></svg></div></div>
+  <div class="lbl abs fi" style="left:870px;top:288px;--d:.5s">Manager</div>
+  <div class="ctr pop" style="left:800px;top:520px;--d:.15s">
+    <div class="av" style="--s:150px"><svg class="ic"><use href="#i-user"/></svg></div>
+    <div class="s4-count pop" style="--d:1.7s"><svg class="ic"><use href="#i-msg"/></svg><span data-to="4" data-delay="1800" data-dur="2600">4</span></div>
+  </div>
+  <div class="ctr pop" style="left:430px;top:430px;--d:.45s"><div class="av" style="--s:100px"><svg class="ic"><use href="#i-user"/></svg></div><span class="s4-pin pop" style="--d:.95s"><svg class="ic"><use href="#i-check"/></svg></span></div>
+  <div class="ctr pop" style="left:430px;top:660px;--d:.55s"><div class="av" style="--s:100px"><svg class="ic"><use href="#i-user"/></svg></div><span class="s4-pin pop" style="--d:1.05s"><svg class="ic"><use href="#i-check"/></svg></span></div>
+  <div class="ctr pop" style="left:1170px;top:430px;--d:.65s"><div class="av ghost" style="--s:100px"><svg class="ic"><use href="#i-user"/></svg></div></div>
+  <div class="ctr pop" style="left:1170px;top:660px;--d:.75s"><div class="av ghost" style="--s:100px"><svg class="ic"><use href="#i-user"/></svg></div></div>
+  <div class="ctr pop" style="left:1330px;top:545px;--d:.85s"><div class="av ghost" style="--s:70px;opacity:.5"><svg class="ic"><use href="#i-user"/></svg></div></div>
+  <span class="chip fu s4-cap" style="left:430px;top:760px;--d:1.2s;--cc:var(--m2)"><svg class="ic"><use href="#i-check"/></svg>Nominated · up to 2</span>
+  <span class="chip fu s4-cap" style="left:1170px;top:760px;--d:1.3s"><svg class="ic"><use href="#i-users"/></svg>Open to anyone</span>
+  <span class="chip fu s4-cap" style="left:800px;top:760px;--d:3.5s;--cc:var(--m2)"><svg class="ic"><use href="#i-up"/></svg>Upward review</span>
+  <aside class="notes"><ul>
+    <li><b>Nominated reviews:</b> the manager nominates up to 2 peer reviewers per person.</li>
+    <li><b>Open feedback:</b> on top of that, anyone can write feedback for anyone, colleagues and bosses alike (upward reviews). Runs in parallel with the self-evaluation.</li>
+    <li>Good feedback describes specific behavior and outcomes, with both strengths and growth areas.</li>
+    <li>Growth areas raised by peers weigh as much as their praise (rubric rule).</li>
+    <li><b>M1 ends</b> when the self-evaluation and reviews are in. The manager takes over.</li>
+  </ul></aside>
+</section>
+
+<!-- 05 · M2 evidence -->
+<section class="slide" id="s5" data-m="2" data-title="The manager collects the evidence">
+  <div class="kicker">Step 2.1</div>
+  <h2 class="title">The manager collects the evidence</h2>
+  <span class="tag fi abs" style="left:236px;top:268px;--d:.4s;--tc:var(--m1)">People</span>
+  <span class="tag fi abs" style="left:1222px;top:268px;--d:.4s;--tc:#e6e3ec">Systems</span>
+  <span class="ptcl s5-dot p" style="left:300px;top:360px;--tx:500px;--ty:160px;--d:1.5s"></span>
+  <span class="ptcl s5-dot p" style="left:300px;top:500px;--tx:500px;--ty:20px;--d:1.8s"></span>
+  <span class="ptcl s5-dot p" style="left:300px;top:640px;--tx:500px;--ty:-120px;--d:2.1s"></span>
+  <span class="ptcl s5-dot" style="left:1170px;top:350px;--tx:-370px;--ty:170px;--d:1.65s"></span>
+  <span class="ptcl s5-dot" style="left:1380px;top:350px;--tx:-580px;--ty:170px;--d:2.4s"></span>
+  <span class="ptcl s5-dot" style="left:1170px;top:470px;--tx:-370px;--ty:50px;--d:1.95s"></span>
+  <span class="ptcl s5-dot" style="left:1380px;top:470px;--tx:-580px;--ty:50px;--d:2.7s"></span>
+  <span class="ptcl s5-pp" style="left:1120px;top:640px;--tx:-320px;--ty:-120px;--d:2.2s;--dur:3.2s"><svg class="ic"><use href="#i-pen"/></svg></span>
+  <span class="ptcl s5-pp" style="left:1250px;top:640px;--tx:-450px;--ty:-120px;--d:3s;--dur:3.2s"><svg class="ic"><use href="#i-pen"/></svg></span>
+  <span class="ptcl s5-pp" style="left:1390px;top:640px;--tx:-590px;--ty:-120px;--d:3.8s;--dur:3.2s"><svg class="ic"><use href="#i-pen"/></svg></span>
+  <span class="chip ctr pop" style="left:300px;top:360px;--d:.5s;--cc:var(--m1)"><svg class="ic"><use href="#i-pen"/></svg>Self-evaluation</span>
+  <span class="chip ctr pop" style="left:300px;top:500px;--d:.6s;--cc:var(--m1)"><svg class="ic"><use href="#i-msg"/></svg>Peer reviews</span>
+  <span class="chip ctr pop" style="left:300px;top:640px;--d:.7s"><svg class="ic"><use href="#i-clip"/></svg>1:1 notes</span>
+  <span class="chip ctr pop s5-sys" style="left:1170px;top:350px;--d:.8s"><svg class="ic"><use href="#i-ticket"/></svg>Jira</span>
+  <span class="chip ctr pop s5-sys" style="left:1380px;top:350px;--d:.9s"><svg class="ic"><use href="#i-book"/></svg>Confluence</span>
+  <span class="chip ctr pop s5-sys" style="left:1170px;top:470px;--d:1s"><svg class="ic"><use href="#i-pr"/></svg>Bitbucket</span>
+  <span class="chip ctr pop s5-sys" style="left:1380px;top:470px;--d:1.1s"><svg class="ic"><use href="#i-branch"/></svg>GitHub</span>
+  <span class="tag fi abs" style="left:1222px;top:556px;--d:1.2s;--tc:var(--gold)"><svg class="ic"><use href="#i-pen"/></svg>Manual</span>
+  <span class="chip ctr pop s5-man" style="left:1120px;top:640px;--d:1.3s"><svg class="ic"><use href="#i-frame"/></svg>Figma<span class="s5-pen"><svg class="ic"><use href="#i-pen"/></svg></span></span>
+  <span class="chip ctr pop s5-man" style="left:1250px;top:640px;--d:1.4s"><svg class="ic"><use href="#i-chart"/></svg>Jellyfish<span class="s5-pen"><svg class="ic"><use href="#i-pen"/></svg></span></span>
+  <span class="chip ctr pop s5-man" style="left:1390px;top:640px;--d:1.5s"><svg class="ic"><use href="#i-building"/></svg>Workday<span class="s5-pen"><svg class="ic"><use href="#i-pen"/></svg></span></span>
+  <div class="ctr pop" style="left:800px;top:520px;--d:.2s">
+    <div class="s5-folder"><svg class="ic"><use href="#i-folder"/></svg><div class="s5-fill"><i class="gx" style="--d:1.5s"></i></div></div>
+  </div>
+  <div class="ctr pop" style="left:672px;top:410px;--d:.35s"><div class="av" style="--s:78px"><svg class="ic"><use href="#i-tie"/></svg></div></div>
+  <div class="lbl ctr fi" style="left:800px;top:660px;--d:.6s">Evidence</div>
+  <aside class="notes"><ul>
+    <li><b>Who:</b> the manager. M2 starts once M1 is done.</li>
+    <li><b>From people:</b> the self-evaluation, peer and upward reviews, 1:1 notes and the manager's own observations.</li>
+    <li><b>From systems:</b> artifacts in Jira, Confluence, Bitbucket and GitHub. The agents can read these too.</li>
+    <li><b>Manual:</b> Figma, Jellyfish, Workday and any other source the agents can't reach yet. The manager enters the relevant information by hand in the document.</li>
+    <li>Verify each item, attribute team work correctly (the person's part, not the team's), and note growth areas.</li>
+  </ul></aside>
+</section>
+
+<!-- 06 · M2 template -->
+<section class="slide" id="s6" data-m="2" data-title="The framework starts here: one template">
+  <div class="kicker">Step 2.2</div>
+  <h2 class="title">The framework starts here: one template</h2>
+  <div class="s6-side" style="left:120px;top:330px">
+    <span class="tag fi" style="--d:.3s;--tc:var(--muted)">Inputs</span>
+    <span class="chip fly" style="--d:.4s;--fx:-80px;--cc:var(--m1)"><svg class="ic"><use href="#i-pen"/></svg>Self-evaluation</span>
+    <span class="chip fly" style="--d:.5s;--fx:-80px;--cc:var(--m1)"><svg class="ic"><use href="#i-msg"/></svg>Peer reviews</span>
+    <span class="chip fly" style="--d:.6s;--fx:-80px"><svg class="ic"><use href="#i-folder"/></svg>Evidence</span>
+  </div>
+  <div class="doc fu" style="left:470px;top:236px;width:600px;height:556px;--d:.2s;padding-top:34px">
+    <div class="hd"><svg class="ic"><use href="#i-doc"/></svg>Performance assessment</div>
+    <div class="s6-row"><span class="ri"><svg class="ic"><use href="#i-user"/></svg></span><span class="rl">Role &amp; level</span><span class="bar"><i class="gx" style="--d:.9s"></i></span><svg class="ic ok pop" style="--d:1.4s"><use href="#i-check"/></svg></div>
+    <div class="s6-row"><span class="ri"><svg class="ic"><use href="#i-layers"/></svg></span><span class="rl">Key work &amp; complexity</span><span class="bar"><i class="gx" style="--d:1.25s"></i></span><svg class="ic ok pop" style="--d:1.75s"><use href="#i-check"/></svg></div>
+    <div class="s6-row"><span class="ri"><svg class="ic"><use href="#i-rank"/></svg></span><span class="rl">10 criteria</span>
+      <span class="s6-sq"><i class="pop" style="--d:1.6s"></i><i class="pop" style="--d:1.65s"></i><i class="pop" style="--d:1.7s"></i><i class="pop" style="--d:1.75s"></i><i class="pop" style="--d:1.8s"></i><i class="pop" style="--d:1.85s"></i><i class="pop" style="--d:1.9s"></i><i class="pop" style="--d:1.95s"></i><i class="pop" style="--d:2s"></i><i class="pop" style="--d:2.05s"></i></span>
+      <svg class="ic ok pop" style="--d:2.15s"><use href="#i-check"/></svg></div>
+    <div class="s6-row"><span class="ri"><svg class="ic"><use href="#i-link"/></svg></span><span class="rl">Evidence links</span><span class="bar"><i class="gx" style="--d:1.95s"></i></span><svg class="ic ok pop" style="--d:2.45s"><use href="#i-check"/></svg></div>
+    <div class="s6-row"><span class="ri"><svg class="ic"><use href="#i-sprout"/></svg></span><span class="rl">Growth</span><span class="bar"><i class="gx" style="--d:2.3s"></i></span><svg class="ic ok pop" style="--d:2.8s"><use href="#i-check"/></svg></div>
+    <div class="s6-row"><span class="ri"><svg class="ic"><use href="#i-grid"/></svg></span><span class="rl">9-box</span><span style="flex:1"><i class="nb pop" data-on="5" style="--nbs:32px;--d:2.75s;--nbc:var(--c)"></i></span><svg class="ic ok pop" style="--d:3s"><use href="#i-check"/></svg></div>
+    <div class="s6-row opt fi" style="--d:3.2s"><span class="ri"><svg class="ic"><use href="#i-star"/></svg></span><span class="rl">Promotion case<small>if candidate</small></span><span class="bar" style="opacity:.4"></span></div>
+  </div>
+  <div class="s6-flag stamp" style="--d:.55s"><svg class="ic"><use href="#i-flag"/></svg>Framework starts here</div>
+  <div class="s6-side" style="left:1150px;top:330px">
+    <span class="tag fi" style="--d:3.4s;--tc:var(--muted)">Built on</span>
+    <span class="chip fly" style="--d:3.5s;--fx:80px"><svg class="ic"><use href="#i-rank"/></svg>Rubric</span>
+    <span class="chip fly" style="--d:3.6s;--fx:80px"><svg class="ic"><use href="#i-layers"/></svg>Complexity framework</span>
+    <span class="chip fly" style="--d:3.7s;--fx:80px"><svg class="ic"><use href="#i-trend"/></svg>Job levels</span>
+  </div>
+  <aside class="notes"><ul>
+    <li><b>The framework starts here.</b> Everything before is input; everything after builds on this document.</li>
+    <li><b>Sections:</b> role and level; 3–6 key work items rated Defined, Difficult or Complex against the position; the 10 criteria of the current position, each with evidence links; inputs summary; growth areas; 9-box placement with justification.</li>
+    <li><b>Promotion case</b> only for candidates: next-position criteria with evidence. Grade 6+ IC cases also need a technical assessment by a Principal+ and an endorsement from another team or business role.</li>
+    <li><b>Rule:</b> evidence over rhetoric. Bold text and level vocabulary without a concrete example add nothing.</li>
+    <li>Built on the existing rubric, complexity framework and job levels. Section list is a proposal (see decision log).</li>
+  </ul></aside>
+</section>
+
+<!-- 07 · M2 Agent 1: the Coach -->
+<section class="slide" id="s7" data-m="2" data-ai="1" data-title="The Coach raises the document's quality">
+  <div class="kicker">Step 2.3 · AI agent 1</div>
+  <h2 class="title">The Coach raises the document's quality</h2>
+  <svg class="s7-svg fi" style="--d:.8s">
+    <defs>
+      <linearGradient id="s7-grad" x1="0" x2="1"><stop offset="0" stop-color="#8dfcf1"/><stop offset=".5" stop-color="#397bff"/><stop offset="1" stop-color="#a97dff"/></linearGradient>
+      <marker id="s7-head" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8dfcf1"/></marker>
+    </defs>
+    <path class="arc flow" d="M640 380 C 780 260, 930 260, 1050 400" marker-end="url(#s7-head)"/>
+    <path class="arc flow" d="M1050 600 C 930 740, 780 740, 640 620" marker-end="url(#s7-head)"/>
+  </svg>
+  <span class="chip s7-al fi" style="left:845px;top:262px;--d:1s;--cc:var(--c)"><svg class="ic"><use href="#i-doc"/></svg>Draft</span>
+  <span class="chip s7-al fi" style="left:845px;top:742px;--d:1.1s;--cc:var(--ai2)"><svg class="ic"><use href="#i-sparkles"/></svg>Findings</span>
+  <div class="doc fu" style="left:180px;top:250px;width:440px;height:500px;--d:.2s">
+    <div class="hd"><svg class="ic"><use href="#i-doc"/></svg>Assessment</div>
+    <div class="ln" style="width:60%"></div><div class="ln" style="width:92%"></div><div class="ln" style="width:78%"></div>
+    <div class="ln" style="width:40%"></div><div class="ln" style="width:88%"></div><div class="ln" style="width:70%"></div>
+    <div class="ln" style="width:55%"></div><div class="ln" style="width:84%"></div><div class="ln" style="width:66%"></div>
+    <div class="ln" style="width:48%"></div><div class="ln" style="width:80%"></div>
+  </div>
+  <div class="s7-f" style="top:330px;--d:1.3s;--r:3s;--fx:820px;--fy:150px;--fs:.3"><span class="sw"><svg class="ic a1 fo"><use href="#i-alert"/></svg><svg class="ic a2 pop"><use href="#i-check"/></svg></span>Missing evidence</div>
+  <div class="s7-f" style="top:430px;--d:1.6s;--r:3.25s;--fx:820px;--fy:50px;--fs:.3"><span class="sw"><svg class="ic a1 fo"><use href="#i-link"/></svg><svg class="ic a2 pop"><use href="#i-check"/></svg></span>Unverified claim</div>
+  <div class="s7-f" style="top:530px;--d:1.9s;--r:3.5s;--fx:820px;--fy:-50px;--fs:.3"><span class="sw"><svg class="ic a1 fo"><use href="#i-q"/></svg><svg class="ic a2 pop"><use href="#i-check"/></svg></span>Follow-up question</div>
+  <div class="s7-f" style="top:630px;--d:2.2s;--r:3.75s;--fx:820px;--fy:-150px;--fs:.3"><span class="sw"><svg class="ic a1 fo"><use href="#i-search"/></svg><svg class="ic a2 pop"><use href="#i-check"/></svg></span>Unmentioned work</div>
+  <div class="s7-gauge pop" style="--d:.7s">
+    <svg viewBox="0 0 220 120"><path class="bgp" d="M20 110 A90 90 0 0 1 200 110"/><path class="fg" pathLength="100" d="M20 110 A90 90 0 0 1 200 110"/></svg>
+    <div class="v"><span data-from="40" data-to="92" data-delay="3000" data-dur="1400">92</span><small>%</small></div>
+    <div class="lbl">Quality</div>
+  </div>
+  <div class="orb ctr pop" style="left:1220px;top:490px;--s:220px;--d:.4s"><div class="ring"></div><div class="core"><svg class="ic"><use href="#i-sparkles"/></svg></div><div class="name">The Coach</div></div>
+  <span class="tag ctr fu" style="left:800px;top:790px;--d:4.2s;--tc:var(--ai2)"><svg class="ic"><use href="#i-shield"/></svg>Advisory · never sets the grade</span>
+  <aside class="notes"><ul>
+    <li><b>Who:</b> the manager runs the Coach on the draft, as often as they like. It's at the manager's disposal.</li>
+    <li><b>It checks:</b> missing or weak evidence per criterion, claims the systems contradict, unclear attribution between person and team, significant work the document doesn't mention, vague wording, empty sections, complexity of key work against the position.</li>
+    <li><b>It returns:</b> findings and follow-up questions. The manager edits; the loop repeats until the manager is satisfied.</li>
+    <li><b>It never</b> decides or suggests the 9-box, a rating, promotion or pay, and it shows no score.</li>
+    <li>Reads Jira, Confluence, Bitbucket and GitHub directly; information from Figma, Jellyfish and Workday comes from what the manager entered by hand. Builds on the existing Rovo Performance Assessor.</li>
+  </ul></aside>
+</section>
+
+<!-- 08 · M2 9-box -->
+<section class="slide" id="s8" data-m="2" data-title="The manager places the person on the 9-box">
+  <div class="kicker">Step 2.4</div>
+  <h2 class="title">The manager places the person on the 9-box</h2>
+  <div class="ctr pop" style="left:300px;top:500px;--d:.2s">
+    <div class="av" style="--s:130px"><svg class="ic"><use href="#i-tie"/></svg></div>
+  </div>
+  <div class="lbl ctr fi" style="left:300px;top:610px;--d:.4s">Manager</div>
+  <div class="s8-cell pop" style="left:622px;top:262px;--tc:#ff996c;--d:0.30s">Solid potential</div>
+  <div class="s8-cell pop" style="left:782px;top:262px;--tc:#8dfcf1;--d:0.36s">Rising star<svg class="ic st"><use href="#i-star"/></svg></div>
+  <div class="s8-cell pop" style="left:942px;top:262px;--tc:#397bff;--d:0.42s">Consistent star<svg class="ic st"><use href="#i-star"/></svg></div>
+  <div class="s8-cell pop" style="left:622px;top:422px;--tc:#fff6b6;--d:0.36s">Development needed</div>
+  <div class="s8-cell pop" style="left:782px;top:422px;--tc:#8dfcf1;--d:0.42s">Key contributor</div>
+  <div class="s8-cell on" style="left:942px;top:422px;--tc:#8dfcf1;--d:.48s">High impact performer<svg class="ic st"><use href="#i-star"/></svg></div>
+  <div class="s8-cell pop" style="left:622px;top:582px;--tc:#ff544f;--d:0.42s">Underperforming</div>
+  <div class="s8-cell pop" style="left:782px;top:582px;--tc:#fff6b6;--d:0.48s">Solid contributor</div>
+  <div class="s8-cell pop" style="left:942px;top:582px;--tc:#8dfcf1;--d:0.54s">Subject matter expert</div>
+  <div class="s8-axis gx" style="left:620px;top:746px;width:480px;height:2px;--d:.6s"></div>
+  <div class="s8-axis gy" style="left:596px;top:260px;width:2px;height:480px;--d:.6s"></div>
+  <span class="s8-tick ctr fi" style="left:700px;top:764px;--d:.8s">Needs improvement</span>
+  <span class="s8-tick ctr fi" style="left:860px;top:764px;--d:.85s">Meets expectations</span>
+  <span class="s8-tick ctr fi" style="left:1020px;top:764px;--d:.9s">Exceeds expectations</span>
+  <div class="lbl ctr fi" style="left:860px;top:792px;font-size:16px;--d:.95s">Performance →</div>
+  <span class="s8-tick fi" style="left:536px;top:340px;translate:-100% -50%;--d:.8s">High</span>
+  <span class="s8-tick fi" style="left:536px;top:500px;translate:-100% -50%;--d:.85s">Growth</span>
+  <span class="s8-tick fi" style="left:536px;top:660px;translate:-100% -50%;--d:.9s">Limited</span>
+  <div class="lbl abs fi" style="left:450px;top:500px;translate:-50% -50%;rotate:-90deg;font-size:16px;--d:.95s">Potential →</div>
+  <div class="s8-rip"></div>
+  <div class="s8-tok"><div class="av" style="--s:76px;--ac:var(--m1)"><svg class="ic"><use href="#i-user"/></svg></div></div>
+  <div class="doc fu" style="left:1180px;top:330px;width:290px;height:300px;--d:.5s">
+    <div class="hd"><svg class="ic"><use href="#i-doc"/></svg>Assessment</div>
+    <div class="ln" style="width:85%"></div><div class="ln" style="width:65%"></div><div class="ln" style="width:75%"></div>
+    <div class="s8-row"><svg class="ic" style="color:var(--c)"><use href="#i-grid"/></svg>9-box<i class="nb pop" data-on="5" style="--nbs:36px;--nbc:var(--c);--d:2.5s;margin-left:auto"></i></div>
+  </div>
+  <div class="s3-stamp stamp" style="left:1236px;top:600px;--d:2.9s;--c:var(--m2)"><svg class="ic"><use href="#i-checkc"/></svg>Submitted</div>
+  <aside class="notes"><ul>
+    <li><b>Who:</b> the manager. Places the person on the 9-box: <b>Performance</b> (against the current position's criteria) × <b>Potential</b> (against the next position's).</li>
+    <li>The placement is the manager's "score" and is justified in the document.</li>
+    <li>The grid is the official one from the HR guide: Performance (Needs improvement, Meets, Exceeds) × Potential (Limited, Growth, High). ★ marks the top three boxes, the "top graded" group cut in M5.</li>
+    <li><b>Promotion candidates</b> use the same document but need more material: next-position evidence, technical assessment, endorsements.</li>
+    <li><b>M2 ends</b> when every document is Submitted with a 9-box placement.</li>
+  </ul></aside>
+</section>
+
+<!-- 09 · M3 internal calibration -->
+<section class="slide" id="s9" data-m="3" data-title="Peer managers calibrate with their Director">
+  <div class="kicker">Step 3.1</div>
+  <h2 class="title">Peer managers calibrate with their Director</h2>
+  <svg class="s9-svg fi" style="--d:.7s">
+    <line x1="800" y1="290" x2="420" y2="430"/><line x1="800" y1="290" x2="800" y2="430"/><line x1="800" y1="290" x2="1180" y2="430"/>
+  </svg>
+  <div class="ctr pop" style="left:800px;top:280px;--d:.15s"><div class="av" style="--s:96px"><svg class="ic"><use href="#i-tie"/></svg></div></div>
+  <div class="lbl abs fi" style="left:868px;top:268px;--d:.4s;color:var(--ink)">Director</div>
+  <div class="ctr pop" style="left:420px;top:430px;--d:.35s"><div class="av" style="--s:80px;--ac:var(--m2)"><svg class="ic"><use href="#i-tie"/></svg></div></div>
+  <div class="ctr pop" style="left:800px;top:430px;--d:.45s"><div class="av" style="--s:80px;--ac:var(--m2)"><svg class="ic"><use href="#i-tie"/></svg></div></div>
+  <div class="ctr pop" style="left:1180px;top:430px;--d:.55s"><div class="av" style="--s:80px;--ac:var(--m2)"><svg class="ic"><use href="#i-tie"/></svg></div></div>
+  <span class="s9-talk" style="left:478px;top:388px;--d:1.1s"><svg class="ic"><use href="#i-msg"/></svg></span>
+  <span class="s9-talk" style="left:858px;top:388px;--d:2.3s"><svg class="ic"><use href="#i-msg"/></svg></span>
+  <span class="s9-talk" style="left:1238px;top:388px;--d:3.5s"><svg class="ic"><use href="#i-msg"/></svg></span>
+  <div class="s9-grid fu" style="left:327px;--d:.7s"><i class="nb"></i></div>
+  <div class="s9-grid fu" style="left:707px;--d:.8s"><i class="nb"></i></div>
+  <div class="s9-grid fu" style="left:1087px;--d:.9s"><i class="nb"></i></div>
+  <div class="s9-bar gx" style="--d:1.8s"></div>
+  <span class="chip ctr fi" style="left:1420px;top:562px;--d:2.2s"><svg class="ic"><use href="#i-target"/></svg>Same bar</span>
+  <span class="s9-t pop" style="left:420px;top:593px;--d:1.2s"></span>
+  <span class="s9-t pop" style="left:356px;top:657px;--d:1.25s"></span>
+  <span class="s9-t mv" style="left:484px;top:593px;--my:-64px"></span>
+  <span class="s9-t pop" style="left:864px;top:529px;--d:1.3s"></span>
+  <span class="s9-t pop" style="left:800px;top:593px;--d:1.35s"></span>
+  <span class="s9-t pop" style="left:864px;top:593px;--d:1.4s"></span>
+  <span class="s9-t pop" style="left:1180px;top:593px;--d:1.45s"></span>
+  <span class="s9-t pop" style="left:1180px;top:657px;--d:1.5s"></span>
+  <span class="s9-t mv" style="left:1244px;top:529px;--my:64px"></span>
+  <span class="s9-delta pop" style="left:508px;top:572px;--d:3.4s">Δ</span>
+  <span class="s9-delta pop" style="left:1268px;top:508px;--d:3.5s">Δ</span>
+  <aside class="notes"><ul>
+    <li><b>Who:</b> peer managers in one Director's organization, led by the Director. HR consulted.</li>
+    <li>Compare 9-box placements across the organization, challenge cases with weak evidence, and apply the same bar everywhere.</li>
+    <li>Some placements move, up or down. Every change is recorded on the next slide.</li>
+  </ul></aside>
+</section>
+
+<!-- 10 · M3 sign-offs & completed -->
+<section class="slide" id="s10" data-m="3" data-title="Leaders comment, then the document is Completed">
+  <div class="kicker">Steps 3.2 – 3.3</div>
+  <h2 class="title">Leaders comment, then the document is Completed</h2>
+  <div class="doc s10-doc" style="left:380px;top:250px;width:450px;height:520px">
+    <div class="hd"><svg class="ic"><use href="#i-doc"/></svg>Assessment<svg class="ic pop" style="margin-left:auto;--d:3.5s"><use href="#i-lock"/></svg></div>
+    <div class="ln" style="width:88%"></div><div class="ln" style="width:70%"></div><div class="ln" style="width:80%"></div>
+    <div class="s10-row"><svg class="ic"><use href="#i-grid"/></svg>9-box
+      <span class="s10-old"><i class="nb" data-on="2"></i><span class="strike gx" style="--d:1.4s"></span></span>
+      <svg class="ic fi" style="--d:1.6s;color:var(--muted)"><use href="#i-right"/></svg>
+      <i class="nb pop" data-on="5" style="--nbs:36px;--nbc:var(--c);--d:1.8s"></i></div>
+    <div class="ln" style="width:76%"></div><div class="ln" style="width:58%"></div>
+  </div>
+  <div class="s10-cm fly" style="top:250px;--d:.9s;--fx:220px"><span class="rb">DIR</span><div class="cl"><div class="who">Director</div><div class="ln" style="width:90%"></div><div class="ln" style="width:60%"></div></div></div>
+  <div class="s10-cm fly" style="top:400px;--d:1.9s;--fx:220px"><span class="rb">SM</span><div class="cl"><div class="who">Senior Manager</div><div class="ln" style="width:80%"></div><div class="ln" style="width:50%"></div></div></div>
+  <div class="s10-cm fly" style="top:550px;--d:2.5s;--fx:220px"><span class="rb">VP</span><div class="cl"><div class="who">VP</div><div class="ln" style="width:85%"></div><div class="ln" style="width:65%"></div></div></div>
+  <div class="s10-stamp stamp" style="--d:3.1s"><svg class="ic"><use href="#i-lock"/></svg>Completed</div>
+  <aside class="notes"><ul>
+    <li><b>Step 3.2:</b> the Director, Senior Manager and VP add comments. Every score change goes into the document with who made it and why.</li>
+    <li><b>Step 3.3:</b> the Director marks the document <b>Completed</b>. Content and grade are frozen from here on.</li>
+    <li>Completed documents are the input to the Scorer.</li>
+    <li><b>M3 ends</b> when every document in the organization is Completed.</li>
+  </ul></aside>
+</section>
+
+<!-- 11 · M4 Agent 2: the Scorer -->
+<section class="slide" id="s11" data-m="4" data-ai="2" data-title="The Scorer scores every completed document">
+  <div class="kicker">Step 4.1 · AI agent 2</div>
+  <h2 class="title">The Scorer scores every completed document</h2>
+  <svg class="s11-svg fi" style="--d:1s">
+    <line class="flow" x1="575" y1="300" x2="800" y2="500"/><line class="flow" x1="725" y1="300" x2="800" y2="500"/><line class="flow" x1="875" y1="300" x2="800" y2="500"/><line class="flow" x1="1025" y1="300" x2="800" y2="500"/>
+  </svg>
+  <div class="s11-sys pop" style="left:575px;top:300px;--d:0.6s"><div class="bx"><svg class="ic"><use href="#i-ticket"/></svg></div><span>Jira</span></div>
+  <div class="s11-sys pop" style="left:725px;top:300px;--d:0.7s"><div class="bx"><svg class="ic"><use href="#i-book"/></svg></div><span>Confluence</span></div>
+  <div class="s11-sys pop" style="left:875px;top:300px;--d:0.8s"><div class="bx"><svg class="ic"><use href="#i-pr"/></svg></div><span>Bitbucket</span></div>
+  <div class="s11-sys pop" style="left:1025px;top:300px;--d:0.9s"><div class="bx"><svg class="ic"><use href="#i-branch"/></svg></div><span>GitHub</span></div>
+  <div class="s11-stack fu" style="--d:.3s">
+    <div class="pg" style="transform:translate(-16px,-16px) rotate(-6deg);opacity:.5"></div>
+    <div class="pg" style="transform:translate(-8px,-8px) rotate(-3deg);opacity:.75"></div>
+    <div class="pg"><svg class="ic"><use href="#i-lock"/></svg></div>
+  </div>
+  <div class="lbl ctr fi" style="left:250px;top:635px;--d:.5s">Completed</div>
+  <div class="s11-man fu" style="--d:.8s"><span class="pn"><svg class="ic"><use href="#i-pen"/></svg></span>
+    <svg class="ic"><use href="#i-frame"/></svg><svg class="ic"><use href="#i-chart"/></svg><svg class="ic"><use href="#i-building"/></svg><b>Manual</b></div>
+  <span class="ptcl s11-pkt" style="left:340px;top:500px;--tx:430px;--ty:0px;--d:1.4s;--dur:1.8s"><svg class="ic"><use href="#i-doc"/></svg></span>
+  <span class="ptcl s11-pkt" style="left:340px;top:500px;--tx:430px;--ty:0px;--d:2.3s;--dur:1.8s"><svg class="ic"><use href="#i-doc"/></svg></span>
+  <span class="ptcl s11-sp" style="left:900px;top:500px;--tx:300px;--ty:-90px;--d:2.2s;--dur:1.6s"></span>
+  <span class="ptcl s11-sp" style="left:900px;top:500px;--tx:300px;--ty:30px;--d:2.7s;--dur:1.6s"></span>
+  <span class="ptcl s11-sp" style="left:900px;top:500px;--tx:300px;--ty:150px;--d:3.2s;--dur:1.6s"></span>
+  <div class="orb ctr pop" style="left:800px;top:500px;--s:184px;--d:.2s"><div class="ring"></div><div class="core"><svg class="ic"><use href="#i-sparkles"/></svg></div><div class="name">The Scorer</div></div>
+  <span class="tag ctr fu" style="left:800px;top:690px;--d:.9s;--tc:var(--ai2)"><svg class="ic"><use href="#i-cpu"/></svg>Most capable model</span>
+  <div class="s11-out">
+    <span class="tag fi" style="--d:2s;--tc:var(--ai2);margin-bottom:12px"><svg class="ic"><use href="#i-sparkles"/></svg>AI score / 100</span>
+    <div class="s11-r fu" style="--d:2.3s"><span class="dt"></span><span class="br"><i class="gx" style="width:86%;--d:2.4s"></i></span><b data-to="86" data-delay="2400">86</b></div>
+    <div class="s11-r fu" style="--d:2.5s"><span class="dt"></span><span class="br"><i class="gx" style="width:81%;--d:2.6s"></i></span><b data-to="81" data-delay="2600">81</b></div>
+    <div class="s11-r fu" style="--d:2.7s"><span class="dt"></span><span class="br"><i class="gx" style="width:77%;--d:2.8s"></i></span><b data-to="77" data-delay="2800">77</b></div>
+    <div class="s11-r fu" style="--d:2.9s"><span class="dt"></span><span class="br"><i class="gx" style="width:72%;--d:3s"></i></span><b data-to="72" data-delay="3000">72</b></div>
+    <div class="s11-r fu" style="--d:3.1s"><span class="dt"></span><span class="br"><i class="gx" style="width:64%;--d:3.2s"></i></span><b data-to="64" data-delay="3200">64</b></div>
+  </div>
+  <span class="chip ctr fu" style="left:1355px;top:722px;--d:3.6s;--cc:var(--c)"><svg class="ic"><use href="#i-rank"/></svg>Starting point for ranking</span>
+  <aside class="notes"><ul>
+    <li><b>When:</b> once documents are Completed, before calibration sessions. <b>Run by:</b> HR. <b>Seen by:</b> managers and calibration participants, not the employee.</li>
+    <li><b>Reads:</b> the completed document, every comment and score change, and verifies claims in Jira, Confluence, Bitbucket and GitHub. Finds significant work the document doesn't mention.</li>
+    <li><b>Manual sources</b> (Figma, Jellyfish, Workday, …): the agent can't reach them; it reads what the manager entered by hand in the document.</li>
+    <li><b>Scores</b> the 10 criteria of the current position: 10 × 10 = <b>score out of 100</b>, with a one-line reason per criterion, complexity of key work against the position, and follow-up questions for the session.</li>
+    <li>Uses the most capable (expensive) models. Built on the existing Rovo Performance Assessor.</li>
+    <li>The score is the <b>starting point</b> for the ranking, not the final word. It never changes the grade.</li>
+    <li>Example numbers are illustrative.</li>
+  </ul></aside>
+</section>
+
+<!-- 12 · M4 calibration groups -->
+<section class="slide" id="s12" data-m="4" data-title="Same level. Same 9-box. Across departments.">
+  <div class="kicker">Step 4.2</div>
+  <h2 class="title">Same level. Same 9-box. Across departments.</h2>
+  <div class="s12-legend fi" style="--d:.2s">
+    <span class="s12-dept"><svg class="ic"><use href="#i-building"/></svg>Departments</span>
+    <span class="s12-dept" style="--dc:#8dfcf1"><i></i>A</span>
+    <span class="s12-dept" style="--dc:#a97dff"><i></i>B</span>
+    <span class="s12-dept" style="--dc:#ff996c"><i></i>C</span>
+  </div>
+  <div class="s12-tray fu" style="left:400px;--d:.3s"><div class="th"><span class="lv">Level 4</span><i class="nb" data-on="2"></i><span class="bn">Consistent star</span></div></div>
+  <div class="s12-tray fu" style="left:800px;--d:.4s"><div class="th"><span class="lv">Level 5</span><i class="nb" data-on="2"></i><span class="bn">Consistent star</span></div></div>
+  <div class="s12-tray fu" style="left:1200px;--d:.5s"><div class="th"><span class="lv">Level 5</span><i class="nb" data-on="5"></i><span class="bn">High impact performer</span></div></div>
+  <div id="s12-toks"></div>
+  <script>
+    (() => {
+      const dept = { A: '#8dfcf1', B: '#a97dff', C: '#ff996c' };
+      const trays = [400, 800, 1200], cols = [-95, 0, 95], rows = [595, 682];
+      const mix = ['ABCACB', 'BACCAB', 'CBAABC'];
+      const scatter = [[1250,300],[620,390],[980,290],[240,340],[1420,410],[760,310],[430,290],[1100,370],[300,420],
+                       [880,410],[1330,290],[560,330],[180,290],[700,430],[1020,420],[1180,300],[480,420],[1400,340]];
+      let h = '', k = 0;
+      trays.forEach((cx, t) => rows.forEach((y, r) => cols.forEach((dx, c) => {
+        const x = cx + dx, [sx, sy] = scatter[k], d = mix[t][r * 3 + c];
+        h += `<span class="s12-tok" style="left:${x}px;top:${y}px;--dc:${dept[d]};--fx:${sx - x}px;--fy:${sy - y}px;--d:${(.3 + ((k * 7) % 18) * .045).toFixed(2)}s"><svg class="ic"><use href="#i-user"/></svg></span>`;
+        k++;
+      })));
+      document.getElementById('s12-toks').innerHTML = h;
+    })();
+  </script>
+  <aside class="notes"><ul>
+    <li><b>Who:</b> HR forms the groups and schedules the sessions (assumption, D-18).</li>
+    <li><b>Rule:</b> a group holds people at the <b>same job level</b> with the <b>same 9-box placement</b>, drawn <b>across departments</b>.</li>
+    <li>Each group starts with a list pre-ranked by the Scorer's AI score.</li>
+    <li>Mixing departments is the point: the same bar applies across the company, not just inside one org.</li>
+  </ul></aside>
+</section>
+
+<!-- 13 · M4 calibration session -->
+<section class="slide" id="s13" data-m="4" data-title="Managers represent their people. HR keeps it fair.">
+  <div class="kicker">Step 4.3</div>
+  <h2 class="title">Managers represent their people. HR keeps it fair.</h2>
+  <div class="s13-table fi" style="--d:.2s"></div>
+  <div class="ctr pop" style="left:610px;top:340px;--d:.4s"><div class="av" style="--s:84px;--ac:var(--m2)"><svg class="ic"><use href="#i-tie"/></svg></div></div>
+  <div class="ctr pop" style="left:990px;top:340px;--d:.5s"><div class="av" style="--s:84px;--ac:var(--m2)"><svg class="ic"><use href="#i-tie"/></svg></div></div>
+  <div class="ctr pop" style="left:610px;top:700px;--d:.6s"><div class="av" style="--s:84px;--ac:var(--m2)"><svg class="ic"><use href="#i-tie"/></svg></div></div>
+  <div class="ctr pop" style="left:990px;top:700px;--d:.7s"><div class="av" style="--s:84px;--ac:var(--m2)"><svg class="ic"><use href="#i-tie"/></svg></div></div>
+  <span class="s13-mini pop" style="left:540px;top:316px;--d:.9s"></span><span class="s13-mini pop" style="left:530px;top:356px;--d:.95s"></span>
+  <span class="s13-mini pop" style="left:1062px;top:330px;--d:1s"></span>
+  <span class="s13-mini pop" style="left:540px;top:716px;--d:1.05s"></span>
+  <span class="s13-mini pop" style="left:1060px;top:690px;--d:1.1s"></span><span class="s13-mini pop" style="left:1070px;top:728px;--d:1.15s"></span>
+  <div class="ctr pop" style="left:380px;top:520px;--d:.8s"><div class="av" style="--s:100px;--ac:var(--m0)"><svg class="ic"><use href="#i-shield"/></svg></div></div>
+  <span class="tag ctr fu" style="left:380px;top:618px;--d:1s;--tc:var(--m0)">HR · Required</span>
+  <div class="ctr pop" style="left:1220px;top:520px;--d:.9s"><div class="av ghost" style="--s:92px;--ac:var(--muted)"><svg class="ic"><use href="#i-tie"/></svg></div></div>
+  <span class="tag ctr fu" style="left:1220px;top:614px;--d:1.1s;--tc:var(--muted)">2nd level · Optional</span>
+  <div class="lbl ctr fi" style="left:1220px;top:648px;font-size:15px;--d:1.3s">Supports the line manager</div>
+  <div class="s13-list">
+    <div class="s13-r fu" style="--d:1.3s"><span class="n">1</span><span class="dt"></span><span class="br"><i style="width:86%"></i></span><b>86</b><span class="fx cm pop" style="--d:2.4s"><svg class="ic"><use href="#i-msg"/></svg></span></div>
+    <div class="s13-r fu" style="--d:1.4s"><span class="n">2</span><span class="dt"></span><span class="br"><i class="adj" style="width:85%;--w0:82%"></i></span><b data-from="82" data-to="85" data-delay="2800" data-dur="1000">85</b><span class="fx up pop" style="--d:2.7s"><svg class="ic"><use href="#i-plus"/></svg></span></div>
+    <div class="s13-r fu" style="--d:1.5s"><span class="n">3</span><span class="dt"></span><span class="br"><i style="width:79%"></i></span><b>79</b><span class="fx cm pop" style="--d:3.1s"><svg class="ic"><use href="#i-msg"/></svg></span></div>
+    <div class="s13-r fu" style="--d:1.6s"><span class="n">4</span><span class="dt"></span><span class="br"><i class="adj" style="width:71%;--w0:75%"></i></span><b data-from="75" data-to="71" data-delay="2800" data-dur="1000">71</b><span class="fx dn pop" style="--d:2.7s"><svg class="ic"><use href="#i-minus"/></svg></span></div>
+    <div class="s13-r fu" style="--d:1.7s"><span class="n">5</span><span class="dt"></span><span class="br"><i style="width:68%"></i></span><b>68</b><span class="fx" style="opacity:0"></span></div>
+  </div>
+  <span class="s9-talk" style="left:660px;top:292px;--d:1.8s"><svg class="ic"><use href="#i-msg"/></svg></span>
+  <span class="s9-talk" style="left:1040px;top:292px;--d:2.6s"><svg class="ic"><use href="#i-msg"/></svg></span>
+  <span class="s9-talk" style="left:660px;top:652px;--d:3.4s"><svg class="ic"><use href="#i-msg"/></svg></span>
+  <span class="s9-talk" style="left:1040px;top:652px;--d:4.2s"><svg class="ic"><use href="#i-msg"/></svg></span>
+  <span class="chip ctr fu" style="left:1330px;top:300px;--d:1.4s;--cc:var(--ai2)"><svg class="ic"><use href="#i-sparkles"/></svg>AI score = start</span>
+  <aside class="notes"><ul>
+    <li><b>Participants:</b> managers, each representing their own people. <b>HR is required</b> in every session. <b>2nd-level managers are optional</b>: they already agreed the rating in internal calibration and attend to support the line manager, especially for top cases.</li>
+    <li><b>Input:</b> the group's list, pre-ranked by the Scorer, with the AI scores, reasons and follow-up questions, and the documents.</li>
+    <li><b>In the room:</b> discuss each AI score, adjust it, add comments, and agree the order.</li>
+    <li><b>Ties and disagreements:</b> HR facilitates to consensus.</li>
+  </ul></aside>
+</section>
+
+<!-- 14 · M4 rank, don't regrade -->
+<section class="slide" id="s14" data-m="4" data-title="Calibration ranks. It doesn't regrade.">
+  <div class="kicker">Step 4.4</div>
+  <h2 class="title">Calibration ranks. It doesn't regrade.</h2>
+  <div class="s14-panel s14-old fu" style="--d:.2s">
+    <span class="tag" style="--tc:var(--bad)">Before</span>
+    <div class="s14-grid"><i class="nb"></i></div>
+    <div class="s14-hop"></div>
+    <div class="s14-x stamp" style="--d:1.5s"><svg class="ic"><use href="#i-x"/></svg></div>
+    <div class="s14-cap"><span class="chip" style="--cc:var(--bad)"><svg class="ic"><use href="#i-grid"/></svg>Grades changed</span></div>
+  </div>
+  <div class="s14-panel s14-new fu" style="--d:.35s">
+    <span class="tag">Now</span>
+    <div style="position:absolute;right:24px;top:16px;display:flex;gap:10px">
+      <span class="chip pop" style="--d:3.3s;font-size:16px;padding:7px 12px"><svg class="ic"><use href="#i-lock"/></svg>Grade locked</span>
+      <span class="chip pop" style="--d:3.45s;font-size:16px;padding:7px 12px"><svg class="ic"><use href="#i-rank"/></svg>Order agreed</span>
+    </div>
+    <div class="s14-card up" style="top:80px;--d:.7s;--fy:74px"><span class="rk pop" style="--d:3.1s">#1</span><span class="dt"></span><span class="ai"><svg class="ic"><use href="#i-sparkles"/></svg>82</span><span class="ln"></span><span class="gr"><i class="nb" data-on="2"></i><svg class="ic"><use href="#i-lock"/></svg></span></div>
+    <div class="s14-card" style="top:154px;--d:.6s;--fy:-74px"><span class="rk pop" style="--d:3.15s">#2</span><span class="dt"></span><span class="ai"><svg class="ic"><use href="#i-sparkles"/></svg>86</span><span class="ln"></span><span class="gr"><i class="nb" data-on="2"></i><svg class="ic"><use href="#i-lock"/></svg></span></div>
+    <div class="s14-card" style="top:228px;--d:.8s;--fy:0px"><span class="rk pop" style="--d:3.2s">#3</span><span class="dt"></span><span class="ai"><svg class="ic"><use href="#i-sparkles"/></svg>79</span><span class="ln"></span><span class="gr"><i class="nb" data-on="2"></i><svg class="ic"><use href="#i-lock"/></svg></span></div>
+    <div class="s14-card up" style="top:302px;--d:1s;--fy:74px"><span class="rk pop" style="--d:3.25s">#4</span><span class="dt"></span><span class="ai"><svg class="ic"><use href="#i-sparkles"/></svg>71</span><span class="ln"></span><span class="gr"><i class="nb" data-on="2"></i><svg class="ic"><use href="#i-lock"/></svg></span></div>
+    <div class="s14-card" style="top:376px;--d:.9s;--fy:-74px"><span class="rk pop" style="--d:3.3s">#5</span><span class="dt"></span><span class="ai"><svg class="ic"><use href="#i-sparkles"/></svg>75</span><span class="ln"></span><span class="gr"><i class="nb" data-on="2"></i><svg class="ic"><use href="#i-lock"/></svg></span></div>
+    <div class="s14-card" style="top:450px;--d:1.1s;--fy:0px"><span class="rk pop" style="--d:3.35s">#6</span><span class="dt"></span><span class="ai"><svg class="ic"><use href="#i-sparkles"/></svg>66</span><span class="ln"></span><span class="gr"><i class="nb" data-on="2"></i><svg class="ic"><use href="#i-lock"/></svg></span></div>
+  </div>
+  <aside class="notes"><ul>
+    <li><b>The key change.</b> In the old practice, calibration meetings changed grades. Now the grade set in M2–M3 stands.</li>
+    <li>The only output of a session is the <b>order</b> of the people in the group. The rank is recorded on each document.</li>
+    <li>The AI score starts the order; the group's agreement decides it. Here, two pairs swap after discussion.</li>
+    <li><b>M4 ends</b> when every group has a ranked list.</li>
+  </ul></aside>
+</section>
+
+<!-- 15 · M5 senior leadership -->
+<section class="slide" id="s15" data-m="5" data-title="Leadership decides where the line falls">
+  <div class="kicker">Steps 5.1 – 5.2</div>
+  <h2 class="title">Leadership decides where the line falls</h2>
+  <div class="ctr pop" style="left:230px;top:420px;--d:.2s"><div class="av" style="--s:84px"><svg class="ic"><use href="#i-crown"/></svg></div></div>
+  <div class="ctr pop" style="left:340px;top:420px;--d:.3s"><div class="av" style="--s:84px"><svg class="ic"><use href="#i-crown"/></svg></div></div>
+  <div class="ctr pop" style="left:285px;top:515px;--d:.4s"><div class="av" style="--s:84px"><svg class="ic"><use href="#i-crown"/></svg></div></div>
+  <span class="tag ctr fu" style="left:285px;top:610px;--d:.6s">Director +</span>
+  <div id="s15-rows"></div>
+  <script>
+    (() => {
+      const gc = ['#fff6b6', '#ff996c', '#a97dff'], grp = [0, 1, 0, 2, 1, 2, 0, 1, 2, 0];
+      const from = [['-340px', '0px'], ['0px', '-240px'], ['340px', '0px']], w = [92, 89, 87, 84, 82, 80, 77, 75, 72, 70];
+      let h = '';
+      grp.forEach((g, i) => {
+        const below = i >= 6;
+        h += `<div class="s15-r fly" style="top:${240 + i * 48}px;--gc:${gc[g]};--fx:${from[g][0]};--fy:${from[g][1]};--fs:.8;--d:${(.5 + i * .09).toFixed(2)}s;--k:${below ? ((i - 6) * .08).toFixed(2) : 0}s">`
+          + `<div class="in ${below ? 'below' : 'above'}"><span class="n">${i + 1}</span><span class="dt"></span><span class="br"><i style="width:${w[i]}%"></i></span></div></div>`;
+        if (below) h += `<span class="s15-dn pop" style="top:${240 + i * 48 + 27}px;--d:${(4.5 + (i - 6) * .08).toFixed(2)}s"><svg class="ic"><use href="#i-down"/></svg></span>`;
+      });
+      document.getElementById('s15-rows').innerHTML = h;
+    })();
+  </script>
+  <div class="s15-cut"><svg class="ic"><use href="#i-cut"/></svg></div>
+  <span class="tag abs fi" style="left:1100px;top:250px;--d:4.2s;--tc:var(--gold)"><i class="nb" data-on="1,2,5" style="--nbs:20px"></i>Top three boxes</span>
+  <span class="tag abs fi" style="left:1100px;top:560px;--d:4.5s;--tc:var(--muted)"><svg class="ic"><use href="#i-down"/></svg>One box down</span>
+  <span class="chip abs fi" style="left:1100px;top:490px;--d:3.9s;font-size:17px;padding:8px 14px"><svg class="ic"><use href="#i-cut"/></svg>The line</span>
+  <aside class="notes"><ul>
+    <li><b>Who:</b> senior leadership, Director and above. HR consulted.</li>
+    <li><b>Input:</b> all ranked lists from the calibration groups, merged in rank order (stripe color = source group).</li>
+    <li>Leadership decides by judgment, each cycle, where the line falls on the <b>top-graded</b> employees: the top three boxes (Consistent star, Rising star, High impact performer). The aim is roughly the top 10%.</li>
+    <li>Top-graded people <b>below the line move one box down</b>. Rising star and High impact performer → Key contributor; Consistent star → Rising star or High impact performer, at leadership's choice. The final box is recorded on every document.</li>
+    <li>Only the top-graded group is cut; the other boxes aren't.</li>
+  </ul></aside>
+</section>
+
+<!-- 16 · Promotion -->
+<section class="slide" id="s16" data-m="6" data-title="One document set. Higher tier, higher bar.">
+  <div class="kicker" style="color:var(--gold)">Performance + promotion</div>
+  <h2 class="title">One document set. Higher tier, higher bar.</h2>
+  <svg class="s16-svg">
+    <path class="dr" pathLength="1" style="--d:.6s" d="M352 500 C 390 500, 380 356, 418 356"/>
+    <path class="dr" pathLength="1" style="--d:.7s" d="M352 500 C 390 500, 380 616, 418 616"/>
+    <path class="dr big" pathLength="1" style="--d:2.6s" d="M745 600 L 1460 200"/>
+  </svg>
+  <div class="doc fu" style="left:150px;top:380px;width:200px;height:240px;--d:.2s;--c:var(--gold)">
+    <div class="hd"><svg class="ic"><use href="#i-doc"/></svg></div>
+    <div class="ln"></div><div class="ln" style="width:70%"></div><div class="ln" style="width:85%"></div><div class="ln" style="width:55%"></div>
+  </div>
+  <span class="chip abs pop" style="left:420px;top:332px;--d:1s;--cc:var(--m4)"><svg class="ic"><use href="#i-gauge"/></svg>Performance</span>
+  <span class="chip abs pop" style="left:420px;top:592px;--d:1.1s;--cc:var(--gold)"><svg class="ic"><use href="#i-trend"/></svg>Promotion</span>
+  <div class="s16-step gy" style="left:770px;height:110px;--sc:#e6e3ec;--d:1.2s"><i class="nb" data-on="4"></i>Key contributor</div>
+  <div class="s16-step gy" style="left:940px;height:190px;--sc:var(--m2);--d:1.4s"><i class="nb" data-on="1,5"></i>Rising star / High impact</div>
+  <div class="s16-step gy" style="left:1110px;height:270px;--sc:var(--gold);--d:1.6s"><i class="nb" data-on="2"></i>Consistent star</div>
+  <div class="s16-step gy" style="left:1280px;height:350px;--sc:var(--m5);--d:1.8s"><svg class="ic" style="width:30px;height:30px"><use href="#i-trend"/></svg>Promotion</div>
+  <div class="s16-stack" style="left:770px;bottom:250px"><i class="pop" style="--d:2s"></i></div>
+  <div class="s16-stack" style="left:940px;bottom:330px"><i class="pop" style="--d:2.1s"></i><i class="pop" style="--d:2.2s"></i></div>
+  <div class="s16-stack" style="left:1110px;bottom:410px"><i class="pop" style="--d:2.3s"></i><i class="pop" style="--d:2.38s"></i><i class="pop" style="--d:2.46s"></i><i class="pop" style="--d:2.54s"></i></div>
+  <div class="s16-stack" style="left:1280px;bottom:490px"><i class="pop" style="--d:2.6s"></i><i class="pop" style="--d:2.66s"></i><i class="pop" style="--d:2.72s"></i><i class="pop" style="--d:2.78s"></i><i class="pop" style="--d:2.84s"></i><i class="pop" style="--d:2.9s"></i></div>
+  <span class="chip abs fu" style="left:830px;top:236px;--d:3.2s;--cc:var(--gold)"><svg class="ic"><use href="#i-layers"/></svg>More evidence</span>
+  <span class="chip abs fu" style="left:830px;top:300px;--d:3.35s;--cc:var(--ai2)"><svg class="ic"><use href="#i-sparkles"/></svg>Higher score</span>
+  <aside class="notes"><ul>
+    <li>The performance and promotion cycles share <b>one set of documents</b>. No separate promotion write-up.</li>
+    <li><b>The higher the box, the higher the bar:</b> candidates for the top three boxes or for promotion need more material and a higher score.</li>
+    <li>People with high scores are the usual promotion candidates, and that's exactly why their evidence must be stronger.</li>
+    <li>Existing rules still apply: next-position criteria consistently evidenced; grade 6+ IC cases need a technical assessment by a Principal+; grade 6+ cases need an endorsement from another product team or business role.</li>
+    <li>Steps use the official 9-box boxes, from Key contributor up to Consistent star.</li>
+  </ul></aside>
+</section>
+
+<!-- 17 · Recap -->
+<section class="slide" id="s17" data-m="6" data-title="The whole cycle">
+  <div class="kicker" style="color:var(--muted)">Recap</div>
+  <h2 class="title">The whole cycle</h2>
+  <div class="s17-road gx" style="--d:.2s"></div>
+  <div class="ctr pop" style="left:300px;top:350px;--d:.4s"><div class="av" style="--s:84px;--ac:var(--m1)"><svg class="ic"><use href="#i-pen"/></svg></div></div>
+  <div class="ctr pop" style="left:550px;top:350px;--d:.55s"><div class="av" style="--s:84px;--ac:var(--m2)"><svg class="ic"><use href="#i-brief"/></svg></div></div>
+  <div class="ctr pop" style="left:800px;top:350px;--d:.7s"><div class="av" style="--s:84px;--ac:var(--m3)"><svg class="ic"><use href="#i-users"/></svg></div></div>
+  <div class="ctr pop" style="left:1050px;top:350px;--d:.85s"><div class="av" style="--s:84px;--ac:var(--m4)"><svg class="ic"><use href="#i-sliders"/></svg></div></div>
+  <div class="ctr pop" style="left:1300px;top:350px;--d:1s"><div class="av" style="--s:84px;--ac:var(--m5)"><svg class="ic"><use href="#i-crown"/></svg></div></div>
+  <div class="orb ctr pop" style="left:550px;top:250px;--s:50px;--d:1.2s"><div class="ring" style="inset:-6px"></div><div class="core"><svg class="ic"><use href="#i-sparkles"/></svg></div></div>
+  <div class="orb ctr pop" style="left:925px;top:250px;--s:50px;--d:1.3s"><div class="ring" style="inset:-6px"></div><div class="core"><svg class="ic"><use href="#i-sparkles"/></svg></div></div>
+  <div class="lbl ctr fi" style="left:300px;top:420px;--d:.6s">Self-evaluation</div>
+  <div class="lbl ctr fi" style="left:550px;top:420px;--d:.7s">Manager evaluation</div>
+  <div class="lbl ctr fi" style="left:800px;top:420px;--d:.8s">Internal calibration</div>
+  <div class="lbl ctr fi" style="left:1050px;top:420px;--d:.9s">Calibration</div>
+  <div class="lbl ctr fi" style="left:1300px;top:420px;--d:1s">Senior leadership</div>
+  <div class="s17-card fu" style="left:215px;--kc:var(--gold);--d:1.5s"><svg class="ic"><use href="#i-doc"/></svg><b>One document</b><span>Performance and promotion</span></div>
+  <div class="s17-card fu" style="left:515px;--kc:var(--ai2);--d:1.65s"><svg class="ic"><use href="#i-sparkles"/></svg><b>Two advisory agents</b><span>Coach and Scorer</span></div>
+  <div class="s17-card fu" style="left:815px;--kc:var(--m4);--d:1.8s"><svg class="ic"><use href="#i-rank"/></svg><b>Rank, don't regrade</b><span>Calibration sorts</span></div>
+  <div class="s17-card fu" style="left:1115px;--kc:var(--m5);--d:1.95s"><svg class="ic"><use href="#i-scale"/></svg><b>Higher tier, higher bar</b><span>Evidence over rhetoric</span></div>
+  <aside class="notes"><ul>
+    <li><b>One document</b> per person, through every milestone, for both performance and promotion.</li>
+    <li><b>Two advisory agents:</b> the Coach raises document quality for the manager; the Scorer gives calibration an evidence-based starting point. People decide.</li>
+    <li><b>Rank, don't regrade:</b> grades are set in M2–M3; calibration only orders people; leadership draws the line.</li>
+    <li><b>Higher tier, higher bar:</b> top-tier and promotion cases need more and better evidence.</li>
+    <li>Open questions are tracked in the decision log (02-decisions.md).</li>
+  </ul></aside>
+</section>
+
+    </div>
+    <div id="hud">
+      <div class="mchip"><span class="dot"></span><span class="mtext"></span>
+        <span class="ai"><svg class="ic"><use href="#i-sparkles"/></svg><span></span></span></div>
+      <div class="counter"></div>
+    </div>
+    <nav id="tl" aria-label="Timeline"></nav>
+  </div>
+</div>
+<aside id="notes" aria-live="polite"></aside>
+<div id="overview" role="dialog" aria-label="All slides"><h3>All slides · press O or Esc to close</h3><div class="ov-grid"></div></div>
+
+<script>
+(() => {
+  const W = 1600, PAR = 0.3;
+  const MS = ['Start', 'Self-evaluation', 'Manager evaluation', 'Internal calibration', 'Calibration', 'Senior leadership', 'Wrap-up'];
+  const stage = document.getElementById('stage'), track = document.getElementById('track'), bg = document.getElementById('bg');
+  const tl = document.getElementById('tl'), notes = document.getElementById('notes'), ov = document.getElementById('overview');
+  const hud = document.getElementById('hud');
+  const slides = [...track.querySelectorAll('.slide')];
+  const N = slides.length;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const mc = m => `var(--m${m})`;
+  const pad = n => String(n).padStart(2, '0');
+  let cur = -1, raf = [];
+
+  // Mini 9-box glyphs: <i class="nb" data-on="2"> → 3×3 cells, listed cells lit (0 = top-left, 2 = top-right)
+  document.querySelectorAll('.nb').forEach(el => {
+    const on = (el.dataset.on || '').split(',').filter(Boolean).map(Number);
+    el.innerHTML = Array.from({ length: 9 }, (_, i) => `<i class="${on.includes(i) ? 'on' : ''}"></i>`).join('');
+  });
+
+  // Fit the 1600×900 stage to the window
+  const fit = () => stage.style.setProperty('--scale', Math.min(innerWidth / W, innerHeight / 900));
+  addEventListener('resize', fit); fit();
+
+  // Lay slides on the track; parallax color blobs behind them
+  bg.style.width = (W * 2 + (N - 1) * W * PAR) + 'px';
+  slides.forEach((s, i) => {
+    s.style.left = i * W + 'px';
+    s.style.setProperty('--c', mc(s.dataset.m));
+    const b = document.createElement('div');
+    b.className = 'blob';
+    b.style.left = (i * W * PAR + W / 2 - 700) + 'px';
+    b.style.setProperty('--bc', mc(s.dataset.m));
+    bg.appendChild(b);
+  });
+
+  // Timeline: ticks per slide, grouped under milestones
+  const X0 = 150, X1 = 1450, step = (X1 - X0) / (N - 1), x = i => X0 + i * step;
+  const groups = [];
+  slides.forEach((s, i) => {
+    const m = +s.dataset.m, g = groups[groups.length - 1];
+    if (g && g.m === m) g.to = i; else groups.push({ m, from: i, to: i });
+  });
+  let h = '<div class="tl-base"></div>';
+  groups.forEach(g => {
+    const l = x(g.from) - step / 2 + 5, r = x(g.to) + step / 2 - 5;
+    h += `<div class="tl-seg" data-m="${g.m}" style="left:${l}px;width:${r - l}px;--mc:${mc(g.m)}"></div>`;
+    const major = g.m >= 1 && g.m <= 5;
+    h += `<button class="tl-lab${major ? '' : ' minor'}" data-m="${g.m}" data-go="${g.from}" style="left:${(x(g.from) + x(g.to)) / 2}px;--mc:${mc(g.m)}">${major ? `<b>${g.m}</b>` : ''}${MS[g.m]}</button>`;
+  });
+  slides.forEach((s, i) => {
+    const t = s.dataset.title.replace(/"/g, '&quot;');
+    h += s.dataset.ai
+      ? `<button class="tl-tick ai" data-go="${i}" style="left:${x(i)}px" title="${i + 1}. ${t}"><svg class="ic"><use href="#i-sparkles"/></svg></button>`
+      : `<button class="tl-tick" data-go="${i}" style="left:${x(i)}px;--mc:${mc(s.dataset.m)}" title="${i + 1}. ${t}"></button>`;
+  });
+  h += '<div class="tl-mark"></div><button class="tl-nav" data-step="-1" style="left:70px" aria-label="Previous">‹</button><button class="tl-nav" data-step="1" style="left:1530px" aria-label="Next">›</button>';
+  tl.innerHTML = h;
+  const ticks = [...tl.querySelectorAll('.tl-tick')], mark = tl.querySelector('.tl-mark');
+  tl.addEventListener('click', e => {
+    const b = e.target.closest('[data-go],[data-step]');
+    if (!b) return;
+    b.dataset.go !== undefined ? go(+b.dataset.go) : go(cur + +b.dataset.step);
+  });
+
+  // Overview cards
+  ov.querySelector('.ov-grid').innerHTML = slides.map((s, i) =>
+    `<button class="ov-card" data-go="${i}" style="--mc:${mc(s.dataset.m)}"><span class="n">${pad(i + 1)} · ${MS[s.dataset.m]}${s.dataset.ai ? ' · AI' : ''}</span><span class="t">${s.dataset.title}</span></button>`).join('');
+  ov.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) { go(+b.dataset.go); ov.classList.remove('show'); } });
+
+  // Number counters: data-to, data-from, data-delay (ms after the slide's base delay), data-dur, data-dec, data-suf
+  const setFinal = s => s.querySelectorAll('[data-to]').forEach(el => el.textContent = (+el.dataset.to).toFixed(+(el.dataset.dec || 0)) + (el.dataset.suf || ''));
+  function runCounters(s, baseMs) {
+    raf.forEach(cancelAnimationFrame); raf = [];
+    if (reduced) return setFinal(s);
+    s.querySelectorAll('[data-to]').forEach(el => {
+      const to = +el.dataset.to, from = +(el.dataset.from || 0), dec = +(el.dataset.dec || 0), suf = el.dataset.suf || '';
+      const t0 = performance.now() + baseMs + +(el.dataset.delay || 0), du = +(el.dataset.dur || 1200);
+      el.textContent = from.toFixed(dec) + suf;
+      const tick = now => {
+        const p = Math.min(1, Math.max(0, (now - t0) / du)), e = 1 - Math.pow(1 - p, 3);
+        el.textContent = (from + (to - from) * e).toFixed(dec) + suf;
+        if (p < 1) raf.push(requestAnimationFrame(tick));
+      };
+      raf.push(requestAnimationFrame(tick));
+    });
+  }
+
+  function go(i, { replay = false } = {}) {
+    i = Math.max(0, Math.min(N - 1, i));
+    if (i === cur && !replay) return;
+    const prev = cur; cur = i;
+    const base = (prev < 0 || replay) ? 0.15 : 0.6;
+    track.style.setProperty('--base', base + 's');
+    if (prev < 0) { track.classList.add('instant'); bg.classList.add('instant'); }
+    track.style.transform = `translateX(${-i * W}px)`;
+    bg.style.transform = `translateX(${-i * W * PAR}px)`;
+    if (prev >= 0 && prev !== i) { slides[prev].classList.remove('is-active'); setFinal(slides[prev]); }
+    const s = slides[i];
+    s.classList.remove('is-active'); void s.offsetWidth; s.classList.add('is-active');
+    if (prev < 0) requestAnimationFrame(() => requestAnimationFrame(() => { track.classList.remove('instant'); bg.classList.remove('instant'); }));
+    runCounters(s, base * 1000);
+
+    // HUD, timeline, notes
+    const m = +s.dataset.m;
+    hud.style.setProperty('--mc', mc(m));
+    hud.querySelector('.mtext').innerHTML = m >= 1 && m <= 5 ? `Milestone ${m} · <b>${MS[m]}</b>` : `<b>${MS[m]}</b>`;
+    const ai = hud.querySelector('.ai');
+    ai.classList.toggle('on', !!s.dataset.ai);
+    ai.querySelector('span').textContent = s.dataset.ai ? `AI agent ${s.dataset.ai}` : '';
+    hud.querySelector('.counter').innerHTML = `<b>${pad(i + 1)}</b> / ${pad(N)}`;
+    ticks.forEach((t, k) => t.classList.toggle('past', k <= i));
+    tl.querySelectorAll('.tl-seg,.tl-lab').forEach(el => el.classList.toggle('on', +el.dataset.m === m));
+    mark.style.left = x(i) + 'px';
+    mark.style.setProperty('--mc', s.dataset.ai ? 'var(--ai2)' : mc(m));
+    const n = s.querySelector('.notes');
+    notes.innerHTML = `<h4>${pad(i + 1)} · ${s.dataset.title}</h4>` + (n ? n.innerHTML : '');
+    ov.querySelectorAll('.ov-card').forEach((c, k) => c.classList.toggle('cur', k === i));
+    if (location.hash !== '#' + (i + 1)) history.replaceState(null, '', '#' + (i + 1));
+  }
+
+  const toggleFS = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+  addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (ov.classList.contains('show') && k !== 'o' && k !== 'O' && k !== 'Escape') return;
+    if (['ArrowRight', 'PageDown', ' ', 'Enter', 'ArrowDown'].includes(k)) { e.preventDefault(); go(cur + 1); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace', 'ArrowUp'].includes(k)) { e.preventDefault(); go(cur - 1); }
+    else if (k === 'Home') go(0);
+    else if (k === 'End') go(N - 1);
+    else if (k === 'f' || k === 'F') toggleFS();
+    else if (k === 'n' || k === 'N') notes.classList.toggle('show');
+    else if (k === 'r' || k === 'R') go(cur, { replay: true });
+    else if (k === 'o' || k === 'O') ov.classList.toggle('show');
+    else if (k === 'Escape') ov.classList.remove('show');
+  });
+
+  // Swipe
+  let sx = null, sy = null;
+  const vp = document.getElementById('viewport');
+  vp.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; });
+  vp.addEventListener('pointerup', e => {
+    if (sx === null) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    sx = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(cur + (dx < 0 ? 1 : -1));
+  });
+
+  const fromHash = () => { const n = parseInt(location.hash.slice(1), 10); return Number.isFinite(n) ? n - 1 : 0; };
+  addEventListener('hashchange', () => go(fromHash()));
+  go(fromHash());
+})();
+</script>
+</body>
+</html>

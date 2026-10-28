@@ -25,6 +25,9 @@ public final class AppConfig {
     private final boolean imageOptimizationEnabled;
     private final boolean fontCleanupEnabled;
     private final boolean layoutNormalizeEnabled;
+    private final DeckFormat deckFormat;
+    private final Path outputHtmlPath;
+    private final Path htmlDeckOutlinePath;
     private final Path presentationKeysPath;
     private final Path voiceStylePath;
     private final Set<Integer> layoutSkipTextFitSlideIndices;
@@ -34,6 +37,9 @@ public final class AppConfig {
             Path templatePptxPath,
             List<Path> sourceDocxPaths,
             Path outputPptxPath,
+            DeckFormat deckFormat,
+            Path outputHtmlPath,
+            Path htmlDeckOutlinePath,
             String geminiModel,
             int geminiMaxRetries,
             String pexelsApiKey,
@@ -49,6 +55,9 @@ public final class AppConfig {
         this.templatePptxPath = templatePptxPath;
         this.sourceDocxPaths = List.copyOf(sourceDocxPaths);
         this.outputPptxPath = outputPptxPath;
+        this.deckFormat = deckFormat;
+        this.outputHtmlPath = outputHtmlPath;
+        this.htmlDeckOutlinePath = htmlDeckOutlinePath;
         this.geminiModel = geminiModel;
         this.geminiMaxRetries = geminiMaxRetries;
         this.pexelsApiKey = pexelsApiKey;
@@ -70,6 +79,9 @@ public final class AppConfig {
         Path pptx = Path.of(values.getOrDefault("TEMPLATE_PPTX_PATH", "template.pptx"));
         Path sourcesDir = Path.of(values.getOrDefault("SOURCES_DIR", "sources"));
         Path output = Path.of(values.getOrDefault("OUTPUT_PPTX_PATH", "final_presentation.pptx"));
+        DeckFormat deckFormat = DeckFormat.parse(values.getOrDefault("DECK_FORMAT", "pptx"));
+        Path outputHtml = Path.of(values.getOrDefault("OUTPUT_HTML_PATH", "final_presentation.html"));
+        Path htmlOutline = Path.of(values.getOrDefault("HTML_DECK_OUTLINE_PATH", "html-deck-outline.properties"));
         String model = values.getOrDefault("GEMINI_MODEL", "gemini-3.1-flash-lite");
         int retries = parseInt(values.getOrDefault("GEMINI_MAX_RETRIES", "3"), 3);
         String pexelsKey = values.getOrDefault("PEXELS_API_KEY", "");
@@ -84,19 +96,26 @@ public final class AppConfig {
                 values.getOrDefault("LAYOUT_SKIP_TEXT_FIT_SLIDE_INDICES", ""));
 
         validateGeminiCli(cliPath);
-        validateInputFile(pptx, "TEMPLATE_PPTX_PATH");
         List<Path> sourceDocxPaths = resolveSourceDocxPaths(sourcesDir);
-        validateInputFile(
-                presentationKeys,
-                "PRESENTATION_KEYS_PATH",
-                "Copy presentation-keys.example.properties to presentation-keys.properties");
-
         validateInputFile(voiceStyle, "VOICE_STYLE_PATH");
 
+        if (deckFormat == DeckFormat.PPTX) {
+            validateInputFile(pptx, "TEMPLATE_PPTX_PATH");
+            validateInputFile(
+                    presentationKeys,
+                    "PRESENTATION_KEYS_PATH",
+                    "Copy presentation-keys.example.properties to presentation-keys.properties");
+        } else {
+            validateInputFile(
+                    htmlOutline,
+                    "HTML_DECK_OUTLINE_PATH",
+                    "Copy html-deck-outline.example.properties to html-deck-outline.properties");
+        }
+
         return new AppConfig(
-                cliPath, pptx, sourceDocxPaths, output, model, retries, pexelsKey, imageCache,
-                clampJpegQuality(jpegQuality), optimizationEnabled, fontCleanupEnabled, layoutNormalizeEnabled,
-                presentationKeys, voiceStyle, skipTextFitSlideIndices);
+                cliPath, pptx, sourceDocxPaths, output, deckFormat, outputHtml, htmlOutline, model, retries,
+                pexelsKey, imageCache, clampJpegQuality(jpegQuality), optimizationEnabled, fontCleanupEnabled,
+                layoutNormalizeEnabled, presentationKeys, voiceStyle, skipTextFitSlideIndices);
     }
 
     private static Map<String, String> loadEnvFile(Path envPath) {
@@ -133,7 +152,8 @@ public final class AppConfig {
     private static void mergeSystemEnv(Map<String, String> values) {
         for (String key : List.of(
                 "GEMINI_CLI_PATH", "TEMPLATE_PPTX_PATH", "SOURCES_DIR",
-                "OUTPUT_PPTX_PATH", "GEMINI_MODEL", "GEMINI_MAX_RETRIES",
+                "OUTPUT_PPTX_PATH", "DECK_FORMAT", "OUTPUT_HTML_PATH", "HTML_DECK_OUTLINE_PATH",
+                "GEMINI_MODEL", "GEMINI_MAX_RETRIES",
                 "PEXELS_API_KEY", "IMAGE_CACHE_DIR",
                 "IMAGE_JPEG_QUALITY", "IMAGE_OPTIMIZATION_ENABLED", "FONT_CLEANUP_ENABLED",
                 "LAYOUT_NORMALIZE_ENABLED", "PRESENTATION_KEYS_PATH",
@@ -282,6 +302,18 @@ public final class AppConfig {
 
     public Path outputPptxPath() {
         return outputPptxPath;
+    }
+
+    public DeckFormat deckFormat() {
+        return deckFormat;
+    }
+
+    public Path outputHtmlPath() {
+        return outputHtmlPath;
+    }
+
+    public Path htmlDeckOutlinePath() {
+        return htmlDeckOutlinePath;
     }
 
     public String geminiModel() {

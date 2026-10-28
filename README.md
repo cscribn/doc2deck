@@ -8,7 +8,9 @@ Operator guide. Behavioral spec: [requirements.md](requirements.md).
 2. Copy [presentation-keys.example.properties](presentation-keys.example.properties) to `presentation-keys.properties`.
 3. Install and authenticate Gemini CLI: `npm install -g @google/gemini-cli`, then run `gemini` once to sign in.
 4. Place `template.pptx` at project root and one or more `.docx` files in `sources/` (or override paths in `.env`).
-5. Run from project root: `./gradlew bootRun` → `final_presentation.pptx` (step progress on stdout; errors only in logs; full log in `presentation-generator.log`).
+5. Run from project root: `./gradlew bootRun` → `final_presentation.pptx` (default) or `final_presentation.html` when `DECK_FORMAT=html` (step progress on stdout; errors only in logs; full log in `presentation-generator.log`).
+
+**HTML deck:** Set `DECK_FORMAT=html` in `.env`. Copy [html-deck-outline.example.properties](html-deck-outline.example.properties) to `html-deck-outline.properties`. PPTX template and `presentation-keys.properties` are not required in HTML mode. Reference UX: [sample_deck.html](sample_deck.html).
 
 **Prerequisites:** JDK 21 (Gradle toolchain auto-provision; `./gradlew -q javaToolchains`), Gemini CLI, `curl` on PATH. Optional: `PEXELS_API_KEY` for slide images (skipped when unset).
 
@@ -34,8 +36,10 @@ Variables and commented defaults: [.env.example](.env.example). Code defaults: [
 
 - **Gemini CLI not found:** `npm install -g @google/gemini-cli` or set `GEMINI_CLI_PATH`
 - **Auth failure:** run `gemini` interactively once
-- **Input not found:** check `TEMPLATE_PPTX_PATH`, `SOURCES_DIR` (must contain at least one `.docx`)
-- **Presentation keys config not found:** copy `presentation-keys.example.properties` to `presentation-keys.properties`, or set `PRESENTATION_KEYS_PATH`
+- **Input not found:** check `TEMPLATE_PPTX_PATH` (PPTX mode), `SOURCES_DIR` (must contain at least one `.docx`)
+- **Presentation keys config not found (PPTX):** copy `presentation-keys.example.properties` to `presentation-keys.properties`, or set `PRESENTATION_KEYS_PATH`
+- **HTML outline not found:** copy `html-deck-outline.example.properties` to `html-deck-outline.properties`, or set `HTML_DECK_OUTLINE_PATH`
+- **Gradle fails with `What went wrong: 27`:** Gradle 8.x cannot run on JDK 27; this project uses Gradle 9.8+ (wrapper). Re-run `./gradlew bootRun`. If you must stay on Gradle 8, set `JAVA_HOME` to JDK 21–24 for the Gradle process.
 - **Toolchain:** `./gradlew -q javaToolchains`; install JDK 21 if auto-download fails
 - **Validation failure:** fix missing keys, word-limit errors, or image queries (2-5 words)
 - **Google Drive/Slides overflow:** keep `LAYOUT_NORMALIZE_ENABLED=true`; fix validation errors first

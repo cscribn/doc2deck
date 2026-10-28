@@ -4,7 +4,11 @@ import com.appfire.presentation.images.ImageAcquisitionService;
 import com.appfire.presentation.images.PresentationImageOptimizer;
 import com.appfire.presentation.template.EmbeddedFontCleaner;
 import com.appfire.presentation.template.PptxLayoutNormalizer;
+import com.appfire.presentation.llm.HtmlDeckPromptBuilder;
+import com.appfire.presentation.llm.PromptBuilder;
+import com.appfire.presentation.llm.PromptLoader;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,7 +22,30 @@ public class AppBeansConfiguration {
 
     @Bean
     PresentationKeysConfig presentationKeysConfig(AppConfig appConfig) {
+        if (appConfig.deckFormat() == DeckFormat.HTML) {
+            return new PresentationKeysConfig("(html mode — presentation keys unused)", Map.of());
+        }
         return PresentationKeysConfigLoader.load(appConfig.presentationKeysPath());
+    }
+
+    @Bean
+    HtmlDeckOutlineConfig htmlDeckOutlineConfig(AppConfig appConfig) {
+        if (appConfig.deckFormat() == DeckFormat.HTML) {
+            return HtmlDeckOutlineConfigLoader.load(appConfig.htmlDeckOutlinePath());
+        }
+        return HtmlDeckOutlineConfig.unusedPlaceholder();
+    }
+
+    @Bean
+    PromptBuilder promptBuilder(
+            PromptLoader promptLoader, AppConfig appConfig, PresentationKeysConfig keysConfig) {
+        return new PromptBuilder(promptLoader, keysConfig, appConfig.voiceStylePath());
+    }
+
+    @Bean
+    HtmlDeckPromptBuilder htmlDeckPromptBuilder(
+            PromptLoader promptLoader, AppConfig appConfig, HtmlDeckOutlineConfig outlineConfig) {
+        return new HtmlDeckPromptBuilder(promptLoader, outlineConfig, appConfig.voiceStylePath());
     }
 
     @Bean

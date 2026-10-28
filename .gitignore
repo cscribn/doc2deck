@@ -6,6 +6,7 @@ out/
 # Environment and secrets
 .env
 presentation-keys.properties
+html-deck-outline.properties
 
 # IDE
 .idea/
