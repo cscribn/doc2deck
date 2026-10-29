@@ -6,13 +6,15 @@ Operator guide. Behavioral spec: [requirements.md](requirements.md).
 
 1. Copy [.env.example](.env.example) to `.env`.
 2. Copy [presentation-keys.example.properties](presentation-keys.example.properties) to `presentation-keys.properties`.
-3. Install and authenticate Gemini CLI: `npm install -g @google/gemini-cli`, then run `gemini` once to sign in.
+3. Configure an AI backend (default `AI_BACKEND=cursor_cli`):
+   - **Cursor CLI:** Install from [Cursor CLI docs](https://cursor.com/docs/cli/overview), then `agent login` or set `CURSOR_API_KEY`.
+   - **Google GenAI SDK:** Set `AI_BACKEND=google_genai` and `GOOGLE_API_KEY` (see [Google AI Studio](https://aistudio.google.com/app/apikey)).
 4. Place `template.pptx` at project root and one or more `.docx` files in `sources/` (or override paths in `.env`).
 5. Run from project root: `./gradlew bootRun` → `final_presentation.pptx` (default) or `final_presentation.html` when `DECK_FORMAT=html` (step progress on stdout; errors only in logs; full log in `presentation-generator.log`).
 
 **HTML deck:** Set `DECK_FORMAT=html` in `.env`. Copy [html-deck-outline.example.properties](html-deck-outline.example.properties) to `html-deck-outline.properties`. PPTX template and `presentation-keys.properties` are not required in HTML mode. Reference UX: [sample_deck.html](sample_deck.html).
 
-**Prerequisites:** JDK 21 (Gradle toolchain auto-provision; `./gradlew -q javaToolchains`), Gemini CLI, `curl` on PATH. Optional: `PEXELS_API_KEY` for slide images (skipped when unset).
+**Prerequisites:** JDK 21 (Gradle toolchain auto-provision; `./gradlew -q javaToolchains`), configured AI backend, `curl` on PATH. Optional: `PEXELS_API_KEY` for slide images (skipped when unset).
 
 **Template:** `${variableName}` placeholders in single uninterrupted text runs. Key instructions and per-key limits: local `presentation-keys.properties` (see [presentation-keys.example.properties](presentation-keys.example.properties)). Voice/tone: `VOICE_STYLE_PATH` in `.env` (see `prompts/voice-styles/`). Generated decks target live presentation (short on-slide reinforcement), not infodeck pre-reads; use source DOCX for full detail. See [requirements.md](requirements.md).
 
@@ -26,7 +28,7 @@ Operator guide. Behavioral spec: [requirements.md](requirements.md).
 ## Commands
 
 - `./gradlew bootRun` — generate presentation (no CLI args; `./gradlew run` aliases to `bootRun`)
-- `./gradlew build` — unit tests always; full pipeline integration test only when `gemini` is available
+- `./gradlew build` — unit tests always; full pipeline integration test when the configured AI backend is available
 
 ## Environment
 
@@ -34,8 +36,9 @@ Variables and commented defaults: [.env.example](.env.example). Code defaults: [
 
 ## Troubleshooting
 
-- **Gemini CLI not found:** `npm install -g @google/gemini-cli` or set `GEMINI_CLI_PATH`
-- **Auth failure:** run `gemini` interactively once
+- **Cursor CLI not found:** install Cursor CLI or set `CURSOR_CLI_PATH`
+- **Cursor auth failure:** run `agent login` or set `CURSOR_API_KEY`
+- **Google GenAI auth failure:** set valid `GOOGLE_API_KEY` when `AI_BACKEND=google_genai`
 - **Input not found:** check `TEMPLATE_PPTX_PATH` (PPTX mode), `SOURCES_DIR` (must contain at least one `.docx`)
 - **Presentation keys config not found (PPTX):** copy `presentation-keys.example.properties` to `presentation-keys.properties`, or set `PRESENTATION_KEYS_PATH`
 - **HTML outline not found:** copy `html-deck-outline.example.properties` to `html-deck-outline.properties`, or set `HTML_DECK_OUTLINE_PATH`

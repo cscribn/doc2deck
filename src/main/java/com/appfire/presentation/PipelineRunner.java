@@ -32,6 +32,6 @@ public class PipelineRunner implements CommandLineRunner {
         if (e instanceof IllegalStateException) {
             return "Fix configuration or input files and re-run ./gradlew bootRun";
         }
-        return "Review the error above, verify gemini CLI and inputs, then re-run ./gradlew bootRun";
+        return "Review the error above, verify AI backend auth and inputs, then re-run ./gradlew bootRun";
     }
 }

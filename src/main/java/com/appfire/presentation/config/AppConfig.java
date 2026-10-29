@@ -13,12 +13,16 @@ import java.util.stream.Stream;
 
 public final class AppConfig {
 
-    private final String geminiCliPath;
+    private final AiBackend aiBackend;
+    private final int llmMaxRetries;
+    private final String googleApiKey;
+    private final String googleGenaiModel;
+    private final String cursorCliPath;
+    private final String cursorModel;
+    private final Path cursorWorkspace;
     private final Path templatePptxPath;
     private final List<Path> sourceDocxPaths;
     private final Path outputPptxPath;
-    private final String geminiModel;
-    private final int geminiMaxRetries;
     private final String pexelsApiKey;
     private final Path imageCacheDir;
     private final float imageJpegQuality;
@@ -33,15 +37,19 @@ public final class AppConfig {
     private final Set<Integer> layoutSkipTextFitSlideIndices;
 
     private AppConfig(
-            String geminiCliPath,
+            AiBackend aiBackend,
+            int llmMaxRetries,
+            String googleApiKey,
+            String googleGenaiModel,
+            String cursorCliPath,
+            String cursorModel,
+            Path cursorWorkspace,
             Path templatePptxPath,
             List<Path> sourceDocxPaths,
             Path outputPptxPath,
             DeckFormat deckFormat,
             Path outputHtmlPath,
             Path htmlDeckOutlinePath,
-            String geminiModel,
-            int geminiMaxRetries,
             String pexelsApiKey,
             Path imageCacheDir,
             float imageJpegQuality,
@@ -51,15 +59,19 @@ public final class AppConfig {
             Path presentationKeysPath,
             Path voiceStylePath,
             Set<Integer> layoutSkipTextFitSlideIndices) {
-        this.geminiCliPath = geminiCliPath;
+        this.aiBackend = aiBackend;
+        this.llmMaxRetries = llmMaxRetries;
+        this.googleApiKey = googleApiKey;
+        this.googleGenaiModel = googleGenaiModel;
+        this.cursorCliPath = cursorCliPath;
+        this.cursorModel = cursorModel;
+        this.cursorWorkspace = cursorWorkspace;
         this.templatePptxPath = templatePptxPath;
         this.sourceDocxPaths = List.copyOf(sourceDocxPaths);
         this.outputPptxPath = outputPptxPath;
         this.deckFormat = deckFormat;
         this.outputHtmlPath = outputHtmlPath;
         this.htmlDeckOutlinePath = htmlDeckOutlinePath;
-        this.geminiModel = geminiModel;
-        this.geminiMaxRetries = geminiMaxRetries;
         this.pexelsApiKey = pexelsApiKey;
         this.imageCacheDir = imageCacheDir;
         this.imageJpegQuality = imageJpegQuality;
@@ -75,15 +87,20 @@ public final class AppConfig {
         Map<String, String> values = loadEnvFile(Path.of(".env"));
         mergeSystemEnv(values);
 
-        String cliPath = values.getOrDefault("GEMINI_CLI_PATH", "gemini");
+        AiBackend aiBackend = AiBackend.parse(values.getOrDefault("AI_BACKEND", "cursor_cli"));
+        int llmMaxRetries = parseInt(values.getOrDefault("LLM_MAX_RETRIES", "3"), 3);
+        String googleApiKey = values.getOrDefault("GOOGLE_API_KEY", "");
+        String googleGenaiModel = values.getOrDefault("GOOGLE_GENAI_MODEL", "gemini-3.1-flash-lite");
+        String cursorCliPath = values.getOrDefault("CURSOR_CLI_PATH", "agent");
+        String cursorModel = values.getOrDefault("CURSOR_MODEL", "");
+        Path cursorWorkspace = Path.of(values.getOrDefault("CURSOR_WORKSPACE", System.getProperty("user.dir")));
+
         Path pptx = Path.of(values.getOrDefault("TEMPLATE_PPTX_PATH", "template.pptx"));
         Path sourcesDir = Path.of(values.getOrDefault("SOURCES_DIR", "sources"));
         Path output = Path.of(values.getOrDefault("OUTPUT_PPTX_PATH", "final_presentation.pptx"));
         DeckFormat deckFormat = DeckFormat.parse(values.getOrDefault("DECK_FORMAT", "pptx"));
         Path outputHtml = Path.of(values.getOrDefault("OUTPUT_HTML_PATH", "final_presentation.html"));
         Path htmlOutline = Path.of(values.getOrDefault("HTML_DECK_OUTLINE_PATH", "html-deck-outline.properties"));
-        String model = values.getOrDefault("GEMINI_MODEL", "gemini-3.1-flash-lite");
-        int retries = parseInt(values.getOrDefault("GEMINI_MAX_RETRIES", "3"), 3);
         String pexelsKey = values.getOrDefault("PEXELS_API_KEY", "");
         Path imageCache = Path.of(values.getOrDefault("IMAGE_CACHE_DIR", ".cache/images"));
         float jpegQuality = parseFloat(values.getOrDefault("IMAGE_JPEG_QUALITY", "0.8"), 0.8f);
@@ -95,7 +112,8 @@ public final class AppConfig {
         Set<Integer> skipTextFitSlideIndices = parseSkipTextFitSlideIndices(
                 values.getOrDefault("LAYOUT_SKIP_TEXT_FIT_SLIDE_INDICES", ""));
 
-        validateGeminiCli(cliPath);
+        validateAiBackend(aiBackend, googleApiKey, cursorCliPath, cursorWorkspace);
+
         List<Path> sourceDocxPaths = resolveSourceDocxPaths(sourcesDir);
         validateInputFile(voiceStyle, "VOICE_STYLE_PATH");
 
@@ -113,9 +131,77 @@ public final class AppConfig {
         }
 
         return new AppConfig(
-                cliPath, pptx, sourceDocxPaths, output, deckFormat, outputHtml, htmlOutline, model, retries,
-                pexelsKey, imageCache, clampJpegQuality(jpegQuality), optimizationEnabled, fontCleanupEnabled,
-                layoutNormalizeEnabled, presentationKeys, voiceStyle, skipTextFitSlideIndices);
+                aiBackend,
+                llmMaxRetries,
+                googleApiKey,
+                googleGenaiModel,
+                cursorCliPath,
+                cursorModel,
+                cursorWorkspace,
+                pptx,
+                sourceDocxPaths,
+                output,
+                deckFormat,
+                outputHtml,
+                htmlOutline,
+                pexelsKey,
+                imageCache,
+                clampJpegQuality(jpegQuality),
+                optimizationEnabled,
+                fontCleanupEnabled,
+                layoutNormalizeEnabled,
+                presentationKeys,
+                voiceStyle,
+                skipTextFitSlideIndices);
+    }
+
+    private static void validateAiBackend(
+            AiBackend aiBackend, String googleApiKey, String cursorCliPath, Path cursorWorkspace) {
+        switch (aiBackend) {
+            case GOOGLE_GENAI -> validateGoogleGenai(googleApiKey);
+            case CURSOR_CLI -> validateCursorCli(cursorCliPath, cursorWorkspace);
+        }
+    }
+
+    private static void validateGoogleGenai(String googleApiKey) {
+        if (googleApiKey == null || googleApiKey.isBlank()) {
+            throw new IllegalStateException(
+                    "GOOGLE_API_KEY is required when AI_BACKEND=google_genai. "
+                            + "Set it in .env or the environment and re-run ./gradlew bootRun");
+        }
+    }
+
+    private static void validateCursorCli(String cursorCliPath, Path cursorWorkspace) {
+        if (!Files.isDirectory(cursorWorkspace)) {
+            throw new IllegalStateException(
+                    "CURSOR_WORKSPACE is not a directory: " + cursorWorkspace
+                            + ". Set CURSOR_WORKSPACE to the project root and re-run ./gradlew bootRun");
+        }
+        try {
+            Process process = new ProcessBuilder(cursorCliPath, "--version")
+                    .redirectErrorStream(true)
+                    .start();
+            boolean finished = process.waitFor(30, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                throw new IllegalStateException(
+                        "Cursor CLI timed out: " + cursorCliPath
+                                + ". Verify the agent command is installed and re-run ./gradlew bootRun");
+            }
+            if (process.exitValue() != 0) {
+                throw new IllegalStateException(
+                        "Cursor CLI not working: " + cursorCliPath
+                                + ". Install from https://cursor.com/docs/cli/overview and re-run ./gradlew bootRun");
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Cursor CLI not found: " + cursorCliPath
+                            + ". Install Cursor CLI and ensure it is on PATH, then re-run ./gradlew bootRun",
+                    e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while validating Cursor CLI", e);
+        }
     }
 
     private static Map<String, String> loadEnvFile(Path envPath) {
@@ -151,45 +237,32 @@ public final class AppConfig {
 
     private static void mergeSystemEnv(Map<String, String> values) {
         for (String key : List.of(
-                "GEMINI_CLI_PATH", "TEMPLATE_PPTX_PATH", "SOURCES_DIR",
-                "OUTPUT_PPTX_PATH", "DECK_FORMAT", "OUTPUT_HTML_PATH", "HTML_DECK_OUTLINE_PATH",
-                "GEMINI_MODEL", "GEMINI_MAX_RETRIES",
-                "PEXELS_API_KEY", "IMAGE_CACHE_DIR",
-                "IMAGE_JPEG_QUALITY", "IMAGE_OPTIMIZATION_ENABLED", "FONT_CLEANUP_ENABLED",
-                "LAYOUT_NORMALIZE_ENABLED", "PRESENTATION_KEYS_PATH",
-                "VOICE_STYLE_PATH", "LAYOUT_SKIP_TEXT_FIT_SLIDE_INDICES")) {
+                "AI_BACKEND",
+                "LLM_MAX_RETRIES",
+                "GOOGLE_API_KEY",
+                "GOOGLE_GENAI_MODEL",
+                "CURSOR_CLI_PATH",
+                "CURSOR_MODEL",
+                "CURSOR_WORKSPACE",
+                "TEMPLATE_PPTX_PATH",
+                "SOURCES_DIR",
+                "OUTPUT_PPTX_PATH",
+                "DECK_FORMAT",
+                "OUTPUT_HTML_PATH",
+                "HTML_DECK_OUTLINE_PATH",
+                "PEXELS_API_KEY",
+                "IMAGE_CACHE_DIR",
+                "IMAGE_JPEG_QUALITY",
+                "IMAGE_OPTIMIZATION_ENABLED",
+                "FONT_CLEANUP_ENABLED",
+                "LAYOUT_NORMALIZE_ENABLED",
+                "PRESENTATION_KEYS_PATH",
+                "VOICE_STYLE_PATH",
+                "LAYOUT_SKIP_TEXT_FIT_SLIDE_INDICES")) {
             String env = System.getenv(key);
             if (env != null && !env.isBlank()) {
                 values.put(key, env);
             }
-        }
-    }
-
-    private static void validateGeminiCli(String cliPath) {
-        try {
-            Process process = new ProcessBuilder(cliPath, "--version")
-                    .redirectErrorStream(true)
-                    .start();
-            boolean finished = process.waitFor(30, TimeUnit.SECONDS);
-            if (!finished) {
-                process.destroyForcibly();
-                throw new IllegalStateException(
-                        "Gemini CLI timed out: " + cliPath
-                                + ". Verify the gemini command is installed and re-run ./gradlew bootRun");
-            }
-            if (process.exitValue() != 0) {
-                throw new IllegalStateException(
-                        "Gemini CLI not working: " + cliPath
-                                + ". Install with npm install -g @google/gemini-cli, authenticate, and re-run ./gradlew bootRun");
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException(
-                    "Gemini CLI not found: " + cliPath
-                            + ". Install with npm install -g @google/gemini-cli and ensure it is on PATH, then re-run ./gradlew bootRun",
-                    e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while validating Gemini CLI", e);
         }
     }
 
@@ -288,8 +361,32 @@ public final class AppConfig {
         return indices;
     }
 
-    public String geminiCliPath() {
-        return geminiCliPath;
+    public AiBackend aiBackend() {
+        return aiBackend;
+    }
+
+    public int llmMaxRetries() {
+        return llmMaxRetries;
+    }
+
+    public String googleApiKey() {
+        return googleApiKey;
+    }
+
+    public String googleGenaiModel() {
+        return googleGenaiModel;
+    }
+
+    public String cursorCliPath() {
+        return cursorCliPath;
+    }
+
+    public String cursorModel() {
+        return cursorModel;
+    }
+
+    public Path cursorWorkspace() {
+        return cursorWorkspace;
     }
 
     public Path templatePptxPath() {
@@ -314,14 +411,6 @@ public final class AppConfig {
 
     public Path htmlDeckOutlinePath() {
         return htmlDeckOutlinePath;
-    }
-
-    public String geminiModel() {
-        return geminiModel;
-    }
-
-    public int geminiMaxRetries() {
-        return geminiMaxRetries;
     }
 
     public String pexelsApiKey() {

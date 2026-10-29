@@ -4,7 +4,11 @@ import com.appfire.presentation.images.ImageAcquisitionService;
 import com.appfire.presentation.images.PresentationImageOptimizer;
 import com.appfire.presentation.template.EmbeddedFontCleaner;
 import com.appfire.presentation.template.PptxLayoutNormalizer;
+import com.appfire.presentation.llm.CursorCliClient;
+import com.appfire.presentation.llm.GoogleGenAiClient;
 import com.appfire.presentation.llm.HtmlDeckPromptBuilder;
+import com.appfire.presentation.llm.LlmJsonResponseParser;
+import com.appfire.presentation.llm.PresentationContentGenerator;
 import com.appfire.presentation.llm.PromptBuilder;
 import com.appfire.presentation.llm.PromptLoader;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +22,15 @@ public class AppBeansConfiguration {
     @Bean
     AppConfig appConfig() {
         return AppConfig.load();
+    }
+
+    @Bean
+    PresentationContentGenerator presentationContentGenerator(
+            AppConfig appConfig, LlmJsonResponseParser responseParser) {
+        return switch (appConfig.aiBackend()) {
+            case GOOGLE_GENAI -> new GoogleGenAiClient(appConfig, responseParser);
+            case CURSOR_CLI -> new CursorCliClient(appConfig, responseParser);
+        };
     }
 
     @Bean

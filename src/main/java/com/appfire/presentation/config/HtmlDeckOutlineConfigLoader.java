@@ -35,7 +35,7 @@ public final class HtmlDeckOutlineConfigLoader {
         return parse(properties);
     }
 
-    static HtmlDeckOutlineConfig parse(Properties properties) {
+    public static HtmlDeckOutlineConfig parse(Properties properties) {
         String header = properties.getProperty(HtmlDeckOutlineConfig.HEADER_KEY, "").trim();
         if (header.isBlank()) {
             throw new IllegalStateException(

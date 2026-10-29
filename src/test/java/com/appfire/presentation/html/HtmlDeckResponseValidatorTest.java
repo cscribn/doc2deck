@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.appfire.presentation.config.HtmlDeckOutlineConfig;
 import com.appfire.presentation.config.HtmlDeckOutlineConfigLoader;
+import com.appfire.presentation.llm.HtmlDeckResponseValidator;
 import com.appfire.presentation.model.HtmlDeckBullet;
 import com.appfire.presentation.model.HtmlDeckContentResponse;
 import com.appfire.presentation.model.HtmlDeckSlide;

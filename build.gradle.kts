@@ -23,6 +23,7 @@ dependencies {
     implementation("org.apache.poi:poi-ooxml:5.4.1")
     implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:11.5.7")
     implementation("com.xqlee.image:pngquant-png:1.0.0")
+    implementation("com.google.genai:google-genai:1.80.0")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation(platform("org.junit:junit-bom:5.12.2"))

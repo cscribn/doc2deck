@@ -14,22 +14,24 @@ class AppConfigTest {
 
     @Test
     void loadsWhenPrerequisitesExist() {
-        assumeTrue(geminiCliAvailable(), "gemini CLI not available");
+        assumeTrue(cursorCliAvailable(), "Cursor CLI not available");
         assumeTrue(Files.exists(TestFixtures.resolveTemplatePptx()), "template PPTX not available");
         assumeTrue(Files.exists(TestFixtures.resolveSourceDocx()), "source DOCX not available");
         assumeTrue(Files.exists(Path.of("presentation-keys.properties")), "presentation-keys.properties not available");
 
         AppConfig config = AppConfig.load();
 
-        assertEquals("gemini", config.geminiCliPath());
-        assertEquals("gemini-3.1-flash-lite", config.geminiModel());
+        assertEquals(AiBackend.CURSOR_CLI, config.aiBackend());
+        assertEquals("agent", config.cursorCliPath());
+        assertEquals("gemini-3.1-flash-lite", config.googleGenaiModel());
+        assertEquals(3, config.llmMaxRetries());
         assertEquals(Path.of("presentation-keys.properties"), config.presentationKeysPath());
         assertFalse(config.sourceDocxPaths().isEmpty());
     }
 
-    private static boolean geminiCliAvailable() {
+    private static boolean cursorCliAvailable() {
         try {
-            Process process = new ProcessBuilder("gemini", "--version")
+            Process process = new ProcessBuilder("agent", "--version")
                     .redirectErrorStream(true)
                     .start();
             return process.waitFor(30, TimeUnit.SECONDS) && process.exitValue() == 0;

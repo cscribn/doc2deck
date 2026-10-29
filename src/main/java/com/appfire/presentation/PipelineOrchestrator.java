@@ -7,8 +7,8 @@ import com.appfire.presentation.config.PresentationKeysConfig;
 import com.appfire.presentation.extraction.DocxExtractor;
 import com.appfire.presentation.html.HtmlDeckWriter;
 import com.appfire.presentation.images.ImageAcquisitionService;
-import com.appfire.presentation.llm.GeminiClient;
 import com.appfire.presentation.llm.HtmlDeckPromptBuilder;
+import com.appfire.presentation.llm.PresentationContentGenerator;
 import com.appfire.presentation.llm.HtmlDeckResponseValidator;
 import com.appfire.presentation.llm.PromptBuilder;
 import com.appfire.presentation.llm.ResponseValidator;
@@ -39,7 +39,7 @@ public class PipelineOrchestrator {
     private final TemplateScanner templateScanner;
     private final PromptBuilder promptBuilder;
     private final HtmlDeckPromptBuilder htmlDeckPromptBuilder;
-    private final GeminiClient geminiClient;
+    private final PresentationContentGenerator contentGenerator;
     private final ResponseValidator validator;
     private final HtmlDeckResponseValidator htmlDeckValidator;
     private final PptxTemplateReplacer templateReplacer;
@@ -57,7 +57,7 @@ public class PipelineOrchestrator {
             TemplateScanner templateScanner,
             PromptBuilder promptBuilder,
             HtmlDeckPromptBuilder htmlDeckPromptBuilder,
-            GeminiClient geminiClient,
+            PresentationContentGenerator contentGenerator,
             ResponseValidator validator,
             HtmlDeckResponseValidator htmlDeckValidator,
             PptxTemplateReplacer templateReplacer,
@@ -73,7 +73,7 @@ public class PipelineOrchestrator {
         this.templateScanner = templateScanner;
         this.promptBuilder = promptBuilder;
         this.htmlDeckPromptBuilder = htmlDeckPromptBuilder;
-        this.geminiClient = geminiClient;
+        this.contentGenerator = contentGenerator;
         this.validator = validator;
         this.htmlDeckValidator = htmlDeckValidator;
         this.templateReplacer = templateReplacer;
@@ -98,15 +98,15 @@ public class PipelineOrchestrator {
     }
 
     private void runHtmlPipeline(DocumentContent document) throws Exception {
-        ConsoleProgress.step("Generating HTML deck content with Gemini...");
+        ConsoleProgress.step("Generating HTML deck content...");
         String prompt = htmlDeckPromptBuilder.build(document);
-        var response = geminiClient.generateHtmlDeck(prompt);
+        var response = contentGenerator.generateHtmlDeck(prompt);
 
         ConsoleProgress.step("Validating generated HTML deck content...");
         HtmlDeckResponseValidator.ValidationResult validation = htmlDeckValidator.validate(response);
         if (!validation.passed()) {
             throw new IllegalStateException(
-                    "Gemini HTML deck response failed validation: " + validation.criticalFailures());
+                    "AI HTML deck response failed validation: " + validation.criticalFailures());
         }
 
         if (config.pexelsApiKey().isBlank()) {
@@ -127,15 +127,15 @@ public class PipelineOrchestrator {
         TemplateScanResult scan = templateScanner.scan(config.templatePptxPath(), keysConfig);
         keysConfig.validateAgainstTemplate(scan).forEach(msg -> LOG.warn("Presentation keys advisory: {}", msg));
 
-        ConsoleProgress.step("Generating presentation content with Gemini...");
+        ConsoleProgress.step("Generating presentation content...");
         String prompt = promptBuilder.build(document, scan);
-        PresentationContentResponse response = geminiClient.generate(prompt);
+        PresentationContentResponse response = contentGenerator.generate(prompt);
 
         ConsoleProgress.step("Validating generated content...");
         ResponseValidator.ValidationResult validation = validator.validate(response, scan, keysConfig);
         if (!validation.passed()) {
             throw new IllegalStateException(
-                    "Gemini response failed validation: " + validation.criticalFailures());
+                    "AI response failed validation: " + validation.criticalFailures());
         }
 
         ConsoleProgress.step("Preparing working copy and replacing text placeholders...");
