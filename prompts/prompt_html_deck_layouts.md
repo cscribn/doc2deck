@@ -28,7 +28,7 @@ Final slide. Required: `title`, `bullets` (2-3 takeaway chips). Optional: `subli
 
 ## bullets
 Each bullet: `{ "icon": "<name>", "text": "<fragment>" }`. Icon must be one of:
-pen, brief, users, chart, target, check, sparkles, flag, trend, doc, shield, star, zap, gauge, building, link, search, crown, sliders, cpu, eye, lock, book, layers, sprout, msg, folder, clip, ticket, grid, alert, scale, rank, cut, loop, x, plus, minus, up, down, right, tie, user, branch, frame, pr, checkc, q, down, building
+pen, brief, users, chart, target, check, sparkles, flag, trend, doc, shield, star, zap, gauge, building, link, search, crown, sliders, cpu, eye, lock, book, layers, sprout, msg, folder, clip, clock, ticket, grid, alert, scale, rank, cut, loop, x, plus, minus, up, down, right, tie, user, branch, frame, pr, checkc, q, down, building
 
 ## milestone
 Integer index matching the outline milestones list (0 = first milestone label).

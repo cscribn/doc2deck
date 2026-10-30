@@ -20,7 +20,8 @@ public final class HtmlDeckResponseValidator {
     private static final Set<String> ALLOWED_ICONS = Set.of(
             "pen", "brief", "users", "chart", "target", "check", "sparkles", "flag", "trend", "doc", "shield", "star",
             "zap", "gauge", "building", "link", "search", "crown", "sliders", "cpu", "eye", "lock", "book", "layers",
-            "sprout", "msg", "folder", "clip", "ticket", "grid", "alert", "scale", "rank", "cut", "loop", "x", "plus",
+            "sprout", "msg", "folder", "clip", "ticket", "grid", "alert", "scale", "rank", "cut", "loop", "clock", "x",
+            "plus",
             "minus", "up", "down", "right", "tie", "user", "branch", "frame", "pr", "checkc", "q");
 
     private final HtmlDeckOutlineConfig outlineConfig;
