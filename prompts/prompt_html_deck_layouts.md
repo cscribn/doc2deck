@@ -9,7 +9,7 @@ Opening slide. Required: `headline`, `title` (may match headline). Optional: `ki
 Short bullet beats. Required: `title`, `bullets` (2-4 items). Optional: `kicker`. Use when a simple chip row is enough.
 
 ## split
-Text plus visual. Required: `title`, `bullets` (2-3 items), `imageQuery` (2-5 words, uncluttered stock photo). Optional: `kicker`, `ai` (shows AI orb on slide).
+Text plus visual. Required: `title`, `bullets` (2-3 items), `imageQuery` (2-5 words, uncluttered stock photo). Optional: `kicker`, `imageSide` (`left` or `right`, default right), `ai` (shows AI orb on slide). Photo occupies a full-height column beside copy.
 
 ## journey
 Process overview or timeline. Required: `title`, `bullets` (3-5 items; each bullet is a step label with icon). Optional: `kicker`, `ai` (orb on the road). Best for “how it flows” beats.

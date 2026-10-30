@@ -71,17 +71,24 @@ public final class HtmlSlideRenderer {
 
     private void renderStandard(HtmlDeckSlide slide, StringBuilder sb) {
         openContentSlide(slide, sb, "");
-        sb.append("<div class=\"slide-body\"><div class=\"gen-chips\">\n");
+        sb.append("<div class=\"slide-body\"><div class=\"gen-chips chip-wrap\">\n");
         appendChips(slide.bullets(), sb, 0.2);
         sb.append("</div></div>\n");
         closeContentSlide(sb);
     }
 
     private void renderSplit(HtmlDeckSlide slide, StringBuilder sb, String imageDataUri) {
-        openContentSlide(slide, sb, "");
-        sb.append("<div class=\"slide-body gen-split\">\n<div class=\"gen-chips\">\n");
-        appendChips(slide.bullets(), sb, 0.15);
-        sb.append("</div>\n<div class=\"gen-img-panel fu\" style=\"--d:.35s\">");
+        String mediaClass = "left".equalsIgnoreCase(slide.imageSide()) ? "split-media-left" : "split-media-right";
+        sb.append("<div class=\"slide-safe layout-split ").append(mediaClass).append("\">\n");
+        sb.append("<div class=\"split-cols\">\n<div class=\"split-copy\">\n");
+        if (slide.kicker() != null && !slide.kicker().isBlank()) {
+            sb.append("<div class=\"kicker fu\" style=\"--d:.05s\">")
+                    .append(HtmlEscaper.text(slide.kicker())).append("</div>\n");
+        }
+        sb.append("<h2 class=\"title fu\" style=\"--d:.12s\">").append(HtmlEscaper.text(slide.title()))
+                .append("</h2>\n<div class=\"split-bullets\">\n");
+        appendSplitBullets(slide.bullets(), sb, 0.18);
+        sb.append("</div></div>\n<div class=\"split-media gen-img-panel fu\" style=\"--d:.35s\">");
         if (imageDataUri != null && !imageDataUri.isBlank()) {
             sb.append("<img src=\"").append(imageDataUri).append("\" alt=\"\">");
         } else {
@@ -89,16 +96,15 @@ public final class HtmlSlideRenderer {
         }
         sb.append("</div>\n");
         if (hasAi(slide)) {
-            appendAiOrb(slide, sb, "50%", "42%", 0.5);
+            appendAiOrb(slide, sb, "75%", "35%", 0.55);
         }
-        sb.append("</div>\n");
-        closeContentSlide(sb);
+        sb.append("</div></div>\n");
     }
 
     private void renderClosing(HtmlDeckSlide slide, StringBuilder sb) {
         sb.append("<div class=\"slide-safe\">\n<div class=\"gen-closing\">\n");
         sb.append("<h2 class=\"title fu\" style=\"--d:.1s\">").append(HtmlEscaper.text(slide.title()))
-                .append("</h2>\n<div class=\"gen-chips\">\n");
+                .append("</h2>\n<div class=\"gen-chips chip-wrap\">\n");
         appendChips(slide.bullets(), sb, 0.25);
         sb.append("</div>\n");
         if (slide.subline() != null && !slide.subline().isBlank()) {
@@ -113,7 +119,7 @@ public final class HtmlSlideRenderer {
         List<HtmlDeckBullet> bullets = slide.bullets();
         int n = bullets.size();
         sb.append("<div class=\"slide-body journey-stage\">\n");
-        sb.append("<div class=\"journey-road gx fu\" style=\"--d:.2s\"></div>\n");
+        sb.append("<div class=\"journey-road gx flow fu\" style=\"--d:.2s\"></div>\n");
         sb.append("<div class=\"journey-doc\"><svg class=\"ic\"><use href=\"#i-doc\"/></svg></div>\n");
         double start = 110;
         double span = 1140;
@@ -121,11 +127,13 @@ public final class HtmlSlideRenderer {
             HtmlDeckBullet bullet = bullets.get(i);
             int left = n == 1 ? (int) (start + span / 2) : (int) (start + i * span / (n - 1));
             String color = MILESTONE_COLORS[Math.min(i + 1, MILESTONE_COLORS.length - 1)];
+            double hitDelay = 0.18 * i;
             sb.append("<div class=\"journey-node pop\" style=\"left:").append(left).append("px;--ac:var(--m")
-                    .append(color).append(");--d:").append(String.format("%.2f", 0.35 + i * 0.12)).append("s\">")
+                    .append(color).append(");--d:").append(String.format("%.2f", 0.35 + i * 0.12))
+                    .append("s;--hd:").append(String.format("%.2f", hitDelay)).append("s\">")
+                    .append("<span class=\"lbl\">").append(HtmlEscaper.text(bullet.text())).append("</span>")
                     .append("<div class=\"av\">").append(iconSvg(bullet.icon())).append("</div>")
                     .append("<span class=\"num\">").append(String.format("%02d", i + 1)).append("</span>")
-                    .append("<span class=\"lbl\">").append(HtmlEscaper.text(bullet.text())).append("</span>")
                     .append("</div>\n");
         }
         if (hasAi(slide)) {
@@ -152,19 +160,19 @@ public final class HtmlSlideRenderer {
                     .append("</div>\n");
         }
         sb.append("</div>\n");
-        if (bullets.size() >= 3) {
-            sb.append("<div class=\"doc-side\">\n");
-            for (int i = 0; i < bullets.size(); i++) {
-                HtmlDeckBullet bullet = bullets.get(i);
-                sb.append("<span class=\"chip pop\" style=\"--d:")
-                        .append(String.format("%.2f", 0.4 + i * 0.1)).append("s\">")
-                        .append(iconSvg(bullet.icon())).append(HtmlEscaper.text(bullet.text()))
-                        .append("</span>\n");
-            }
-            sb.append("</div>\n");
-        }
         sb.append("</div>\n");
         closeContentSlide(sb);
+    }
+
+    private void appendSplitBullets(List<HtmlDeckBullet> bullets, StringBuilder sb, double baseDelay) {
+        for (int i = 0; i < bullets.size(); i++) {
+            HtmlDeckBullet bullet = bullets.get(i);
+            sb.append("<div class=\"split-bullet fu\" style=\"--d:")
+                    .append(String.format("%.2f", baseDelay + i * 0.1)).append("s\">")
+                    .append("<div class=\"ri\">").append(iconSvg(bullet.icon())).append("</div>")
+                    .append("<span class=\"text\">").append(HtmlEscaper.text(bullet.text())).append("</span>")
+                    .append("</div>\n");
+        }
     }
 
     private void renderCards(HtmlDeckSlide slide, StringBuilder sb) {

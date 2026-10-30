@@ -25,6 +25,7 @@ class HtmlSlideRendererTest {
                         List.of(new HtmlDeckBullet("pen", "a & b")),
                         null,
                         List.of("note"),
+                        null,
                         null),
                 0,
                 null);
@@ -60,6 +61,7 @@ class HtmlSlideRendererTest {
                                 new HtmlDeckBullet("check", "Row two")),
                         null,
                         List.of("note"),
+                        null,
                         null),
                 2,
                 null);
@@ -82,6 +84,7 @@ class HtmlSlideRendererTest {
                                 new HtmlDeckBullet("flag", "Card B")),
                         null,
                         List.of("note"),
+                        null,
                         null),
                 3,
                 null);
@@ -104,6 +107,7 @@ class HtmlSlideRendererTest {
                                 new HtmlDeckBullet("target", "Item two")),
                         null,
                         List.of("note"),
+                        null,
                         null),
                 4,
                 null);
@@ -125,6 +129,32 @@ class HtmlSlideRendererTest {
                         new HtmlDeckBullet("users", "Step three")),
                 null,
                 List.of("note"),
-                "Coach");
+                "Coach",
+                null);
+    }
+
+    @Test
+    void splitLayoutUsesTwoColumnsAndImageSideLeft() {
+        String html = renderer.renderSlide(
+                new HtmlDeckSlide(
+                        "split",
+                        1,
+                        "Split title",
+                        "VISUAL",
+                        null,
+                        null,
+                        List.of(
+                                new HtmlDeckBullet("chart", "Metric one"),
+                                new HtmlDeckBullet("trend", "Metric two")),
+                        "office teamwork",
+                        List.of("note"),
+                        null,
+                        "left"),
+                0,
+                "data:image/png;base64,abc");
+        assertTrue(html.contains("split-cols"));
+        assertTrue(html.contains("split-media"));
+        assertTrue(html.contains("split-media-left"));
+        assertTrue(html.contains("split-bullets"));
     }
 }

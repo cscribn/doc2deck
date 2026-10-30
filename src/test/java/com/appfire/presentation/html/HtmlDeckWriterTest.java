@@ -47,6 +47,7 @@ class HtmlDeckWriterTest {
                                 List.of(new HtmlDeckBullet("pen", "Chip text")),
                                 null,
                                 List.of("Note one"),
+                                null,
                                 null),
                         new HtmlDeckSlide(
                                 "closing",
@@ -60,6 +61,7 @@ class HtmlDeckWriterTest {
                                         new HtmlDeckBullet("flag", "Take two")),
                                 null,
                                 List.of("Final note"),
+                                null,
                                 null)),
                 null,
                 null);

@@ -140,6 +140,12 @@ public final class HtmlDeckResponseValidator {
     private void validateSplit(HtmlDeckSlide slide, String prefix, List<String> critical) {
         validateBullets(slide.bullets(), prefix, 2, 3, critical);
         validateImageQuery(slide.imageQuery(), prefix, critical);
+        if (slide.imageSide() != null && !slide.imageSide().isBlank()) {
+            String side = slide.imageSide().trim().toLowerCase();
+            if (!"left".equals(side) && !"right".equals(side)) {
+                critical.add(prefix + " imageSide must be left or right");
+            }
+        }
     }
 
     private void validateJourney(HtmlDeckSlide slide, String prefix, List<String> critical) {

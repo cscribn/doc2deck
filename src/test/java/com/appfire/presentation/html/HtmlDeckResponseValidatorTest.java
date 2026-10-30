@@ -67,6 +67,34 @@ class HtmlDeckResponseValidatorTest {
     }
 
     @Test
+    void rejectsInvalidImageSide() {
+        HtmlDeckResponseValidator validator = new HtmlDeckResponseValidator(outline);
+        List<HtmlDeckSlide> slides = List.of(
+                heroSlide(),
+                new HtmlDeckSlide(
+                        "split",
+                        1,
+                        "Split",
+                        null,
+                        null,
+                        null,
+                        List.of(
+                                new HtmlDeckBullet("chart", "One"),
+                                new HtmlDeckBullet("trend", "Two")),
+                        "team office",
+                        List.of("note"),
+                        null,
+                        "center"),
+                standardSlide(1),
+                standardSlide(2),
+                splitSlide(3),
+                listSlide(2),
+                cardsSlide(3),
+                closingSlide());
+        assertFalse(validator.validate(new HtmlDeckContentResponse("Hook title here", slides, null, null)).passed());
+    }
+
+    @Test
     void rejectsJourneyWithTooFewBullets() {
         HtmlDeckResponseValidator validator = new HtmlDeckResponseValidator(outline);
         List<HtmlDeckSlide> slides = List.of(
@@ -83,6 +111,7 @@ class HtmlDeckResponseValidatorTest {
                                 new HtmlDeckBullet("brief", "Two")),
                         null,
                         List.of("note"),
+                        null,
                         null),
                 standardSlide(1),
                 standardSlide(2),
@@ -142,6 +171,7 @@ class HtmlDeckResponseValidatorTest {
                         new HtmlDeckBullet("users", "Third step label")),
                 null,
                 List.of("Walk the timeline."),
+                null,
                 null);
     }
 
@@ -158,6 +188,7 @@ class HtmlDeckResponseValidatorTest {
                         new HtmlDeckBullet("check", "Row two fragment")),
                 null,
                 List.of("Explain the form."),
+                null,
                 null);
     }
 
@@ -174,6 +205,7 @@ class HtmlDeckResponseValidatorTest {
                         new HtmlDeckBullet("target", "Pillar two here")),
                 null,
                 List.of("Expand each pillar."),
+                null,
                 null);
     }
 
@@ -190,6 +222,7 @@ class HtmlDeckResponseValidatorTest {
                         new HtmlDeckBullet("gauge", "Criterion two")),
                 null,
                 List.of("Walk the list."),
+                null,
                 null);
     }
 
@@ -204,6 +237,7 @@ class HtmlDeckResponseValidatorTest {
                 List.of(new HtmlDeckBullet("pen", "One fragment here")),
                 null,
                 List.of("Speaker context for the opening."),
+                null,
                 null);
     }
 
@@ -220,6 +254,7 @@ class HtmlDeckResponseValidatorTest {
                         new HtmlDeckBullet("target", "Second point here")),
                 null,
                 List.of("Expand on this beat verbally."),
+                null,
                 null);
     }
 
@@ -236,6 +271,7 @@ class HtmlDeckResponseValidatorTest {
                         new HtmlDeckBullet("trend", "Metric beat two")),
                 "team collaboration office",
                 List.of("Walk through the visual."),
+                null,
                 null);
     }
 
@@ -252,6 +288,7 @@ class HtmlDeckResponseValidatorTest {
                         new HtmlDeckBullet("flag", "Takeaway two here")),
                 null,
                 List.of("Close with next steps."),
+                null,
                 null);
     }
 }

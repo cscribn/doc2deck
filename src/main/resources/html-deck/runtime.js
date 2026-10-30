@@ -63,6 +63,31 @@
   ov.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) { go(+b.dataset.go); ov.classList.remove('show'); } });
 
   const setFinal = s => s.querySelectorAll('[data-to]').forEach(el => el.textContent = (+el.dataset.to).toFixed(+(el.dataset.dec || 0)) + (el.dataset.suf || ''));
+  const FIT_SEL = '.slide-safe .title,.s1-h,.s1-sub,.split-bullets .text,.gen-chips .chip,.journey-node .lbl,.s17-card b,.s6-row .rl,.doc-row .rl,.split-bullet .text';
+  function clearFitSizes(slide) {
+    slide.querySelectorAll(FIT_SEL).forEach(el => { el.style.fontSize = ''; });
+  }
+  function fitSlideCopy(slide) {
+    if (reduced) return;
+    const box = slide.querySelector('.slide-safe,.slide-hero');
+    if (!box || slide.dataset.noFit !== undefined) return;
+    clearFitSizes(slide);
+    const targets = [...slide.querySelectorAll(FIT_SEL)];
+    if (!targets.length) return;
+    const floors = targets.map(el => parseFloat(getComputedStyle(el).fontSize) * 0.75);
+    let guard = 0;
+    while (guard++ < 24 && (box.scrollHeight > box.clientHeight + 1 || box.scrollWidth > box.clientWidth + 1)) {
+      let shrunk = false;
+      targets.forEach((el, i) => {
+        const px = parseFloat(getComputedStyle(el).fontSize);
+        if (px > floors[i]) {
+          el.style.fontSize = (px * 0.94) + 'px';
+          shrunk = true;
+        }
+      });
+      if (!shrunk) break;
+    }
+  }
   function runCounters(s, baseMs) {
     raf.forEach(cancelAnimationFrame); raf = [];
     if (reduced) return setFinal(s);
@@ -88,11 +113,12 @@
     if (prev < 0) { track.classList.add('instant'); bg.classList.add('instant'); }
     track.style.transform = `translateX(${-i * W}px)`;
     bg.style.transform = `translateX(${-i * W * PAR}px)`;
-    if (prev >= 0 && prev !== i) { slides[prev].classList.remove('is-active'); setFinal(slides[prev]); }
+    if (prev >= 0 && prev !== i) { slides[prev].classList.remove('is-active'); clearFitSizes(slides[prev]); setFinal(slides[prev]); }
     const s = slides[i];
     s.classList.remove('is-active'); void s.offsetWidth; s.classList.add('is-active');
     if (prev < 0) requestAnimationFrame(() => requestAnimationFrame(() => { track.classList.remove('instant'); bg.classList.remove('instant'); }));
     runCounters(s, base * 1000);
+    requestAnimationFrame(() => fitSlideCopy(s));
 
     const m = +s.dataset.m;
     hud.style.setProperty('--mc', mc(m));

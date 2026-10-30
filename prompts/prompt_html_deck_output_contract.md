@@ -26,6 +26,7 @@ Deliverable body (JSON only):
       "subline": "optional semicolon-separated beats",
       "bullets": [{ "icon": "pen", "text": "fragment" }],
       "imageQuery": "split only",
+      "imageSide": "split only: left or right (default right)",
       "notes": ["speaker note"],
       "ai": "optional agent label"
     }
@@ -38,4 +39,5 @@ Constraints:
 - First slide should use layout hero; last slide should use layout closing.
 - bullets: omit or empty only when layout allows (hero may have 0-5).
 - imageQuery: required for split layout; 2-5 words; omit for other layouts.
+- imageSide: optional for split only; `left` or `right`; omit for default right column.
 - Do not emit HTML, markdown, URLs, citations, slide numbers, or emojis in copy fields.

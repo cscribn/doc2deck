@@ -14,7 +14,8 @@ public record HtmlDeckSlide(
         List<HtmlDeckBullet> bullets,
         String imageQuery,
         List<String> notes,
-        String ai) {
+        String ai,
+        String imageSide) {
 
     public HtmlDeckSlide {
         if (bullets == null) {

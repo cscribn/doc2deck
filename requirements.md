@@ -58,7 +58,7 @@ Template (PPTX): `${key}` in single run; disable spell-check-as-you-type.
 
 **PPTX:** Template-driven keys in `presentation-keys.properties`. Per key: instruction, optional `maxWords`, `optional=true`, `type=image`. Defaults: `type=text`, `optional=false`, `maxWords=15` (text) or `5` (image).
 
-**HTML:** Outline in `html-deck-outline.properties`: `milestones`, `slides.min`/`slides.max`, per-field `*.maxWords`, `layout.*` descriptions. Model returns slide objects (title, kicker, headline, subline, bullets with icon+text, notes, optional `ai`, split `imageQuery`). Icons from prompt allowlist only; Java HTML-escapes all copy.
+**HTML:** Outline in `html-deck-outline.properties`: `milestones`, `slides.min`/`slides.max`, per-field `*.maxWords`, `layout.*` descriptions. Model returns slide objects (title, kicker, headline, subline, bullets with icon+text, notes, optional `ai`, split `imageQuery`, optional split `imageSide` left|right). Icons from prompt allowlist only; Java HTML-escapes all copy.
 
 Prompt rules (both formats): source mapping, JSON-only output, citations in `sourceRefs`/`warnings`, sentence case slide copy, no URLs/citations/slide numbers/logos on slides. Canonical PPTX prompts: `prompt_{core_rules,slide_copy_rules,slide_principles,image_keys,output_contract,docx_content}.md`. HTML adds `prompt_html_deck_layouts.md`, `prompt_html_deck_output_contract.md`. Voice from `VOICE_STYLE_PATH`.
 
@@ -66,7 +66,7 @@ Prompt rules (both formats): source mapping, JSON-only output, citations in `sou
 
 **PPTX critical:** JSON/`keys` fail; required template key blank; text over per-key word limit; image query outside 2-5 words.
 
-**HTML critical:** JSON/deckTitle/slides fail; slide count outside outline bounds; layout/field violations; invalid icon; split image query word count; first slide not `hero`; last not `closing`.
+**HTML critical:** JSON/deckTitle/slides fail; slide count outside outline bounds; layout/field violations; invalid icon; split image query word count or invalid `imageSide`; first slide not `hero`; last not `closing`.
 
 **Advisory (both):** empty `sourceRefs`; PPTX template/key/design warnings; HTML weak backing in `warnings`.
 
