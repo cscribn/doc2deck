@@ -113,7 +113,7 @@
     if (prev < 0) { track.classList.add('instant'); bg.classList.add('instant'); }
     track.style.transform = `translateX(${-i * W}px)`;
     bg.style.transform = `translateX(${-i * W * PAR}px)`;
-    if (prev >= 0 && prev !== i) { slides[prev].classList.remove('is-active'); clearFitSizes(slides[prev]); setFinal(slides[prev]); }
+    if (prev >= 0 && prev !== i) { slides[prev].classList.remove('is-active'); setFinal(slides[prev]); }
     const s = slides[i];
     s.classList.remove('is-active'); void s.offsetWidth; s.classList.add('is-active');
     if (prev < 0) requestAnimationFrame(() => requestAnimationFrame(() => { track.classList.remove('instant'); bg.classList.remove('instant'); }));
