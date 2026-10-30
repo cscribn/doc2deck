@@ -70,7 +70,7 @@ public final class HtmlSlideRenderer {
     }
 
     private void renderStandard(HtmlDeckSlide slide, StringBuilder sb) {
-        openContentSlide(slide, sb, "");
+        openContentSlide(slide, sb, "layout-standard");
         sb.append("<div class=\"slide-body\"><div class=\"gen-chips chip-wrap\">\n");
         appendChips(slide.bullets(), sb, 0.2);
         sb.append("</div></div>\n");
@@ -121,8 +121,11 @@ public final class HtmlSlideRenderer {
         sb.append("<div class=\"slide-body journey-stage\">\n");
         sb.append("<div class=\"journey-road gx flow fu\" style=\"--d:.2s\"></div>\n");
         sb.append("<div class=\"journey-doc\"><svg class=\"ic\"><use href=\"#i-doc\"/></svg></div>\n");
-        double start = 110;
-        double span = 1140;
+        double start = 80;
+        double span = n >= 5 ? 1200 : 1140;
+        if (n < 5) {
+            start = 110;
+        }
         for (int i = 0; i < n; i++) {
             HtmlDeckBullet bullet = bullets.get(i);
             int left = n == 1 ? (int) (start + span / 2) : (int) (start + i * span / (n - 1));
@@ -131,9 +134,9 @@ public final class HtmlSlideRenderer {
             sb.append("<div class=\"journey-node pop\" style=\"left:").append(left).append("px;--ac:var(--m")
                     .append(color).append(");--d:").append(String.format("%.2f", 0.35 + i * 0.12))
                     .append("s;--hd:").append(String.format("%.2f", hitDelay)).append("s\">")
-                    .append("<span class=\"lbl\">").append(HtmlEscaper.text(bullet.text())).append("</span>")
                     .append("<div class=\"av\">").append(iconSvg(bullet.icon())).append("</div>")
                     .append("<span class=\"num\">").append(String.format("%02d", i + 1)).append("</span>")
+                    .append("<span class=\"lbl\">").append(HtmlEscaper.text(bullet.text())).append("</span>")
                     .append("</div>\n");
         }
         if (hasAi(slide)) {

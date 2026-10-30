@@ -13,19 +13,29 @@
 
 /* --- Split two-column --- */
 .layout-split.slide-safe{display:flex;flex-direction:column;min-height:0}
-.layout-split .split-cols{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:stretch;position:relative}
+.layout-split .split-cols{flex:1;min-height:0;display:grid;grid-template-columns:1.08fr 0.92fr;gap:28px;align-items:stretch;position:relative}
 .split-media-left .split-cols{direction:rtl}
 .split-media-left .split-copy{direction:ltr}
 .split-copy{display:flex;flex-direction:column;justify-content:center;gap:10px;min-width:0;min-height:0}
+.layout-split.slide-safe .title{font-size:clamp(36px,3.4vw,54px)}
 .split-bullets{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.layout-split .split-bullets{gap:16px}
 .split-bullet{display:flex;align-items:flex-start;gap:14px;font-size:21px;font-weight:600;line-height:1.25}
+.layout-split .split-bullet{font-size:24px;gap:16px}
 .split-bullet .ri{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;flex:none;
   background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c)}
+.layout-split .split-bullet .ri{width:42px;height:42px;border-radius:11px}
 .split-bullet .ri .ic{width:22px;height:22px}
+.layout-split .split-bullet .ri .ic{width:24px;height:24px}
 .split-bullet .text{flex:1;overflow-wrap:anywhere;min-width:0}
 .split-media,.split-media.gen-img-panel{height:100%;min-height:0;max-width:none;flex:none}
+.layout-split .split-media,.layout-split .split-media.gen-img-panel{align-self:center;max-height:85%;height:auto}
 
 /* --- Standard / closing chips --- */
+.layout-standard.slide-safe{display:flex;flex-direction:column;min-height:0}
+.layout-standard .slide-body{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.layout-standard .gen-chips{justify-content:center;align-content:center;gap:20px}
+.layout-standard .chip-wrap .chip{font-size:24px;padding:12px 18px}
 .gen-chips{display:flex;flex-wrap:wrap;gap:14px;align-content:flex-start}
 .chip-wrap .chip{white-space:normal;max-width:100%;font-size:21px}
 .gen-closing{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px}
@@ -40,24 +50,34 @@
 
 /* --- Journey (S2) --- */
 .journey-stage{flex:1;min-height:0;position:relative;margin-top:4px;overflow:hidden}
+.layout-journey .journey-road{top:38%}
 .journey-road{position:absolute;left:30px;right:30px;top:42%;height:6px;border-radius:3px;
   background:linear-gradient(90deg,var(--m1),var(--m2),var(--m3),var(--m4),var(--m5));box-shadow:0 0 22px rgba(169,125,255,.45)}
 .is-active .journey-road.flow{animation:k-dash 1.4s linear infinite}
+.layout-journey .journey-node{top:38%;translate:-50% 0;display:flex;flex-direction:column;align-items:center;width:min(220px,14vw)}
 .journey-node{position:absolute;top:42%;translate:-50% -50%;text-align:center;width:200px}
+.layout-journey .journey-node .av{--s:88px;translate:0 -50%;margin:0 auto;position:relative}
 .journey-node .lbl{display:block;margin-bottom:10px;color:var(--ink);font-size:18px;line-height:1.2;
   font-weight:600;overflow-wrap:anywhere;max-width:200px;margin-left:auto;margin-right:auto}
+.layout-journey .journey-node .lbl{margin:10px 0 0;max-width:min(220px,14vw);font-size:16px;line-height:1.35}
 .journey-node .av{--s:100px;margin:0 auto;position:relative}
 .journey-node .av::after{content:"";position:absolute;inset:-8px;border-radius:50%;border:3px solid var(--ac,var(--c));opacity:0}
 @keyframes journey-hit{0%{opacity:0;transform:scale(.9)}3%{opacity:1;transform:scale(1)}14%{opacity:0;transform:scale(1.5)}100%{opacity:0}}
 .is-active .journey-node .av::after{animation:journey-hit 9s ease-out calc(var(--base) + 2.2s + var(--hd,0s)) infinite}
 .journey-node .num{display:block;margin-top:8px;font-size:14px;font-weight:800;letter-spacing:.12em;color:var(--ac,var(--c))}
+.layout-journey .journey-node .num{margin-top:6px}
+.layout-journey .journey-doc{top:38%}
 .journey-doc{position:absolute;top:42%;left:30px;translate:-50% -50%;width:44px;height:52px;border-radius:9px;display:grid;place-items:center;
   background:linear-gradient(180deg,#fff6b6,#fff6b6);box-shadow:0 0 26px rgba(255,246,182,.7);opacity:0}
 .journey-doc .ic{width:26px;height:26px;color:#090a0f;stroke-width:2.1}
 @keyframes journey-trip{0%{transform:translateX(0);opacity:0}5%,12%{transform:translateX(0);opacity:1}
   20%,30%{transform:translateX(285px)}38%,48%{transform:translateX(570px)}56%,66%{transform:translateX(855px)}
   74%,88%{transform:translateX(1140px);opacity:1}96%,100%{transform:translateX(1140px);opacity:0}}
+@keyframes journey-trip-wide{0%{transform:translateX(0);opacity:0}5%,12%{transform:translateX(0);opacity:1}
+  20%,30%{transform:translateX(300px)}38%,48%{transform:translateX(600px)}56%,66%{transform:translateX(900px)}
+  74%,88%{transform:translateX(1200px);opacity:1}96%,100%{transform:translateX(1200px);opacity:0}}
 .is-active .journey-doc{animation:journey-trip 9s cubic-bezier(.65,0,.35,1) calc(var(--base) + 2.2s) infinite}
+.is-active .layout-journey .journey-doc{animation:journey-trip-wide 9s cubic-bezier(.65,0,.35,1) calc(var(--base) + 2.2s) infinite}
 .journey-ai{position:absolute;top:32%;translate:-50% -50%;width:72px;height:72px;z-index:3}
 .journey-ai .stem{position:absolute;left:50%;top:100%;width:0;height:70px;border-left:2px dashed rgba(141,252,241,.6)}
 .journey-ai .orb{--s:72px;position:relative}

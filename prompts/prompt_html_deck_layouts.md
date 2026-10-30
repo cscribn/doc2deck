@@ -12,7 +12,7 @@ Short bullet beats. Required: `title`, `bullets` (2-4 items). Optional: `kicker`
 Text plus visual. Required: `title`, `bullets` (2-3 items), `imageQuery` (2-5 words, uncluttered stock photo). Optional: `kicker`, `imageSide` (`left` or `right`, default right), `ai` (shows AI orb on slide). Photo occupies a full-height column beside copy.
 
 ## journey
-Process overview or timeline. Required: `title`, `bullets` (3-5 items; each bullet is a step label with icon). Optional: `kicker`, `ai` (orb on the road). Best for “how it flows” beats.
+Process overview or timeline. Required: `title`, `bullets` (3-5 items; each bullet is a step label with icon). Optional: `kicker`, `ai` (orb on the road). Best for “how it flows” beats. Step labels render under the milestone icons on the road.
 
 ## doc
 Structured evidence or form-like content. Required: `title`, `bullets` (2-4 items as rows). Optional: `kicker`. Best for templates, checklists, or document-centric steps.

@@ -33,6 +33,7 @@ class HtmlSlideRendererTest {
         assertTrue(html.contains("a &amp; b"));
         assertFalse(html.contains("<unsafe>"));
         assertTrue(html.contains("slide-safe"));
+        assertTrue(html.contains("layout-standard"));
     }
 
     @Test
