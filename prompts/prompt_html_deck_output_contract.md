@@ -18,7 +18,7 @@ Deliverable body (JSON only):
   "deckTitle": "string",
   "slides": [
     {
-      "layout": "hero|standard|split|closing",
+      "layout": "hero|standard|split|journey|doc|cards|list|closing",
       "milestone": 0,
       "title": "string",
       "kicker": "optional string",

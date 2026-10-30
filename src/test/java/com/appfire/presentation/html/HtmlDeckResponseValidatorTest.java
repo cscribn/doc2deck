@@ -66,19 +66,130 @@ class HtmlDeckResponseValidatorTest {
         assertFalse(validator.validate(response).passed());
     }
 
+    @Test
+    void rejectsJourneyWithTooFewBullets() {
+        HtmlDeckResponseValidator validator = new HtmlDeckResponseValidator(outline);
+        List<HtmlDeckSlide> slides = List.of(
+                heroSlide(),
+                new HtmlDeckSlide(
+                        "journey",
+                        1,
+                        "Flow",
+                        null,
+                        null,
+                        null,
+                        List.of(
+                                new HtmlDeckBullet("pen", "One"),
+                                new HtmlDeckBullet("brief", "Two")),
+                        null,
+                        List.of("note"),
+                        null),
+                standardSlide(1),
+                standardSlide(2),
+                splitSlide(3),
+                listSlide(2),
+                cardsSlide(3),
+                closingSlide());
+        assertFalse(validator.validate(new HtmlDeckContentResponse("Hook title here", slides, null, null)).passed());
+    }
+
+    @Test
+    void acceptsMixedLayoutDeck() {
+        HtmlDeckResponseValidator validator = new HtmlDeckResponseValidator(outline);
+        HtmlDeckContentResponse response = new HtmlDeckContentResponse(
+                "Hook title here",
+                List.of(
+                        heroSlide(),
+                        journeySlide(),
+                        docSlide(1),
+                        cardsSlide(2),
+                        listSlide(2),
+                        splitSlide(3),
+                        standardSlide(3),
+                        closingSlide()),
+                null,
+                null);
+        assertTrue(validator.validate(response).passed());
+    }
+
     private HtmlDeckContentResponse sampleDeck() {
         return new HtmlDeckContentResponse(
                 "Hook title here",
                 List.of(
                         heroSlide(),
-                        standardSlide(1),
-                        standardSlide(2),
+                        journeySlide(),
+                        docSlide(1),
                         splitSlide(3),
-                        standardSlide(2),
-                        standardSlide(3),
+                        cardsSlide(2),
+                        listSlide(2),
                         standardSlide(3),
                         closingSlide()),
                 null,
+                null);
+    }
+
+    private HtmlDeckSlide journeySlide() {
+        return new HtmlDeckSlide(
+                "journey",
+                0,
+                "Overview flow title",
+                "JOURNEY",
+                null,
+                null,
+                List.of(
+                        new HtmlDeckBullet("pen", "First step label"),
+                        new HtmlDeckBullet("brief", "Second step label"),
+                        new HtmlDeckBullet("users", "Third step label")),
+                null,
+                List.of("Walk the timeline."),
+                null);
+    }
+
+    private HtmlDeckSlide docSlide(int milestone) {
+        return new HtmlDeckSlide(
+                "doc",
+                milestone,
+                "Document beat title",
+                "TEMPLATE",
+                null,
+                null,
+                List.of(
+                        new HtmlDeckBullet("doc", "Row one fragment"),
+                        new HtmlDeckBullet("check", "Row two fragment")),
+                null,
+                List.of("Explain the form."),
+                null);
+    }
+
+    private HtmlDeckSlide cardsSlide(int milestone) {
+        return new HtmlDeckSlide(
+                "cards",
+                milestone,
+                "Pillar slide title",
+                "PROOF",
+                null,
+                null,
+                List.of(
+                        new HtmlDeckBullet("star", "Pillar one here"),
+                        new HtmlDeckBullet("target", "Pillar two here")),
+                null,
+                List.of("Expand each pillar."),
+                null);
+    }
+
+    private HtmlDeckSlide listSlide(int milestone) {
+        return new HtmlDeckSlide(
+                "list",
+                milestone,
+                "Checklist slide title",
+                "STEPS",
+                null,
+                null,
+                List.of(
+                        new HtmlDeckBullet("check", "Criterion one"),
+                        new HtmlDeckBullet("gauge", "Criterion two")),
+                null,
+                List.of("Walk the list."),
                 null);
     }
 

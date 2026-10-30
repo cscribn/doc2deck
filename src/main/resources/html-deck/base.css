@@ -28,13 +28,21 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #track{position:absolute;inset:0;transition:transform 1.2s var(--pan);z-index:2}
 #track.instant,#bg.instant{transition:none}
 .slide{position:absolute;top:0;width:1600px;height:900px;opacity:.1;transform:scale(.92);
+  --safe-top:88px;--safe-bottom:112px;--safe-x:120px;
   transition:opacity 1s ease,transform 1.2s var(--pan);pointer-events:none}
 .slide.is-active{opacity:1;transform:none;pointer-events:auto}
 .slide>.notes{display:none}
+.slide-safe{position:absolute;inset:var(--safe-top) var(--safe-x) var(--safe-bottom);overflow:hidden;
+  display:flex;flex-direction:column;gap:10px;min-height:0}
+.slide-safe .kicker{position:static;flex:none;font-size:17px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--c)}
+.slide-safe .title{position:static;flex:none;font-size:clamp(32px,3.1vw,50px);font-weight:600;letter-spacing:-.02em;
+  line-height:1.08;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.slide-safe .slide-body{flex:1;min-height:0;position:relative;display:flex;flex-direction:column}
 .kicker{position:absolute;left:120px;top:96px;font-size:17px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--c)}
 .title{position:absolute;left:120px;top:124px;font-size:50px;font-weight:600;letter-spacing:-.02em;line-height:1.08;max-width:1360px}
 .is-active .kicker{animation:k-fu .7s var(--out) var(--base) backwards}
 .is-active .title{animation:k-fu .8s var(--out) calc(var(--base) + .08s) backwards}
+.is-active .slide-safe .kicker.fu,.is-active .slide-safe .title.fu{animation:k-fu .8s var(--out) calc(var(--base) + var(--d,0s)) backwards}
 
 /* ===== HUD ===== */
 #hud{position:absolute;left:44px;right:44px;top:30px;display:flex;justify-content:space-between;align-items:center;z-index:5;pointer-events:none}

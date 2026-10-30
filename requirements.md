@@ -47,7 +47,7 @@ Shared: `DocxExtractor` → `DocumentContent`.
 ### HTML (`DECK_FORMAT=html`)
 
 1. `HtmlDeckPromptBuilder` → core/slide rules + voice + `html-deck-outline.properties` + `prompt_html_deck_{layouts,output_contract}.md` + DOCX
-2. `PresentationContentGenerator.generateHtmlDeck` → JSON `HtmlDeckContentResponse` (slides array; layouts `hero|standard|split|closing` only)
+2. `PresentationContentGenerator.generateHtmlDeck` → JSON `HtmlDeckContentResponse` (slides array; layouts `hero|standard|split|journey|doc|cards|list|closing`)
 3. `HtmlDeckResponseValidator` → slide count bounds; first/last layout rules; per-field word limits; icon allowlist; split `imageQuery` 2-5 words; critical fail stops write
 4. `ImageAcquisitionService` for split slides; skip without `PEXELS_API_KEY` (placeholder panel)
 5. `HtmlDeckWriter` → inline `html-deck/` CSS/JS/icons; write `OUTPUT_HTML_PATH`

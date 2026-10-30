@@ -1,7 +1,6 @@
 package com.appfire.presentation.config;
 
 import java.util.LinkedHashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,7 +10,8 @@ public final class HtmlDeckOutlineConfig {
     public static final int DEFAULT_MAX_WORDS = 15;
     public static final int MIN_IMAGE_QUERY_WORDS = 2;
     public static final int MAX_IMAGE_QUERY_WORDS = 5;
-    public static final List<String> ALLOWED_LAYOUTS = List.of("hero", "standard", "split", "closing");
+    public static final List<String> ALLOWED_LAYOUTS =
+            List.of("hero", "standard", "split", "journey", "doc", "cards", "list", "closing");
 
     private final String header;
     private final List<String> milestoneLabels;

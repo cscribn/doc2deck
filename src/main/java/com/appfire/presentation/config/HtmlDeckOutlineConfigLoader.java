@@ -66,7 +66,7 @@ public final class HtmlDeckOutlineConfigLoader {
                 if (!HtmlDeckOutlineConfig.ALLOWED_LAYOUTS.contains(layout)) {
                     throw new IllegalStateException(
                             "Unknown HTML deck layout in outline: " + layout
-                                    + ". Use hero, standard, split, or closing");
+                                    + ". Use one of: " + HtmlDeckOutlineConfig.ALLOWED_LAYOUTS);
                 }
                 layouts.put(layout, properties.getProperty(name, "").trim());
                 continue;

@@ -6,6 +6,7 @@ import com.appfire.presentation.model.HtmlDeckContentResponse;
 import com.appfire.presentation.model.HtmlDeckSlide;
 import com.appfire.presentation.template.WordCount;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -63,6 +64,7 @@ public final class HtmlDeckResponseValidator {
             if (!"closing".equalsIgnoreCase(lastLayout)) {
                 critical.add("Last slide must use layout closing");
             }
+            checkLayoutVariety(slides, advisory);
         }
 
         if (response.sourceRefs() == null || response.sourceRefs().isEmpty()) {
@@ -108,6 +110,10 @@ public final class HtmlDeckResponseValidator {
             case "hero" -> validateHero(slide, prefix, critical);
             case "standard" -> validateStandard(slide, prefix, critical);
             case "split" -> validateSplit(slide, prefix, critical);
+            case "journey" -> validateJourney(slide, prefix, critical);
+            case "doc" -> validateDoc(slide, prefix, critical);
+            case "cards" -> validateCards(slide, prefix, critical);
+            case "list" -> validateList(slide, prefix, critical);
             case "closing" -> validateClosing(slide, prefix, critical);
             default -> critical.add(prefix + " unknown layout");
         }
@@ -134,6 +140,22 @@ public final class HtmlDeckResponseValidator {
     private void validateSplit(HtmlDeckSlide slide, String prefix, List<String> critical) {
         validateBullets(slide.bullets(), prefix, 2, 3, critical);
         validateImageQuery(slide.imageQuery(), prefix, critical);
+    }
+
+    private void validateJourney(HtmlDeckSlide slide, String prefix, List<String> critical) {
+        validateBullets(slide.bullets(), prefix, 3, 5, critical);
+    }
+
+    private void validateDoc(HtmlDeckSlide slide, String prefix, List<String> critical) {
+        validateBullets(slide.bullets(), prefix, 2, 4, critical);
+    }
+
+    private void validateCards(HtmlDeckSlide slide, String prefix, List<String> critical) {
+        validateBullets(slide.bullets(), prefix, 2, 4, critical);
+    }
+
+    private void validateList(HtmlDeckSlide slide, String prefix, List<String> critical) {
+        validateBullets(slide.bullets(), prefix, 2, 4, critical);
     }
 
     private void validateClosing(HtmlDeckSlide slide, String prefix, List<String> critical) {
@@ -203,6 +225,34 @@ public final class HtmlDeckResponseValidator {
 
     private static String truncate(String value) {
         return value.length() <= 60 ? value : value.substring(0, 60) + "...";
+    }
+
+    private static void checkLayoutVariety(List<HtmlDeckSlide> slides, List<String> advisory) {
+        if (slides.size() < 3) {
+            return;
+        }
+        int run = 1;
+        String prev = slides.get(1).layout().toLowerCase();
+        for (int i = 2; i < slides.size() - 1; i++) {
+            String layout = slides.get(i).layout().toLowerCase();
+            if (layout.equals(prev)) {
+                run++;
+                if (run >= 3) {
+                    advisory.add("Layout " + layout + " used " + run + "+ times consecutively (middle slides)");
+                    break;
+                }
+            } else {
+                run = 1;
+                prev = layout;
+            }
+        }
+        Set<String> distinct = new LinkedHashSet<>();
+        for (int i = 1; i < slides.size() - 1; i++) {
+            distinct.add(slides.get(i).layout().toLowerCase());
+        }
+        if (slides.size() - 2 >= 4 && distinct.size() < 4) {
+            advisory.add("Middle slides use fewer than 4 distinct layouts; vary journey, doc, cards, list, split, standard");
+        }
     }
 
     public record ValidationResult(boolean passed, List<String> criticalFailures, List<String> advisories) {
